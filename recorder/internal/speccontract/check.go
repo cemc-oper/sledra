@@ -1,4 +1,5 @@
-// Package speccontract is an offline contract test helper, not the recorder.
+// Package speccontract contains the canonical JSON primitives shared by the
+// recorder event codec and the offline bundle contract checker.
 package speccontract
 
 import (

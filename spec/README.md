@@ -45,7 +45,7 @@ Adding an optional field is minor only in an already open extension location. A 
 
 ## CLI and errors frozen for later SLD tasks
 
-These are **future recorder interfaces**, not implemented commands. The existing helper is `python3 spec/check.py BUNDLE.json` or `cd recorder && go run ./cmd/sledra-spec-check [-spec-dir DIR] BUNDLE.json`; it returns JSON status on stdout for success and JSON `{ok:false,code,detail}` on stderr for failure.
+These are **future recorder interfaces**, not implemented commands. The existing bundle helper is `python3 spec/check.py BUNDLE.json` or `cd recorder && go run ./cmd/sledra-spec-check [-spec-dir DIR] BUNDLE.json`; it returns JSON status on stdout for success and JSON `{ok:false,code,detail}` on stderr for failure. SLD-06 additionally provides a standalone offline [`sledra-event` encoder/validator](../recorder/event/README.md), which does not record to a spool and keeps stdout empty.
 
 | Future command | Required input | Output / behavior |
 |---|---|---|
@@ -56,6 +56,8 @@ These are **future recorder interfaces**, not implemented commands. The existing
 | `sledra run finish --context RUN.json --scope-file FILE` | Explicit immutable covered Attempt IDs, scope/rule version/reason | Empty stdout; appends a finish declaration; later Attempt remains possible |
 
 Recorder failures must be machine-classified on stderr without exposing secrets. Contract helper codes are `duplicate_key`, `schema_invalid`, `semantic_invalid`, `missing_parameter`, `unknown_parameter`, `parent_mismatch`, `unauthorized_event`, `conflicting_event_id`, `unsupported_major`. The SLD-04 Go Registry package already classifies `conflict`, `corrupt_record`, `registry_unavailable` and `indeterminate`; the public CLI remains for SLD-05. Future recording commands add `context_missing`, `spool_unavailable` and `limit_exceeded`; `indeterminate` means retry lookup with the **same** request token, never resubmit the business action. The helper exits 0 on valid bundle and 1 on invalid bundle; future recorder CLI exit statuses are owned by SLD-05/06/07 and may not be inferred from this helper.
+
+The SLD-06 offline event command returns only a classified code on stderr for failure and empty stdout in both modes. Its additional codes include `limit_exceeded`, `sensitive_field`, `config_invalid`, `config_unavailable`, `input_unavailable`, `output_unavailable`, and `indeterminate`. The `encode` output file is an intermediate artifact, not a recording or ingestion acknowledgment. Event parent-reference checks still require the bundle helper or a later context-aware validator.
 
 ## Development entry and evidence
 
