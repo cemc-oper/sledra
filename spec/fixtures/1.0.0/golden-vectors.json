@@ -1,0 +1,30 @@
+{
+  "attempt_context_sha256": "0f3871dd5b88a103ea537601027109504980d652021459b75e5d0971d95fec97",
+  "attempt_id": "att_9e0a23e0e34efd87a40c9e74f27e516bac29495b7c219c3ff27f48e8965308d8",
+  "canonical_parameters": "{\"domain\":\"global\",\"lead_seconds\":0,\"member\":\"01\"}",
+  "event_sha256": "608df0057ec0f681e38bcb0156a43453b16a455065c6d37b0088a9e8cac6db3a",
+  "integer_1": "{\"member\":1}",
+  "job_ref_id": "job_236b7900120183b1a5ec21d336c415954f7a21b841aa22d8ec8033fada84098b",
+  "key_order": "{\"a\":2,\"z\":1}",
+  "lead_inputs": [
+    {
+      "normalized_lead_seconds": 0,
+      "unit": "h",
+      "value": 0
+    },
+    {
+      "normalized_lead_seconds": 0,
+      "unit": "s",
+      "value": 0
+    }
+  ],
+  "manifest_sha256": "410ae316e8cad27947d48a9bdb198028f695212bc91a2a19be44a30f298c9d8f",
+  "negative_zero_canonical": "{\"n\":0}",
+  "reused_scheduler_job_id_ref": "job_7e6577213a3466bcf3e4850893f6ae9bff654a479dc0cdbd7d3f61749bc7bc42",
+  "run_context_sha256": "236bc47414990af0e53c8c8770e023c2b951f83403362bc4a6b47a2dd452060e",
+  "run_id": "run_eeff24fb97bc287ebc5cddea33eafa8c8e958847ba82e653b501c17fd2662959",
+  "string_01": "{\"member\":\"01\"}",
+  "task_instance_id": "ti_883ec1a4b030bb767864e77f296e507d16d32bb315e82b5a1e8f3f5a524185d5",
+  "unicode_nfc": "{\"emoji\":\"☀\",\"label\":\"é\"}",
+  "zero_hour_seconds": 0
+}

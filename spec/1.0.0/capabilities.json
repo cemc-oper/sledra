@@ -1,0 +1,35 @@
+{
+  "contract_version": "1.0.0",
+  "read_contracts": [
+    "1.x"
+  ],
+  "write_contracts": [
+    "1.0.0"
+  ],
+  "known_event_types": [
+    "artifact.file_observed",
+    "artifact.generated",
+    "artifact.published",
+    "artifact.stable_observed",
+    "artifact.used",
+    "artifact.validation_completed",
+    "attempt.exited",
+    "attempt.registered",
+    "attempt.selection_declared",
+    "attempt.started",
+    "data.wait_ended",
+    "data.wait_started",
+    "delivery.confirmed",
+    "engine.control_observed",
+    "engine.state_observed",
+    "expectation.revision_declared",
+    "job.state_observed",
+    "run.finish_declared",
+    "run.registered",
+    "stage.ended",
+    "stage.started",
+    "submission.accepted",
+    "submission.failed",
+    "submission.requested"
+  ]
+}

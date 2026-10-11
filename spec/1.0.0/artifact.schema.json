@@ -1,0 +1,146 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "artifact",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "kind",
+    "artifact_id",
+    "artifact_version_id",
+    "artifact_kind",
+    "cycle",
+    "lead_seconds",
+    "member",
+    "domain",
+    "version_evidence",
+    "location_refs",
+    "producer_run_id",
+    "producer_attempt_id"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "pattern": "^1\\.(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)$"
+    },
+    "kind": {
+      "const": "artifact"
+    },
+    "artifact_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "artifact_version_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "artifact_kind": {
+      "type": "string",
+      "minLength": 1
+    },
+    "cycle": {
+      "type": "object",
+      "required": [
+        "cycle_time",
+        "cycle_kind"
+      ],
+      "properties": {
+        "cycle_time": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "cycle_kind": {
+          "enum": [
+            "forecast",
+            "assimilation"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "lead_seconds": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9223372036854775807
+    },
+    "member": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "domain": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "version_evidence": {
+      "type": "object",
+      "required": [
+        "kind",
+        "value"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "content_sha256",
+            "object_generation",
+            "producer_version"
+          ]
+        },
+        "value": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "location_refs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "locator",
+          "kind"
+        ],
+        "properties": {
+          "locator": {
+            "type": "string",
+            "minLength": 1
+          },
+          "kind": {
+            "enum": [
+              "path",
+              "uri",
+              "opaque"
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "producer_run_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "producer_attempt_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "extensions": {
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$"
+      },
+      "additionalProperties": {
+        "type": "object"
+      }
+    }
+  },
+  "additionalProperties": false
+}

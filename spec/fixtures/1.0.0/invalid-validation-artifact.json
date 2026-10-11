@@ -1,0 +1,534 @@
+{
+  "artifact": {
+    "artifact_id": "grib.member01.lead0",
+    "artifact_kind": "forecast_grib",
+    "artifact_version_id": "av_5bde2bc457d99a2bf69573a6bcc5b1d58a804c3b20821d32906ffef33d791e52",
+    "cycle": {
+      "cycle_kind": "forecast",
+      "cycle_time": "2026-10-09T16:00:00Z"
+    },
+    "domain": "global",
+    "kind": "artifact",
+    "lead_seconds": 0,
+    "location_refs": [
+      {
+        "kind": "opaque",
+        "locator": "opaque:synthetic-grib-01"
+      }
+    ],
+    "member": "01",
+    "producer_attempt_id": "att_9e0a23e0e34efd87a40c9e74f27e516bac29495b7c219c3ff27f48e8965308d8",
+    "producer_run_id": "run_eeff24fb97bc287ebc5cddea33eafa8c8e958847ba82e653b501c17fd2662959",
+    "schema_version": "1.0.0",
+    "version_evidence": {
+      "kind": "content_sha256",
+      "value": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    }
+  },
+  "attempt_context": {
+    "attempt_id": "att_9e0a23e0e34efd87a40c9e74f27e516bac29495b7c219c3ff27f48e8965308d8",
+    "context_sha256": "0f3871dd5b88a103ea537601027109504980d652021459b75e5d0971d95fec97",
+    "execution_token_sha256": "e345b37e9549dcf82d68073cde126b9961a90c82a5300e30167de11336cd38f2",
+    "kind": "attempt_context",
+    "parameters": {
+      "domain": "global",
+      "lead_seconds": 0,
+      "member": "01"
+    },
+    "process_role": "forecast_program",
+    "retry_of": null,
+    "run_context_sha256": "236bc47414990af0e53c8c8770e023c2b951f83403362bc4a6b47a2dd452060e",
+    "run_id": "run_eeff24fb97bc287ebc5cddea33eafa8c8e958847ba82e653b501c17fd2662959",
+    "schema_version": "1.0.0",
+    "task_instance_id": "ti_883ec1a4b030bb767864e77f296e507d16d32bb315e82b5a1e8f3f5a524185d5",
+    "task_key": "main.forecast"
+  },
+  "definition_manifest": {
+    "application_revision": "synthetic-revision-1",
+    "content_sha256": "410ae316e8cad27947d48a9bdb198028f695212bc91a2a19be44a30f298c9d8f",
+    "definition_id": "def_410ae316e8cad27947d48a9bdb198028f695212bc91a2a19be44a30f298c9d8f",
+    "generator": {
+      "name": "synthetic-generator",
+      "version": "0.1.0"
+    },
+    "kind": "definition_manifest",
+    "mapping_version": "1",
+    "product_rule_refs": [],
+    "schema_version": "1.0.0",
+    "stage_definitions": [
+      "forecast"
+    ],
+    "tasks": [
+      {
+        "depends_on": [],
+        "engine_path_template": "/synthetic/main/{member}/forecast",
+        "parameters": {
+          "domain": {
+            "default": "global",
+            "required": false,
+            "type": "string"
+          },
+          "lead_seconds": {
+            "required": true,
+            "type": "integer"
+          },
+          "member": {
+            "required": true,
+            "type": "string"
+          }
+        },
+        "stage_key": "forecast",
+        "task_key": "main.forecast",
+        "task_kind": "forecast"
+      }
+    ]
+  },
+  "events": [
+    {
+      "association": {
+        "run_id": "run_eeff24fb97bc287ebc5cddea33eafa8c8e958847ba82e653b501c17fd2662959"
+      },
+      "event_id": "evt_89ca08efe6008805520aaaff462534d626eb4629dbe5f9221c5795523d321260",
+      "event_type": "run.registered",
+      "kind": "event",
+      "occurred_at": "2026-10-10T03:12:14+08:00",
+      "payload": {
+        "request_sha256": "509ea19e41f24a3dd4b7ac46ebd8224856101b32a2bacd3a9d4453c1cfa77777",
+        "run_context_sha256": "236bc47414990af0e53c8c8770e023c2b951f83403362bc4a6b47a2dd452060e"
+      },
+      "producer": {
+        "name": "synthetic-contract-helper",
+        "role": "registry",
+        "version": "0.1.0"
+      },
+      "recorded_at": "2026-10-10T03:12:14+08:00",
+      "schema_version": "1.0.0",
+      "source": {
+        "kind": "direct",
+        "session_id": "session-a",
+        "source_id": "sandbox-node-a"
+      },
+      "time_quality": {
+        "basis": "producer_clock"
+      }
+    },
+    {
+      "association": {
+        "attempt_id": "att_9e0a23e0e34efd87a40c9e74f27e516bac29495b7c219c3ff27f48e8965308d8",
+        "run_id": "run_eeff24fb97bc287ebc5cddea33eafa8c8e958847ba82e653b501c17fd2662959",
+        "task_instance_id": "ti_883ec1a4b030bb767864e77f296e507d16d32bb315e82b5a1e8f3f5a524185d5"
+      },
+      "event_id": "evt_0f3d2f7f1ea76313eff4d091efcc1e43dd17a8f7ce0f059e21163c58e26c9d88",
+      "event_type": "attempt.registered",
+      "kind": "event",
+      "occurred_at": "2026-10-10T03:12:14+08:00",
+      "payload": {
+        "attempt_context_sha256": "0f3871dd5b88a103ea537601027109504980d652021459b75e5d0971d95fec97",
+        "execution_token_sha256": "e345b37e9549dcf82d68073cde126b9961a90c82a5300e30167de11336cd38f2",
+        "retry_of": null
+      },
+      "producer": {
+        "name": "synthetic-contract-helper",
+        "role": "registry",
+        "version": "0.1.0"
+      },
+      "recorded_at": "2026-10-10T03:12:14+08:00",
+      "schema_version": "1.0.0",
+      "source": {
+        "kind": "direct",
+        "session_id": "session-a",
+        "source_id": "sandbox-node-a"
+      },
+      "time_quality": {
+        "basis": "producer_clock"
+      }
+    },
+    {
+      "association": {
+        "attempt_id": "att_9e0a23e0e34efd87a40c9e74f27e516bac29495b7c219c3ff27f48e8965308d8",
+        "run_id": "run_eeff24fb97bc287ebc5cddea33eafa8c8e958847ba82e653b501c17fd2662959",
+        "task_instance_id": "ti_883ec1a4b030bb767864e77f296e507d16d32bb315e82b5a1e8f3f5a524185d5"
+      },
+      "event_id": "be998bc6-86a5-4e84-9e14-6c4c950da121",
+      "event_type": "attempt.started",
+      "kind": "event",
+      "occurred_at": "2026-10-10T03:12:14+08:00",
+      "payload": {
+        "invocation_id": "invocation-a",
+        "process_role": "forecast_program"
+      },
+      "producer": {
+        "name": "synthetic-contract-helper",
+        "role": "process_owner",
+        "version": "0.1.0"
+      },
+      "recorded_at": "2026-10-10T03:12:14+08:00",
+      "schema_version": "1.0.0",
+      "source": {
+        "kind": "direct",
+        "session_id": "session-a",
+        "source_id": "sandbox-node-a"
+      },
+      "time_quality": {
+        "basis": "producer_clock"
+      }
+    },
+    {
+      "association": {
+        "attempt_id": "att_9e0a23e0e34efd87a40c9e74f27e516bac29495b7c219c3ff27f48e8965308d8",
+        "run_id": "run_eeff24fb97bc287ebc5cddea33eafa8c8e958847ba82e653b501c17fd2662959",
+        "task_instance_id": "ti_883ec1a4b030bb767864e77f296e507d16d32bb315e82b5a1e8f3f5a524185d5"
+      },
+      "event_id": "be998bc6-86a5-4e84-9e14-6c4c950da122",
+      "event_type": "stage.started",
+      "kind": "event",
+      "occurred_at": "2026-10-10T03:12:14+08:00",
+      "payload": {
+        "interval_id": "interval-a",
+        "stage_key": "forecast"
+      },
+      "producer": {
+        "name": "synthetic-contract-helper",
+        "role": "stage_owner",
+        "version": "0.1.0"
+      },
+      "recorded_at": "2026-10-10T03:12:14+08:00",
+      "schema_version": "1.0.0",
+      "source": {
+        "kind": "direct",
+        "session_id": "session-a",
+        "source_id": "sandbox-node-a"
+      },
+      "time_quality": {
+        "basis": "producer_clock"
+      }
+    },
+    {
+      "association": {
+        "attempt_id": "att_9e0a23e0e34efd87a40c9e74f27e516bac29495b7c219c3ff27f48e8965308d8",
+        "run_id": "run_eeff24fb97bc287ebc5cddea33eafa8c8e958847ba82e653b501c17fd2662959",
+        "task_instance_id": "ti_883ec1a4b030bb767864e77f296e507d16d32bb315e82b5a1e8f3f5a524185d5"
+      },
+      "event_id": "be998bc6-86a5-4e84-9e14-6c4c950da123",
+      "event_type": "stage.ended",
+      "kind": "event",
+      "occurred_at": "2026-10-10T03:12:14+08:00",
+      "payload": {
+        "duration_ns": 1000000000,
+        "interval_id": "interval-a",
+        "result": "failure",
+        "stage_key": "forecast"
+      },
+      "producer": {
+        "name": "synthetic-contract-helper",
+        "role": "stage_owner",
+        "version": "0.1.0"
+      },
+      "recorded_at": "2026-10-10T03:12:14+08:00",
+      "schema_version": "1.0.0",
+      "source": {
+        "kind": "direct",
+        "session_id": "session-a",
+        "source_id": "sandbox-node-a"
+      },
+      "time_quality": {
+        "basis": "producer_clock"
+      }
+    },
+    {
+      "association": {
+        "attempt_id": "att_9e0a23e0e34efd87a40c9e74f27e516bac29495b7c219c3ff27f48e8965308d8",
+        "run_id": "run_eeff24fb97bc287ebc5cddea33eafa8c8e958847ba82e653b501c17fd2662959",
+        "task_instance_id": "ti_883ec1a4b030bb767864e77f296e507d16d32bb315e82b5a1e8f3f5a524185d5"
+      },
+      "event_id": "be998bc6-86a5-4e84-9e14-6c4c950da124",
+      "event_type": "attempt.exited",
+      "kind": "event",
+      "occurred_at": "2026-10-10T03:12:14+08:00",
+      "payload": {
+        "exit_code": 2,
+        "process_role": "forecast_program",
+        "termination": "exited"
+      },
+      "producer": {
+        "name": "synthetic-contract-helper",
+        "role": "process_owner",
+        "version": "0.1.0"
+      },
+      "recorded_at": "2026-10-10T03:12:14+08:00",
+      "schema_version": "1.0.0",
+      "source": {
+        "kind": "direct",
+        "session_id": "session-a",
+        "source_id": "sandbox-node-a"
+      },
+      "time_quality": {
+        "basis": "producer_clock"
+      }
+    },
+    {
+      "association": {
+        "run_id": "run_eeff24fb97bc287ebc5cddea33eafa8c8e958847ba82e653b501c17fd2662959"
+      },
+      "event_id": "evt_f5b249db1ef8b44521182a1a34472995b8d5eef0962a78b860c47bd6be9f9484",
+      "event_type": "run.finish_declared",
+      "kind": "event",
+      "occurred_at": "2026-10-10T03:12:14+08:00",
+      "payload": {
+        "covered_attempt_ids": [
+          "att_9e0a23e0e34efd87a40c9e74f27e516bac29495b7c219c3ff27f48e8965308d8"
+        ],
+        "covered_attempts_sha256": "dcdaa149fb4469f536610a9dfcd5a2d3bf371284d403df8119385d6bb2be79d7",
+        "declaration_id": "finish-a",
+        "reason": "synthetic end",
+        "result": "finished",
+        "rule_version": "1",
+        "scope_ref": "scope-a"
+      },
+      "producer": {
+        "name": "synthetic-contract-helper",
+        "role": "lifecycle_owner",
+        "version": "0.1.0"
+      },
+      "recorded_at": "2026-10-10T03:12:14+08:00",
+      "schema_version": "1.0.0",
+      "source": {
+        "kind": "direct",
+        "session_id": "session-a",
+        "source_id": "sandbox-node-a"
+      },
+      "time_quality": {
+        "basis": "producer_clock"
+      }
+    },
+    {
+      "association": {
+        "run_id": "run_eeff24fb97bc287ebc5cddea33eafa8c8e958847ba82e653b501c17fd2662959"
+      },
+      "event_id": "be998bc6-86a5-4e84-9e14-6c4c950da125",
+      "event_type": "artifact.validation_completed",
+      "evidence_refs": [
+        {
+          "availability": "present",
+          "evidence_id": "synthetic-evidence-a",
+          "locator": "opaque:synthetic-check-a",
+          "source": "synthetic-checker"
+        }
+      ],
+      "kind": "event",
+      "occurred_at": "2026-10-10T03:12:14+08:00",
+      "payload": {
+        "artifact_version_ref": "av_wrong",
+        "check_id": "check-a",
+        "result": "fail",
+        "rule_id": "file-exists",
+        "rule_version": "1"
+      },
+      "producer": {
+        "name": "synthetic-contract-helper",
+        "role": "artifact_checker",
+        "version": "0.1.0"
+      },
+      "recorded_at": "2026-10-10T03:12:14+08:00",
+      "schema_version": "1.0.0",
+      "source": {
+        "kind": "observed",
+        "session_id": "session-a",
+        "source_id": "sandbox-node-a"
+      },
+      "time_quality": {
+        "basis": "producer_clock"
+      }
+    },
+    {
+      "association": {
+        "attempt_id": "att_9e0a23e0e34efd87a40c9e74f27e516bac29495b7c219c3ff27f48e8965308d8",
+        "job_ref_id": "job_236b7900120183b1a5ec21d336c415954f7a21b841aa22d8ec8033fada84098b",
+        "run_id": "run_eeff24fb97bc287ebc5cddea33eafa8c8e958847ba82e653b501c17fd2662959",
+        "task_instance_id": "ti_883ec1a4b030bb767864e77f296e507d16d32bb315e82b5a1e8f3f5a524185d5"
+      },
+      "event_id": "be998bc6-86a5-4e84-9e14-6c4c950da127",
+      "event_type": "submission.accepted",
+      "kind": "event",
+      "occurred_at": "2026-10-10T03:12:14+08:00",
+      "payload": {
+        "confirmation_basis": "synthetic-return",
+        "job_ref_id": "job_236b7900120183b1a5ec21d336c415954f7a21b841aa22d8ec8033fada84098b",
+        "submission_instance": "submit-a"
+      },
+      "producer": {
+        "name": "synthetic-contract-helper",
+        "role": "submitter",
+        "version": "0.1.0"
+      },
+      "recorded_at": "2026-10-10T03:12:14+08:00",
+      "schema_version": "1.0.0",
+      "source": {
+        "kind": "direct",
+        "session_id": "session-a",
+        "source_id": "sandbox-node-a"
+      },
+      "time_quality": {
+        "basis": "producer_clock"
+      }
+    },
+    {
+      "association": {
+        "job_ref_id": "job_236b7900120183b1a5ec21d336c415954f7a21b841aa22d8ec8033fada84098b",
+        "run_id": "run_eeff24fb97bc287ebc5cddea33eafa8c8e958847ba82e653b501c17fd2662959"
+      },
+      "event_id": "be998bc6-86a5-4e84-9e14-6c4c950da128",
+      "event_type": "job.state_observed",
+      "kind": "event",
+      "occurred_at": "2026-10-10T03:12:14+08:00",
+      "payload": {
+        "job_ref_id": "job_236b7900120183b1a5ec21d336c415954f7a21b841aa22d8ec8033fada84098b",
+        "normalized_state": "finished",
+        "observation_time": "2026-10-10T03:12:14+08:00",
+        "raw_state": "DONE"
+      },
+      "producer": {
+        "name": "synthetic-contract-helper",
+        "role": "scheduler_observer",
+        "version": "0.1.0"
+      },
+      "recorded_at": "2026-10-10T03:12:14+08:00",
+      "schema_version": "1.0.0",
+      "source": {
+        "kind": "observed",
+        "session_id": "session-a",
+        "source_id": "sandbox-node-a"
+      },
+      "time_quality": {
+        "basis": "producer_clock"
+      }
+    },
+    {
+      "association": {
+        "run_id": "run_eeff24fb97bc287ebc5cddea33eafa8c8e958847ba82e653b501c17fd2662959"
+      },
+      "event_id": "be998bc6-86a5-4e84-9e14-6c4c950da129",
+      "event_type": "delivery.confirmed",
+      "evidence_refs": [
+        {
+          "availability": "present",
+          "evidence_id": "synthetic-delivery-evidence",
+          "locator": "opaque:synthetic-delivery-a",
+          "source": "synthetic-recipient"
+        }
+      ],
+      "kind": "event",
+      "occurred_at": "2026-10-10T03:12:14+08:00",
+      "payload": {
+        "artifact_version_ref": "av_5bde2bc457d99a2bf69573a6bcc5b1d58a804c3b20821d32906ffef33d791e52",
+        "check_id": "delivery-a",
+        "confirmed_at": "2026-10-10T03:12:14+08:00",
+        "expectation_slot": "grib.member01.lead0",
+        "recipient": "synthetic-recipient",
+        "rule_version": "1"
+      },
+      "producer": {
+        "name": "synthetic-contract-helper",
+        "role": "delivery_verifier",
+        "version": "0.1.0"
+      },
+      "recorded_at": "2026-10-10T03:12:14+08:00",
+      "schema_version": "1.0.0",
+      "source": {
+        "kind": "observed",
+        "session_id": "session-a",
+        "source_id": "sandbox-node-a"
+      },
+      "time_quality": {
+        "basis": "producer_clock"
+      }
+    }
+  ],
+  "expectation": {
+    "approved_by_ref": "synthetic-only",
+    "cycles": [
+      {
+        "cycle": {
+          "cycle_kind": "forecast",
+          "cycle_time": "2026-10-09T16:00:00Z"
+        },
+        "reason": null,
+        "status": "expected"
+      }
+    ],
+    "deployment_id": "wsl-sandbox",
+    "kind": "expectation",
+    "plan_id": "exp_4db906f598e2a550f8e151849eea9a96900f61eb3c68ced43dd1e5af591d5154",
+    "purpose": "test",
+    "schema_version": "1.0.0",
+    "slots": [
+      {
+        "artifact_id": "grib.member01.lead0",
+        "deadline_at": "2026-10-10T03:12:14+08:00",
+        "recipient": "synthetic-recipient",
+        "rule_id": "file-exists",
+        "rule_version": "1",
+        "slot_id": "grib.member01.lead0"
+      }
+    ],
+    "system_id": "synthetic.model"
+  },
+  "job_ref": {
+    "attempt_id": "att_9e0a23e0e34efd87a40c9e74f27e516bac29495b7c219c3ff27f48e8965308d8",
+    "cluster_id": "sandbox-cluster",
+    "job_ref_id": "job_236b7900120183b1a5ec21d336c415954f7a21b841aa22d8ec8033fada84098b",
+    "kind": "job_ref",
+    "platform_id": "wsl2",
+    "role": "primary",
+    "run_id": "run_eeff24fb97bc287ebc5cddea33eafa8c8e958847ba82e653b501c17fd2662959",
+    "scheduler": "synthetic-scheduler",
+    "scheduler_job_id": "42",
+    "schema_version": "1.0.0",
+    "submission_instance": "submit-a"
+  },
+  "run_context": {
+    "config_refs": [],
+    "context_sha256": "236bc47414990af0e53c8c8770e023c2b951f83403362bc4a6b47a2dd452060e",
+    "cycle": {
+      "cycle_kind": "forecast",
+      "cycle_time": "2026-10-09T16:00:00Z"
+    },
+    "definition_ref": {
+      "id": "def_410ae316e8cad27947d48a9bdb198028f695212bc91a2a19be44a30f298c9d8f",
+      "sha256": "410ae316e8cad27947d48a9bdb198028f695212bc91a2a19be44a30f298c9d8f"
+    },
+    "deployment_id": "wsl-sandbox",
+    "expectation_ref": {
+      "id": "exp_4db906f598e2a550f8e151849eea9a96900f61eb3c68ced43dd1e5af591d5154",
+      "sha256": "4db906f598e2a550f8e151849eea9a96900f61eb3c68ced43dd1e5af591d5154"
+    },
+    "kind": "run_context",
+    "launch_token_sha256": "d96a5a9d1f2d28caf07ac8c194e373ca84fc19c3dbddf8d8aae1a87f14ead9e4",
+    "platform_id": "wsl2",
+    "purpose": "test",
+    "registry_id": "registry-synthetic-1",
+    "request_sha256": "509ea19e41f24a3dd4b7ac46ebd8224856101b32a2bacd3a9d4453c1cfa77777",
+    "rerun_of": null,
+    "run_id": "run_eeff24fb97bc287ebc5cddea33eafa8c8e958847ba82e653b501c17fd2662959",
+    "schema_version": "1.0.0",
+    "scope": [
+      {
+        "parameters": {
+          "domain": "global",
+          "lead_seconds": 0,
+          "member": "01"
+        },
+        "task_key": "main.forecast"
+      },
+      {
+        "parameters": {
+          "domain": "global",
+          "lead_seconds": 0,
+          "member": "02"
+        },
+        "task_key": "main.forecast"
+      }
+    ],
+    "system_id": "synthetic.model"
+  }
+}

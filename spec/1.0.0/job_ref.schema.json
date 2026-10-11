@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "job_ref",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "kind",
+    "job_ref_id",
+    "platform_id",
+    "scheduler",
+    "cluster_id",
+    "scheduler_job_id",
+    "submission_instance",
+    "run_id",
+    "attempt_id",
+    "role"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "pattern": "^1\\.(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)$"
+    },
+    "kind": {
+      "const": "job_ref"
+    },
+    "job_ref_id": {
+      "type": "string",
+      "pattern": "^job_[0-9a-f]{64}$"
+    },
+    "platform_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "scheduler": {
+      "type": "string",
+      "minLength": 1
+    },
+    "cluster_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "scheduler_job_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "submission_instance": {
+      "type": "string",
+      "minLength": 1
+    },
+    "run_id": {
+      "type": "string",
+      "pattern": "^run_[0-9a-f]{64}$"
+    },
+    "attempt_id": {
+      "type": "string",
+      "pattern": "^att_[0-9a-f]{64}$"
+    },
+    "role": {
+      "enum": [
+        "primary",
+        "auxiliary"
+      ]
+    },
+    "array_index": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9223372036854775807
+    },
+    "step_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "extensions": {
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$"
+      },
+      "additionalProperties": {
+        "type": "object"
+      }
+    }
+  },
+  "additionalProperties": false
+}
