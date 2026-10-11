@@ -1,0 +1,113 @@
+{
+  "filesystem": {
+    "cross_process_flock": true,
+    "directory_fsync": true,
+    "distinct_request_100_winners": 100,
+    "filesystem_type": "ext4",
+    "fixed_absolute_path_second_process": true,
+    "hardlink_no_replace": true,
+    "latency_ns": {
+      "create_fsync": {
+        "max_ns": 32768544,
+        "p50_ns": 15522205,
+        "p95_ns": 20839808,
+        "p99_ns": 32768544
+      },
+      "link_dir_fsync": {
+        "max_ns": 23650514,
+        "p50_ns": 13489238,
+        "p95_ns": 18695153,
+        "p99_ns": 23650514
+      },
+      "stat_read": {
+        "max_ns": 236587,
+        "p50_ns": 105821,
+        "p95_ns": 197122,
+        "p99_ns": 236587
+      }
+    },
+    "process_crash_after_link_visible": true,
+    "process_crash_before_link_absent": true,
+    "same_request_100_winners": 1,
+    "sample_bytes": 4096,
+    "sample_count": 64,
+    "status": "pass"
+  },
+  "inputs_sha256": {
+    "probe.py": "c7c621f9f1cdb3bea2ccc4ef42d5350468c3f5045e3d96f8ffd7eb4f4202a4eb",
+    "shell_probe.sh": "a6572668026ab768ba0835df64388a6abe4046d910d0d487e77349f8de793779",
+    "valid-bundle.json": "f9a9bca5a0b75f98d7ebf421fac97823478e732491fe7879ca5ada993268bd6d"
+  },
+  "kind": "synthetic_local_platform_probe",
+  "limits": {
+    "cross_node_visibility": "unverified",
+    "hpc_mount": "unverified",
+    "maxrss_kib_parent": 26496,
+    "power_loss_durability": "unverified",
+    "production_recorder_overhead": "unverified"
+  },
+  "platform": {
+    "bash": "GNU bash, version 5.2.21(1)-release (x86_64-pc-linux-gnu)",
+    "go": "go version go1.27.0 linux/amd64",
+    "mount": "/      /dev/sdd ext4   rw,relatime,discard,errors=remount-ro,data=ordered",
+    "python": "3.12.3",
+    "uname": {
+      "machine": "x86_64",
+      "node": "DESKTOP-7PJNF2G",
+      "processor": "x86_64",
+      "release": "6.6.87.2-microsoft-standard-WSL2",
+      "system": "Linux",
+      "version": "#1 SMP PREEMPT_DYNAMIC Thu Jun  5 18:30:46 UTC 2025"
+    }
+  },
+  "probe_version": "1",
+  "shell": {
+    "baseline_exit": 0,
+    "baseline_runs": 20,
+    "baseline_stdout": "start\nend\n",
+    "no_observability_shell_baseline_ns": {
+      "max_ns": 15035236,
+      "p50_ns": 14070931,
+      "p95_ns": 15019131,
+      "p99_ns": 15035236
+    },
+    "set_euo_pipefail_background_wait": true,
+    "signals": {
+      "HUP": {
+        "exit_code": 129,
+        "trap": true
+      },
+      "INT": {
+        "exit_code": 130,
+        "trap": true
+      },
+      "TERM": {
+        "exit_code": 143,
+        "trap": true
+      }
+    },
+    "status": "pass"
+  },
+  "static_binary": {
+    "binary_bytes": 5966432,
+    "contract_helper_startup_and_validation_ns": {
+      "max_ns": 23089140,
+      "p50_ns": 20922860,
+      "p95_ns": 23089140,
+      "p99_ns": 23089140
+    },
+    "elf_interpreter_absent": true,
+    "file_output": "ELF 64-bit LSB executable, x86-64, version 1 (SYSV), statically linked, Go BuildID=yEUihJmER43rdIKMp4_m/3bNhL365sOG2eELyn2-4/6VxhaQ-GeYOjSGtkzj--/GvQJxGC0D6mLKFUVcGhp, BuildID[sha1]=e3545256f89535fddb50b5f7c423d7331d5c4386, with debug_info, not stripped",
+    "runs": 12,
+    "sha256": "c82e70774eb4c8e6cdda3ae6e84cfd48b853a113d9ed87806688b42fcf19a340",
+    "status": "pass"
+  },
+  "temporary_tree": {
+    "directories": 3,
+    "files": 111,
+    "logical_file_bytes": 5969043,
+    "test_cap_files": 200,
+    "test_cap_logical_bytes": 10485760
+  },
+  "utc_time": "2026-10-11T02:25:50Z"
+}
