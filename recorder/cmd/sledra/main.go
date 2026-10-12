@@ -11,8 +11,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"sledra.local/recorder/context"
-	"sledra.local/recorder/internal/speccontract"
+	"github.com/cemc-oper/sledra/recorder/context"
+	"github.com/cemc-oper/sledra/recorder/internal/speccontract"
 )
 
 type runFile struct {

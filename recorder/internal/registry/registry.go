@@ -17,7 +17,7 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"sledra.local/recorder/internal/speccontract"
+	"github.com/cemc-oper/sledra/recorder/internal/speccontract"
 )
 
 const maxRecordBytes = 4 << 20

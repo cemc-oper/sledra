@@ -8,7 +8,7 @@ import (
 	"os"
 	"time"
 
-	"sledra.local/recorder/retention"
+	"github.com/cemc-oper/sledra/recorder/retention"
 )
 
 func main() {

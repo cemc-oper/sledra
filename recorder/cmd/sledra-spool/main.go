@@ -10,8 +10,8 @@ import (
 	"io"
 	"os"
 
-	"sledra.local/recorder/event"
-	"sledra.local/recorder/spool"
+	"github.com/cemc-oper/sledra/recorder/event"
+	"github.com/cemc-oper/sledra/recorder/spool"
 )
 
 type config struct {

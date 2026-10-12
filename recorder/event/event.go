@@ -15,8 +15,8 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/cemc-oper/sledra/recorder/internal/speccontract"
 	"github.com/santhosh-tekuri/jsonschema/v5"
-	"sledra.local/recorder/internal/speccontract"
 )
 
 //go:embed contract/*.json

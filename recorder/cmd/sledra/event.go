@@ -9,9 +9,9 @@ import (
 	"strconv"
 	"time"
 
-	"sledra.local/recorder/context"
-	"sledra.local/recorder/event"
-	"sledra.local/recorder/spool"
+	"github.com/cemc-oper/sledra/recorder/context"
+	"github.com/cemc-oper/sledra/recorder/event"
+	"github.com/cemc-oper/sledra/recorder/spool"
 )
 
 type eventConfig struct {

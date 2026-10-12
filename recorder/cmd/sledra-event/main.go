@@ -12,7 +12,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"sledra.local/recorder/event"
+	"github.com/cemc-oper/sledra/recorder/event"
 )
 
 type config struct {

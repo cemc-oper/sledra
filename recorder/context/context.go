@@ -12,9 +12,9 @@ import (
 	"regexp"
 	"sort"
 
-	"sledra.local/recorder/event"
-	"sledra.local/recorder/internal/registry"
-	"sledra.local/recorder/internal/speccontract"
+	"github.com/cemc-oper/sledra/recorder/event"
+	"github.com/cemc-oper/sledra/recorder/internal/registry"
+	"github.com/cemc-oper/sledra/recorder/internal/speccontract"
 )
 
 type Error struct{ Code string }

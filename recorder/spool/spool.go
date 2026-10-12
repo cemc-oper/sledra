@@ -16,7 +16,7 @@ import (
 	"syscall"
 	"time"
 
-	"sledra.local/recorder/event"
+	"github.com/cemc-oper/sledra/recorder/event"
 )
 
 type Error struct{ Code string }

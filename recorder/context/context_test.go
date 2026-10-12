@@ -11,8 +11,8 @@ import (
 	"sync"
 	"testing"
 
-	"sledra.local/recorder/event"
-	"sledra.local/recorder/internal/speccontract"
+	"github.com/cemc-oper/sledra/recorder/event"
+	"github.com/cemc-oper/sledra/recorder/internal/speccontract"
 )
 
 const specPath = "../../spec/1.0.0"

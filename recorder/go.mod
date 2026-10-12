@@ -1,4 +1,4 @@
-module sledra.local/recorder
+module github.com/cemc-oper/sledra/recorder
 
 go 1.25.0
 

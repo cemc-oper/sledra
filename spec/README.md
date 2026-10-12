@@ -1,6 +1,6 @@
 # Sledra contract 1.0.0 draft (SLD-02)
 
-This is a development baseline for the public wire format, not a released contract or recorder. The JSON files in [`1.0.0/`](1.0.0/) are the portable resources; [`build_contract.py`](build_contract.py) regenerates them. Each schema uses [JSON Schema Draft 2020-12](https://json-schema.org/draft/2020-12/), has no remote `$ref`, and is loaded from this checked-in directory. The schema URI identifies the dialect; it is not fetched at validation time. The `event-types.json` catalog covers all 24 event types listed in [03 Public information contracts](../../../docs/observability-plan/03-information-contracts.md) and contains the known event payload schemas, association levels, source kinds and producer roles. [`capabilities.json`](1.0.0/capabilities.json) declares `read_contracts`, `write_contracts` and `known_event_types` separately from software versions.
+This is a development baseline for the public wire format, not a released contract or recorder. The JSON files in [`1.0.0/`](1.0.0/) are the portable resources; [`build_contract.py`](build_contract.py) regenerates them. Each schema uses [JSON Schema Draft 2020-12](https://json-schema.org/draft/2020-12/), has no remote `$ref`, and is loaded from this checked-in directory. The schema URI identifies the dialect; it is not fetched at validation time. The `event-types.json` catalog covers all 24 event types listed in the reviewed public information contracts described in [contract sources](../docs/contracts.md) and contains the known event payload schemas, association levels, source kinds and producer roles. [`capabilities.json`](1.0.0/capabilities.json) declares `read_contracts`, `write_contracts` and `known_event_types` separately from software versions.
 
 ## Documents and semantic checks
 
@@ -62,7 +62,7 @@ The SLD-06 offline event command returns only a classified code on stderr for fa
 
 ## Development entry and evidence
 
-The tested local toolchain is WSL2 x86_64, Go `1.27.0`, Python `3.12.3`, Bash `5.2.21`, `uv` `0.11.2`, `jsonschema` `4.10.3`. The recorder helper module is `sledra.local/recorder` with pinned Go modules in [`go.mod`](../recorder/go.mod) and [`go.sum`](../recorder/go.sum); Python's direct test dependency is in [`requirements-test.txt`](requirements-test.txt). No Python runtime dependency is added to the future recorder. Remote module naming, distribution license, deployment platform and static binary qualification remain later decisions.
+The tested local toolchain is WSL2 x86_64, Go `1.27.0`, Python `3.12.3`, Bash `5.2.21`, `uv` `0.11.2`, `jsonschema` `4.10.3`. The recorder helper module is `github.com/cemc-oper/sledra/recorder` with pinned Go modules in [`go.mod`](../recorder/go.mod) and [`go.sum`](../recorder/go.sum); Python's direct test dependency is in [`requirements-test.txt`](requirements-test.txt). No Python runtime dependency is added to the future recorder. The module path follows the configured GitHub origin. Distribution license, deployment platform and static recorder qualification remain later decisions.
 
 From the Sledra root, the repeatable checks are:
 

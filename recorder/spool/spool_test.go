@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"sledra.local/recorder/event"
+	"github.com/cemc-oper/sledra/recorder/event"
 )
 
 func fixture(t *testing.T, source, session string) []byte {

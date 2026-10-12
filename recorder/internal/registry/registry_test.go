@@ -15,7 +15,7 @@ import (
 	"testing"
 	"time"
 
-	"sledra.local/recorder/internal/speccontract"
+	"github.com/cemc-oper/sledra/recorder/internal/speccontract"
 )
 
 const (

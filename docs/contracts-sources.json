@@ -1,0 +1,17 @@
+{
+  "reviewed_on": "2026-10-12",
+  "contract_version": "1.0.0-draft",
+  "authority": "workspace docs/observability-plan; repository guides describe the implementation",
+  "sources": {
+    "03-information-contracts.md": "6239b6d30862969409556a58079913d8069bedfca9b1258166410b316eee9009",
+    "adr/01-run-lifecycle.md": "1942027e853533070051c21d190988c8a5c9b1f02333c77e839db2d871b79510",
+    "adr/02-task-attempt.md": "fe474131742ee29e4e5ab4c7f4a451c01c651e43783e97b96e3b7da205f2b723",
+    "adr/03-registry.md": "3f4f814dbce40b1c1e490d62795db715e240c68f6e98ca0c7d0aad85d9dd8260",
+    "adr/04-context.md": "ec91ca297e1989be0932b48daa79c2fc14afee6e438d3c0f1a3a2e0f17f9c737",
+    "adr/05-event-authority.md": "758929b996576b304eadcb9a9a69ac167e7b738901cb7c99e56fd1ff4ab0c22d",
+    "adr/06-shell-degradation.md": "04821329337fe147712db457ea6ff412318dd5df490c4767a2ed84c9f0348ea0",
+    "adr/07-spool.md": "54bc5622255b75d8fba4b74bcaadcc135164547fc426be278c8cb06fd0eda1fe",
+    "adr/10-versioning-reuse.md": "50d007ab22a1c534cb6b62e4712f46aedc5faf4c8c29ed4acee957c876c66b9d",
+    "adr/11-integration-boundary.md": "dfb242348b1b7d5b1b58b391ed1fdbc35d14e38934f0f55bbba71a3161b21781"
+  }
+}

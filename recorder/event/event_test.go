@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"sledra.local/recorder/internal/speccontract"
+	"github.com/cemc-oper/sledra/recorder/internal/speccontract"
 )
 
 func fixture(t *testing.T, name string) map[string]any {

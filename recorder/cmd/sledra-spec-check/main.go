@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"os"
 
-	"sledra.local/recorder/internal/speccontract"
+	"github.com/cemc-oper/sledra/recorder/internal/speccontract"
 )
 
 func main() {
