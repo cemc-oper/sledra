@@ -19,7 +19,7 @@ Analysis, queries, real ingestion acknowledgements and a transparent `sledra exe
 | [tests](docs/testing-local.md) | Contract, Go, Shell, M1 and local filesystem checks |
 | [docs](docs/README.md) | User and developer documentation usable from an independent source copy |
 
-Install resources separately from runtime data. Registry, contexts, documents and spool files live under one explicit `SLEDRA_ROOT`. A shared/HPC deployment requires qualification of the actual target filesystem; current evidence covers local WSL/ext4 only. No `analysis/` package exists yet.
+Install resources separately from runtime data. Registry, contexts, documents and spool files live under one explicit `SLEDRA_ROOT`. A shared/HPC deployment requires qualification of the actual target filesystem; current evidence covers local WSL/ext4 and explicitly reported tmpfs measurements only. No `analysis/` package exists yet.
 
 ## Quick start
 
@@ -37,12 +37,21 @@ Setup is the explicit network step and works with empty dependency caches. Daily
 
 ## Installation and testing
 
-Source builds and a Linux local trial archive are available. [Installation](docs/installation.md) covers `make package`, isolated `make test-package` and user-directory use. `make help` lists the current targets, dependencies and outputs. [Development](docs/development.md) explains locked setup, offline source builds, reports and the separate `make benchmark` measurement. The [CLI guide](docs/cli.md) covers environment-free help/version, embedded default contracts and explicit compatible overrides.
+Source builds and a Linux local trial archive are available. To build and accept the native trial after setup:
+
+```bash
+make package
+make test-package
+```
+
+[Installation](docs/installation.md) covers `make package`, isolated `make test-package` and user-directory use. `make help` lists the current targets, dependencies and outputs. [Development](docs/development.md) explains locked setup, offline source builds, reports and the separate `make benchmark` measurement. The [CLI guide](docs/cli.md) covers environment-free help/version, embedded default contracts and explicit compatible overrides.
 
 ## Documentation and limits
 
 Start with the [documentation index](docs/README.md), [architecture](docs/architecture.md), [configuration](docs/configuration.md) and [contract source policy](docs/contracts.md). The [name and path migration](docs/migration.md) explains old names in historical evidence.
 
-Local passing tests do not establish HPC qualification, approved performance budgets or permission for a public release. License selection remains open. M1 recording is complete locally; M1.5 is preparing engineering and trial delivery, M2 will add offline analysis, M3 integration, and M4 business reports and delivery qualification.
+Local passing tests do not establish HPC qualification, approved performance budgets or permission for a public release. License selection remains open. M1 recording is complete locally; M1.5 has completed its engineering/local exit; M2 will add offline analysis, M3 integration, and M4 business reports and delivery qualification.
 
 Local and compute-node test tools share [binary, spec, work and report parameters](docs/testing-hpc.md). `make test-platform` exercises single-node primitives and the local two-role harness; [site templates](examples/hpc/README.md) prepare reviewable jobs without submitting them. Real HPC qualification remains unverified.
+
+Contact maintainers through [Issues](https://github.com/cemc-oper/sledra/issues). The [CI guide](docs/ci.md), [support matrix](docs/support.md), [versioning policy](docs/versioning.md) and [engineering handoff](docs/engineering-handoff.md) separate verified local behavior from pending remote/platform/release branches.

@@ -63,6 +63,7 @@ def setup() -> None:
         env=env,
     )
     run(["go", "mod", "download"], cwd=ROOT / "recorder", env=env)
+    run([sys.executable, str(ROOT / "scripts/check_ci.py"), "--setup"], env=env)
     print("Setup complete. Daily build/check/test commands disable dependency network queries.")
 
 
@@ -292,6 +293,7 @@ def suite(action: str) -> bool:
                     )
             report.stage("generated-contracts", python_command("scripts/check_contracts.py"))
             report.stage("docs", python_command("scripts/check_docs.py"))
+            report.stage("workflow", [sys.executable, str(ROOT / "scripts/check_ci.py")])
         elif action == "package":
             report.stage("package", [sys.executable, str(ROOT / "scripts/package_trial.py")])
         elif action == "test-package":
@@ -409,9 +411,9 @@ def main() -> int:
     if action == "help":
         print(
             "Sledra development targets (run from repository root):\n"
-            "  make setup      Online: sync uv.lock and download Go modules\n"
+            "  make setup      Online: sync uv.lock, Go modules and pinned CI validator\n"
             "  make build      Offline: build/reuse five tools in build/bin; build/manifest.json\n"
-            "  make check      Offline: lock, format, lint, vet, Bash, contract bytes, docs\n"
+            "  make check      Offline: lock, format, lint, vet, Bash, contract bytes, docs, workflow\n"
             "  make test       Offline: Go, engineering, contract, portable CLI, Shell, M1, frozen replay\n"
             "  make demo       Offline: isolated synthetic normal/failure/retry, export and replay\n"
             "  make benchmark  Offline: separate raw timing samples and statistics (default 20)\n"

@@ -12,9 +12,13 @@ These guides describe the current source-based recorder and synthetic local usag
 | [Development](development.md) | Prepare locked tools, build offline and inspect reports |
 | [Local testing](testing-local.md) | Run existing regression and frozen handoff checks |
 | [HPC and test parameters](testing-hpc.md) | Choose binaries/shared roots and collect scoped node reports |
+| [CI](ci.md) | Reproduce workflow gates and validate pinned configuration |
+| [Support matrix](support.md) | Distinguish measured environments from unverified targets |
+| [Versioning](versioning.md) | Manage software labels independently from contract/stage versions |
+| [Engineering handoff](engineering-handoff.md) | Reuse M1.5 inputs for future M2 work |
 | [Contract sources](contracts.md) | Locate contract rules and review upstream source changes |
 | [Name and path migration](migration.md) | Map historical names and paths to the current project |
 
 Detailed implementation references remain with their components: [context CLI](../recorder/context/README.md), [event codec](../recorder/event/README.md), [spool](../recorder/spool/README.md), [Registry](../recorder/internal/registry/README.md), [Bash API](../shell/README.md), [standalone example](../examples/standalone/README.md) and [fixture retention](../recorder/retention/README.md).
 
-A [local trial package](installation.md) is available; The [HPC harness](testing-hpc.md) is available; contribution/CI guides follow in SLD-33. Current platform evidence is documented by the [local probe](../tests/platform/README.md); it does not establish shared/HPC support.
+A [local trial package](installation.md) and [HPC harness](testing-hpc.md) are available. Current platform evidence is documented by the [local probe](../tests/platform/README.md); it does not establish shared/HPC support.

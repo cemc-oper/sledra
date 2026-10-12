@@ -43,3 +43,5 @@ Only `bin/sledra` is a recording entry point. The helpers under `share/sledra/te
 See `share/sledra/docs/runtime.md` for paths and output behavior.
 
 Standard-library M1, Shell, timing and platform tools are included under `share/sledra/tests/`. See `share/sledra/docs/testing-hpc.md` and `share/sledra/examples/hpc/` for explicit binary/shared-work/report parameters and site preparation. Local simulation does not qualify HPC.
+
+The software label, contract draft and stage revision are independent. Current software is `dev`, with no approved public release. Contact maintainers through https://github.com/cemc-oper/sledra/issues; use a non-sensitive summary for security concerns. The installed manifest and `share/sledra/licenses/THIRD_PARTY.json` identify exact content and dependencies. Native amd64 has local trial evidence; real HPC, native arm64 runtime, public distribution and full upgrade/rollback qualification remain pending.

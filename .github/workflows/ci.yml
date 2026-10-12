@@ -1,0 +1,94 @@
+name: Recorder engineering checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      cold_cache:
+        description: Skip dependency cache restore to exercise setup
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sledra-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  linux-amd64:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      GOTOOLCHAIN: local
+      PYTHONDONTWRITEBYTECODE: '1'
+      UV_PYTHON_DOWNLOADS: never
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - name: Select separate dependency caches
+        run: |
+          printf 'UV_CACHE_DIR=%s/sledra-uv-cache\nGOMODCACHE=%s/sledra-go-modules\nGOCACHE=%s/sledra-go-build\n' \
+            "$RUNNER_TEMP" "$RUNNER_TEMP" "$RUNNER_TEMP" >> "$GITHUB_ENV"
+      - name: Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: '3.12.3'
+      - name: Go
+        uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 # v6.3.0
+        with:
+          go-version: '1.27.0'
+          cache: ${{ github.event_name != 'workflow_dispatch' || !inputs.cold_cache }}
+          cache-dependency-path: recorder/go.sum
+      - name: uv
+        uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
+        with:
+          version: '0.11.2'
+          enable-cache: ${{ github.event_name != 'workflow_dispatch' || !inputs.cold_cache }}
+          cache-dependency-glob: uv.lock
+      - name: Prepare isolated package testing on the disposable runner
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap util-linux
+          if [[ -f /proc/sys/kernel/apparmor_restrict_unprivileged_userns ]]; then
+            sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          fi
+      - name: Online setup (also required on cache hits)
+        run: make setup
+      - name: Static and generated-resource checks
+        run: make check
+      - name: Recorder and frozen-handoff regressions
+        run: make test
+      - name: Single-node primitives and local two-role harness
+        run: make test-platform
+      - name: Synthetic demonstration
+        run: make demo
+      - name: Build the local trial
+        run: make package
+      - name: Verify the trial without source, Go or runtime networking
+        run: make test-package
+      - name: Preserve validation evidence on success or failure
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: sledra-linux-amd64-reports
+          retention-days: 14
+          if-no-files-found: warn
+          path: |
+            test-results/**/summary.json
+            test-results/**/*.log
+            test-results/**/commands.json
+            test-results/**/samples.json
+            test-results/**/handoff.json
+            build/manifest.json
+            build/ci-tools/**/manifest.json
+            dist/*.manifest.json
+            dist/*.tar.gz.sha256

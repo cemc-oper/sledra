@@ -1,0 +1,16 @@
+{
+  "actionlint": {
+    "version": "1.7.11",
+    "source": "https://github.com/rhysd/actionlint/releases/tag/v1.7.11",
+    "targets": {
+      "linux-amd64": {
+        "url": "https://github.com/rhysd/actionlint/releases/download/v1.7.11/actionlint_1.7.11_linux_amd64.tar.gz",
+        "sha256": "900919a84f2229bac68ca9cd4103ea297abc35e9689ebb842c6e34a3d1b01b0a"
+      },
+      "linux-arm64": {
+        "url": "https://github.com/rhysd/actionlint/releases/download/v1.7.11/actionlint_1.7.11_linux_arm64.tar.gz",
+        "sha256": "21bc0dfb57a913fe175298c2a9e906ee630f747cb66d0a934d0d4b69f4ee1235"
+      }
+    }
+  }
+}

@@ -11,7 +11,7 @@ make help
 make setup
 ```
 
-Setup synchronizes the locked Python developer tools and downloads pinned Go modules. It works with empty dependency caches when the installed toolchains and network are available. Python is a development/verification dependency; recording requires the binary and Bash.
+Setup synchronizes the locked Python developer tools and downloads pinned Go modules and prepares the checksum-pinned workflow validator. It works with empty dependency caches when the installed toolchains and network are available. Python is a development/verification dependency; recording requires the binary and Bash.
 
 ## Build and verify
 

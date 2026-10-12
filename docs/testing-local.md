@@ -8,7 +8,7 @@ make check
 make test
 ```
 
-See [development](development.md) for minimum/tested toolchains, dependency-cache requirements, build reuse and report locations. `make check` validates format/static checks, locked metadata, generated contract/fixture bytes and local documentation links. Generation happens in a temporary copy. `make test` builds or reuses each Go helper once and executes Go, engineering, package integrity/archive unit tests, contract/event/context, portable CLI, Shell, M1 normal/failure/retry and frozen replay tests.
+See [development](development.md) for minimum/tested toolchains, dependency-cache requirements, build reuse and report locations. `make check` validates format/static checks, locked metadata, generated contract/fixture bytes, local documentation links and workflow configuration with the setup-prepared actionlint. Generation happens in a temporary copy. `make test` builds or reuses each Go helper once and executes Go, engineering, package integrity/archive unit tests, contract/event/context, portable CLI, Shell, M1 normal/failure/retry and frozen replay tests.
 
 Every check/test run has a unique ignored `test-results/` directory with stage logs and `summary.json`. A failure returns nonzero and identifies the failing stage. The report compares all protected fixtures before and after the run; ordinary tests never rewrite `tests/m1/results/` or `tests/platform/results/`.
 
@@ -48,3 +48,5 @@ uv run --locked --offline python scripts/check_docs.py --plan-dir ../../docs/obs
 ```
 
 An independent source copy can run all daily targets without that neighboring directory. The optional source review checks recorded upstream digests, as described in [contract sources](contracts.md).
+
+The [CI workflow](ci.md) runs these same gates and preserves report artifacts. The [support matrix](support.md) records local acceptance separately from remote Actions and HPC qualification.
