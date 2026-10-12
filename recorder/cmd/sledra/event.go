@@ -1,0 +1,121 @@
+package main
+
+import (
+	"encoding/json"
+	"errors"
+	"flag"
+	"io"
+	"os"
+	"time"
+
+	"sledra.local/recorder/context"
+	"sledra.local/recorder/event"
+	"sledra.local/recorder/spool"
+)
+
+type eventConfig struct {
+	ProducerRole    string `json:"producer_role"`
+	ProducerName    string `json:"producer_name"`
+	ProducerVersion string `json:"producer_version"`
+	SourceID        string `json:"source_id"`
+	SessionID       string `json:"session_id"`
+	SegmentBytes    int64  `json:"segment_bytes"`
+	SessionBytes    int64  `json:"session_bytes"`
+	Segments        int    `json:"segments"`
+}
+
+// recordEvent binds the event to a validated Attempt context. SLD-08 adds the
+// Shell wrapper; this command is already usable without it.
+func recordEvent(args []string, diagnostics io.Writer) error {
+	f := flag.NewFlagSet("event", flag.ContinueOnError)
+	f.SetOutput(io.Discard)
+	contextPath := f.String("context", "", "")
+	typ := f.String("type", "", "")
+	payloadPath := f.String("payload-file", "", "")
+	eventID := f.String("event-id", "", "")
+	strict := f.Bool("strict", false, "")
+	if f.Parse(args) != nil || f.NArg() != 0 || *contextPath == "" || *typ == "" || *payloadPath == "" {
+		return errors.New("usage")
+	}
+	failure := func(err error) error {
+		if *strict {
+			return errors.New(spool.Code(err))
+		}
+		_ = json.NewEncoder(diagnostics).Encode(map[string]any{"ok": false, "code": spool.Code(err), "dropped": 1})
+		return nil
+	}
+	root := os.Getenv("SLEDRA_ROOT")
+	spec := os.Getenv("SLEDRA_SPEC_DIR")
+	cfgPath := os.Getenv("SLEDRA_CONFIG")
+	if root == "" {
+		return failure(errors.New("root_missing"))
+	}
+	if cfgPath == "" {
+		return failure(errors.New("config_invalid"))
+	}
+	if spec == "" {
+		spec = "../spec/1.0.0"
+	}
+	var cfg eventConfig
+	if err := readJSON(cfgPath, &cfg); err != nil {
+		return failure(errors.New("config_invalid"))
+	}
+	if cfg.ProducerRole == "" || cfg.ProducerName == "" || cfg.ProducerVersion == "" || cfg.SourceID == "" || cfg.SessionID == "" {
+		return failure(errors.New("config_invalid"))
+	}
+	s, err := context.New(root, spec)
+	if err != nil {
+		return failure(err)
+	}
+	ctx, err := s.LoadContext(*contextPath)
+	if err != nil {
+		return failure(err)
+	}
+	if ctx["kind"] != "attempt_context" {
+		return failure(errors.New("parent_mismatch"))
+	}
+	payloadFile, err := os.Open(*payloadPath)
+	if err != nil {
+		return failure(errors.New("input_unavailable"))
+	}
+	defer payloadFile.Close()
+	payload, err := event.ReadBounded(payloadFile)
+	if err != nil {
+		return failure(err)
+	}
+	if *eventID == "" {
+		*eventID, err = event.NewID()
+		if err != nil {
+			return failure(errors.New("spool_unavailable"))
+		}
+	}
+	codec, err := event.New(cfg.ProducerRole)
+	if err != nil {
+		return failure(errors.New("contract_unavailable"))
+	}
+	now := time.Now().UTC().Format(time.RFC3339Nano)
+	envelope := event.Envelope{SchemaVersion: "1.0.0", Kind: "event", EventID: *eventID, EventType: *typ,
+		Producer:   event.Producer{Name: cfg.ProducerName, Version: cfg.ProducerVersion, Role: cfg.ProducerRole},
+		Source:     event.Source{Kind: "direct", SourceID: cfg.SourceID, SessionID: cfg.SessionID},
+		OccurredAt: &now, RecordedAt: now, TimeQuality: event.TimeQuality{Basis: "producer_clock"},
+		Association: event.Association{RunID: ctx["run_id"].(string), TaskInstanceID: ctx["task_instance_id"].(string), AttemptID: ctx["attempt_id"].(string)}, Payload: json.RawMessage(payload)}
+	encoded, err := codec.Encode(envelope)
+	if err != nil {
+		return failure(err)
+	}
+	w, err := spool.Open(root, cfg.ProducerRole, cfg.SourceID, envelope.Association.RunID, envelope.Association.TaskInstanceID, envelope.Association.AttemptID, cfg.SessionID, spool.Limits{SegmentBytes: cfg.SegmentBytes, SessionBytes: cfg.SessionBytes, Segments: cfg.Segments})
+	if err != nil {
+		return failure(err)
+	}
+	err = w.Record(encoded.Bytes, *strict)
+	if closeErr := w.Close(); err == nil {
+		err = closeErr
+	}
+	if err != nil {
+		return failure(err)
+	}
+	if stats := w.Stats(); stats.Dropped > 0 {
+		return failure(errors.New(stats.LastError))
+	}
+	return nil
+}

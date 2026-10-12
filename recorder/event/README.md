@@ -4,9 +4,9 @@
 
 The codec checks the envelope, known payload schema, installed producer role, source kind, association level, time/exit/finish rules, size and UTF-8/duplicate-key limits. It strips raw validation details from returned errors, rejects obvious secret keys, control characters and raw absolute/home/traversal/`file://` paths, and preserves unknown 1.x event types and namespaced extensions as opaque canonical JSON. Known payload schemas are closed. Producers remain responsible for redacting allowed string values and using approved locator aliases. A field denylist cannot detect every secret hidden in allowed values.
 
-`Codec.Validate` does not load Run/Attempt/Job/Artifact/Expectation parent documents. Identity bindings that need those parents must also pass the SLD-02 bundle checker now, then the SLD-05 context lookup in the recorder. Opaque events never establish success. Major 2.x is rejected. The codec writes no event; SLD-07 owns the spool and business/strict failure mode.
+`Codec.Validate` does not load Run/Attempt/Job/Artifact/Expectation parent documents. Identity bindings that need those parents must also pass the SLD-02 bundle checker now, then the SLD-05 context lookup in the recorder. Opaque events never establish success. Major 2.x is rejected. The codec writes no event; the [SLD-07 spool](../spool/README.md) owns persistence and the business/strict failure mode.
 
-The standalone command is an offline encoding stage, not the future `sledra event` recording command:
+The standalone command is an offline encoding stage, separate from the implemented `sledra event` recording command:
 
 ```bash
 cd recorder

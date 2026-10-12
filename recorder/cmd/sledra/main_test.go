@@ -1,9 +1,11 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -56,6 +58,26 @@ func TestCLIContextLifecycle(t *testing.T) {
 	}
 	if err := run([]string{"context", "validate", "--file", attemptPath}); err != nil {
 		t.Fatal(err)
+	}
+	configPath := filepath.Join(root, "recorder-config.json")
+	writeJSON(t, configPath, map[string]any{"producer_role": "process_owner", "producer_name": "synthetic-recorder", "producer_version": "0.1.0", "source_id": "node-a", "session_id": "process-1"})
+	t.Setenv("SLEDRA_CONFIG", configPath)
+	payloadPath := filepath.Join(root, "payload.json")
+	writeJSON(t, payloadPath, map[string]any{"invocation_id": "synthetic-invocation", "process_role": "forecast_program"})
+	var diag bytes.Buffer
+	command := []string{"--context", attemptPath, "--type", "attempt.started", "--payload-file", payloadPath, "--event-id", "aa9c3e7d-0fc7-4b87-87ac-e3c9009c62d0"}
+	if err := recordEvent(command, &diag); err != nil || diag.Len() != 0 {
+		t.Fatalf("event: %v %s", err, diag.String())
+	}
+	if err := os.WriteFile(payloadPath, []byte(`{"secret":"token-value"}`), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := recordEvent(command, &diag); err != nil || !strings.Contains(diag.String(), `"dropped":1`) || strings.Contains(diag.String(), "token-value") {
+		t.Fatalf("business: %v %s", err, diag.String())
+	}
+	diag.Reset()
+	if err := recordEvent(append(command, "--strict"), &diag); err == nil || diag.Len() != 0 {
+		t.Fatalf("strict: %v %s", err, diag.String())
 	}
 	var attempt map[string]any
 	ab, err := os.ReadFile(attemptPath)

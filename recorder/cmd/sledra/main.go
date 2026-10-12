@@ -1,5 +1,5 @@
-// sledra exposes the SLD-05 context lifecycle. Event spool commands follow
-// in SLD-07/08; these commands never execute or submit business work.
+// sledra exposes the SLD-05 context lifecycle and SLD-07 event recording.
+// These commands never execute or submit business work.
 package main
 
 import (
@@ -31,6 +31,12 @@ func main() {
 }
 
 func run(args []string) error {
+	if len(args) == 0 {
+		return errors.New("usage")
+	}
+	if args[0] == "event" {
+		return recordEvent(args[1:], os.Stderr)
+	}
 	if len(args) < 2 {
 		return errors.New("usage")
 	}
