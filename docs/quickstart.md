@@ -40,4 +40,4 @@ printf 'Demo files: %s\n' "$demo_dir"
 
 The example locates resources relative to the script. `product.txt`, `executions.log` and `callbacks.log` show the business output and one payload invocation. Under `observability/`, `contexts/`, `registry/`, `spool/` and `finish/` contain raw recording facts; no analysis result is produced. Each manual example uses a fresh directory. Direct recorder calls use embedded default contracts and explicit absolute runtime/input paths as described in [configuration](configuration.md).
 
-See [local testing](testing-local.md) for individual checks and [development](development.md) for reports and dependency modes. See [CLI help and version](cli.md) for portable recording. Trial packages follow in SLD-31.
+See [local testing](testing-local.md) for individual checks and [development](development.md) for reports and dependency modes. See [CLI help and version](cli.md) for portable recording. For a source-independent trial, follow [installation](installation.md) and run `make package` / `make test-package`.

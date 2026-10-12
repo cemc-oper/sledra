@@ -8,7 +8,7 @@ make check
 make test
 ```
 
-See [development](development.md) for minimum/tested toolchains, dependency-cache requirements, build reuse and report locations. `make check` validates format/static checks, locked metadata, generated contract/fixture bytes and local documentation links. Generation happens in a temporary copy. `make test` builds or reuses each Go helper once and executes Go, engineering, contract/event/context, portable CLI, Shell, M1 normal/failure/retry and frozen replay tests.
+See [development](development.md) for minimum/tested toolchains, dependency-cache requirements, build reuse and report locations. `make check` validates format/static checks, locked metadata, generated contract/fixture bytes and local documentation links. Generation happens in a temporary copy. `make test` builds or reuses each Go helper once and executes Go, engineering, package integrity/archive unit tests, contract/event/context, portable CLI, Shell, M1 normal/failure/retry and frozen replay tests.
 
 Every check/test run has a unique ignored `test-results/` directory with stage logs and `summary.json`. A failure returns nonzero and identifies the failing stage. The report compares all protected fixtures before and after the run; ordinary tests never rewrite `tests/m1/results/` or `tests/platform/results/`.
 
@@ -25,6 +25,10 @@ SLEDRA_TEST_BIN_DIR="$PWD/build/bin" uv run --locked --offline python tests/m1/r
 ```
 
 Without `SLEDRA_TEST_BIN_DIR`, an individual helper builds its tool in a private temporary directory using the prepared Go cache. An explicit missing tool fails. Existing `python3` invocations still work when that interpreter has jsonschema installed; the uv environment is the reproducible default.
+
+## Package acceptance
+
+`make package` builds the trial; `make test-package` verifies the existing artifact in source-free, Go-free, network-isolated namespaces with a read-only installation. It additionally proves recording without Python. See [installation](installation.md) for system isolation dependencies, artifact selection and retained reports. Cross-compiled targets remain unverified until run on matching hardware.
 
 ## Demo and performance
 

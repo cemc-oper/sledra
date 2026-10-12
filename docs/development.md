@@ -50,10 +50,10 @@ These commands disable uv network access, Go proxy/sum database lookup, private-
 
 ## Artifacts and failures
 
-`build/`, `dist/` and `test-results/` are ignored by Git. Build outputs live under `build/`; `dist/` is reserved for the later trial package. Check/test/demo/benchmark each create a unique `test-results/<action>-<timestamp>-<id>/` containing stage logs and `summary.json`. Failing stages stop the command, return nonzero, print the stage and log path, and leave a failure summary. The report also compares protected fixture inventories and bytes before/after the command.
+`build/`, `dist/` and `test-results/` are ignored by Git. Build outputs live under `build/`; `dist/` holds local trial archives, manifests and checksums. Check/test/demo/benchmark/package/test-package each create a unique `test-results/<action>-<timestamp>-<id>/` containing stage logs and `summary.json`. Failing stages stop the command, return nonzero, print the stage and log path, and leave a failure summary. The report also compares protected fixture inventories and bytes before/after the command.
 
 Do not overwrite the frozen M1 or historical platform/timing reports during daily work. Deliberate refresh remains the separate procedure in the [M1 guide](../tests/m1/README.md). The [contract source review](contracts.md) remains optional authoring-workspace validation, independent of standalone developer setup.
 
 ## Source and package modes
 
-Source development requires the tools above and prepared Python/Go dependencies. A future precompiled recorder package will require only its target binary and Bash for recording, with Python verification declared separately. Trial packaging is SLD-31; current Make targets do not claim package installation or full offline release acceptance. The recorder embeds its default contract; [CLI help/version](cli.md) and [configuration](configuration.md) describe portable calls and explicit runtime paths.
+Source development requires the tools above and prepared Python/Go dependencies. The [precompiled local trial](installation.md) requires the target binary and Bash for recording; its synthetic example also uses dirname/cat/sleep. Standard-library Python verification is separate. `make package` and `make test-package` deliver and accept the local trial, without claiming full offline release/upgrade qualification. The recorder embeds its default contract; [CLI help/version](cli.md) and [configuration](configuration.md) describe portable calls and explicit runtime paths.

@@ -97,7 +97,7 @@ def build_timestamp() -> str:
     return value.strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
-def build() -> None:
+def build(*, directory: Path = ROOT / "build", tools: tuple[str, ...] = TOOLS) -> dict:
     env = offline_env()
     target = subprocess.check_output(
         ["go", "env", "GOVERSION", "GOOS", "GOARCH"], cwd=ROOT / "recorder", env=env, text=True
@@ -117,8 +117,12 @@ def build() -> None:
         "inputs": input_hashes,
         "provenance": metadata,
         "source_date_epoch": os.environ.get("SOURCE_DATE_EPOCH"),
+        "tools": tools,
     }
-    manifest_path = ROOT / "build/manifest.json"
+    # JSON records tuples as arrays; keep the in-memory recipe comparable.
+    recipe["tools"] = list(tools)
+    manifest_path = directory / "manifest.json"
+    bin_dir = directory / "bin"
     try:
         previous = json.loads(manifest_path.read_text())
     except (FileNotFoundError, json.JSONDecodeError):
@@ -136,20 +140,20 @@ def build() -> None:
         f"-X github.com/cemc-oper/sledra/recorder/internal/buildinfo.{name}={metadata[key]}"
         for name, key in symbols.items()
     )
-    BIN.mkdir(parents=True, exist_ok=True)
+    bin_dir.mkdir(parents=True, exist_ok=True)
     binaries = {}
-    for name in TOOLS:
-        binary = BIN / name
+    for name in tools:
+        binary = bin_dir / name
         if (
             previous.get("recipe") == recipe
             and binary.is_file()
             and os.access(binary, os.X_OK)
             and previous.get("binaries", {}).get(name) == digest(binary)
         ):
-            print(f"Reuse build/bin/{name}", flush=True)
+            print(f"Reuse {binary.relative_to(ROOT)}", flush=True)
         else:
-            print(f"Build build/bin/{name}", flush=True)
-            temporary = BIN / f".{name}-{uuid.uuid4().hex}.tmp"
+            print(f"Build {binary.relative_to(ROOT)}", flush=True)
+            temporary = bin_dir / f".{name}-{uuid.uuid4().hex}.tmp"
             try:
                 run(
                     [
@@ -169,10 +173,9 @@ def build() -> None:
             finally:
                 temporary.unlink(missing_ok=True)
         binaries[name] = digest(binary)
-    write_json(
-        manifest_path,
-        {"recipe": recipe, "build_time": timestamp, "ldflags": ldflags, "binaries": binaries},
-    )
+    manifest = {"recipe": recipe, "build_time": timestamp, "ldflags": ldflags, "binaries": binaries}
+    write_json(manifest_path, manifest)
+    return manifest
 
 
 def protected_files() -> dict[str, str]:
@@ -289,6 +292,18 @@ def suite(action: str) -> bool:
                     )
             report.stage("generated-contracts", python_command("scripts/check_contracts.py"))
             report.stage("docs", python_command("scripts/check_docs.py"))
+        elif action == "package":
+            report.stage("package", [sys.executable, str(ROOT / "scripts/package_trial.py")])
+        elif action == "test-package":
+            report.stage(
+                "isolated-package",
+                [
+                    sys.executable,
+                    str(ROOT / "tests/package/verify.py"),
+                    "--report-dir",
+                    str(report.directory / "acceptance"),
+                ],
+            )
         else:
             report.stage("build", [sys.executable, str(ROOT / "scripts/dev.py"), "build"])
             if action == "test":
@@ -296,6 +311,10 @@ def suite(action: str) -> bool:
                 report.stage(
                     "engineering",
                     python_command("-m", "unittest", "discover", "-s", "tests/engineering", "-v"),
+                )
+                report.stage(
+                    "package-unit",
+                    python_command("-m", "unittest", "discover", "-s", "tests/package", "-v"),
                 )
                 for name, script in (
                     ("contract", "spec/verify.py"),
@@ -336,7 +355,18 @@ def suite(action: str) -> bool:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "action", choices=("help", "setup", "build", "check", "test", "demo", "benchmark")
+        "action",
+        choices=(
+            "help",
+            "setup",
+            "build",
+            "check",
+            "test",
+            "demo",
+            "benchmark",
+            "package",
+            "test-package",
+        ),
     )
     action = parser.parse_args().action
     if sys.version_info < (3, 12):
@@ -350,9 +380,11 @@ def main() -> int:
             "  make test       Offline: Go, engineering, contract, portable CLI, Shell, M1, frozen replay\n"
             "  make demo       Offline: isolated synthetic normal/failure/retry, export and replay\n"
             "  make benchmark  Offline: separate raw timing samples and statistics (default 20)\n"
+            "  make package    Offline: build a Linux trial archive, manifest and checksums\n"
+            "  make test-package Verify the existing archive without source, Go or runtime network\n"
             "Dependencies: Python >=3.12, uv >=0.11.2, Go >=1.25.0, Bash >=5.2, GNU Make >=4.0\n"
-            "Reports/demos/benchmarks: unique directories under test-results/; dist/ reserved for packaging\n"
-            "Offline commands require setup caches. Package targets follow in SLD-31."
+            "Reports/demos/benchmarks: unique directories under test-results/; trial archives in dist/\n"
+            "Offline source builds require setup caches. Package tests also require bwrap and ldd."
         )
         return 0
     try:

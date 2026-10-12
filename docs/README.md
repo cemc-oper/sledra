@@ -4,6 +4,7 @@ These guides describe the current source-based recorder and synthetic local usag
 
 | Guide | Use |
 |---|---|
+| [Installation](installation.md) | Build, unpack and verify the local trial without Go |
 | [Quickstart](quickstart.md) | Prepare dependencies, build and run the synthetic recorder |
 | [Architecture](architecture.md) | Understand components, identities, contexts and event flow |
 | [Command line](cli.md) | Discover help, inspect build provenance and select contracts |
@@ -15,4 +16,4 @@ These guides describe the current source-based recorder and synthetic local usag
 
 Detailed implementation references remain with their components: [context CLI](../recorder/context/README.md), [event codec](../recorder/event/README.md), [spool](../recorder/spool/README.md), [Registry](../recorder/internal/registry/README.md), [Bash API](../shell/README.md), [standalone example](../examples/standalone/README.md) and [fixture retention](../recorder/retention/README.md).
 
-Installation packages, HPC harnesses and contribution/CI guides will follow in SLD-31–33. Current platform evidence is documented by the [local probe](../tests/platform/README.md); it does not establish shared/HPC support.
+A [local trial package](installation.md) is available; HPC harnesses and contribution/CI guides follow in SLD-32/33. Current platform evidence is documented by the [local probe](../tests/platform/README.md); it does not establish shared/HPC support.
