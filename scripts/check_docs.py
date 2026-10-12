@@ -19,12 +19,13 @@ LINK = re.compile(r"\]\(([^\s)]+)(?:\s+\"[^\"]*\")?\)")
 
 def anchors(path: Path) -> set[str]:
     content = path.read_text(encoding="utf-8")
-    result = set(re.findall(r'<a\s+id=[\"\']([^\"\']+)[\"\']', content))
+    result = set(re.findall(r"<a\s+id=[\"\']([^\"\']+)[\"\']", content))
     counts: Counter[str] = Counter()
     for title in re.findall(r"^#{1,6}\s+(.+?)\s*#*\s*$", content, re.MULTILINE):
         title = re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", title).lower()
-        slug = "".join(char for char in title if char in "_- " or
-                       unicodedata.category(char)[0] in "LN").replace(" ", "-")
+        slug = "".join(
+            char for char in title if char in "_- " or unicodedata.category(char)[0] in "LN"
+        ).replace(" ", "-")
         count = counts[slug]
         counts[slug] += 1
         result.add(f"{slug}-{count}" if count else slug)
@@ -48,7 +49,11 @@ def check_links(root: Path, boundary: Path) -> tuple[int, list[str]]:
                 errors.append(f"{location}: escapes source tree")
             elif not target.exists():
                 errors.append(f"{location}: missing target")
-            elif url.fragment and target.suffix == ".md" and unquote(url.fragment) not in anchors(target):
+            elif (
+                url.fragment
+                and target.suffix == ".md"
+                and unquote(url.fragment) not in anchors(target)
+            ):
                 errors.append(f"{location}: missing fragment")
     return checked, errors
 
@@ -67,7 +72,9 @@ def check_sources(plan_dir: Path) -> tuple[int, list[str]]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--plan-dir", type=Path, help="optional authoritative observability-plan directory")
+    parser.add_argument(
+        "--plan-dir", type=Path, help="optional authoritative observability-plan directory"
+    )
     args = parser.parse_args()
     checked, errors = check_links(ROOT, ROOT)
     sources = 0
@@ -76,8 +83,17 @@ def main() -> int:
         errors.extend(source_errors)
     for error in errors:
         print(error, file=sys.stderr)
-    print(json.dumps({"ok": not errors, "local_links": checked,
-                      "reviewed_sources": sources, "errors": len(errors)}, sort_keys=True))
+    print(
+        json.dumps(
+            {
+                "ok": not errors,
+                "local_links": checked,
+                "reviewed_sources": sources,
+                "errors": len(errors),
+            },
+            sort_keys=True,
+        )
+    )
     return int(bool(errors))
 
 

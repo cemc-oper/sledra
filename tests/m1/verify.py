@@ -7,11 +7,15 @@ import hashlib
 import json
 import os
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 
 
 REPO = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(REPO))
+from scripts.test_tools import binary_for  # noqa: E402
+
 RECORDER = REPO / "recorder"
 EXAMPLE = REPO / "examples/standalone"
 FIXTURES = EXAMPLE / "fixtures"
@@ -197,9 +201,7 @@ def main() -> None:
         root.mkdir(mode=0o700)
         requests = base / "requests"
         requests.mkdir()
-        binary = base / "sledra"
-        subprocess.run(["go", "build", "-o", str(binary), "./cmd/sledra"], cwd=RECORDER,
-                       env=dict(os.environ, GOPROXY="off", GOSUMDB="off"), check=True)
+        binary = binary_for("sledra", base)
         env = dict(os.environ, SLEDRA_ROOT=str(root), SLEDRA_SPEC_DIR=str(SPEC))
         normal, normal_path = create_run(binary, env, requests, "normal")
         normal_attempt, normal_result = execute_attempt(binary, env, requests, normal_path, "normal", "success")

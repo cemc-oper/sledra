@@ -1,0 +1,23 @@
+[project]
+name = "sledra-development"
+version = "0.0.0"
+description = "Development and verification tools for the Sledra recorder"
+requires-python = ">=3.12"
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "jsonschema==4.10.3",
+    "ruff==0.16.9",
+]
+
+[tool.uv]
+package = false
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+extend-exclude = ["build", "dist", "test-results"]
+
+[tool.ruff.lint]
+select = ["E4", "E9", "F"]

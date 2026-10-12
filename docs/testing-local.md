@@ -1,20 +1,45 @@
 # Sledra local regression
 
-Run from the repository root after [dependency preparation](quickstart.md#prepare-dependencies). The following commands use existing synthetic fixtures and isolated temporary directories. Offline Go builds need a populated module cache.
+Prepare dependencies once using the explicit online setup, then use the offline public commands from the repository root:
 
 ```bash
-PYTHONDONTWRITEBYTECODE=1 .venv/bin/python spec/verify.py
-PYTHONDONTWRITEBYTECODE=1 .venv/bin/python spec/verify_event.py
-PYTHONDONTWRITEBYTECODE=1 .venv/bin/python spec/verify_context.py
-PYTHONDONTWRITEBYTECODE=1 .venv/bin/python tests/shell/verify.py
-PYTHONDONTWRITEBYTECODE=1 .venv/bin/python tests/m1/verify.py
-PYTHONDONTWRITEBYTECODE=1 .venv/bin/python tests/m1/replay.py tests/m1/results/handoff.json
-(cd recorder && GOPROXY=off GOSUMDB=off go test ./...)
-python3 scripts/check_docs.py
+make setup
+make check
+make test
 ```
 
-An existing Python environment with `jsonschema` may use `python3` in place of `.venv/bin/python`. Contract checks compare Go/Python bytes, identity vectors and positive/negative cases. Shell checks exercise disabled/enabled behavior and failure isolation. M1 checks cover normal execution, failure/retry and the frozen handoff. Keep `tests/m1/results/` and `tests/platform/results/` unchanged during ordinary regressions.
+See [development](development.md) for minimum/tested toolchains, dependency-cache requirements, build reuse and report locations. `make check` validates format/static checks, locked metadata, generated contract/fixture bytes and local documentation links. Generation happens in a temporary copy. `make test` builds or reuses each Go helper once and executes Go, engineering, contract/event/context, Shell, M1 normal/failure/retry and frozen replay tests.
 
-The [M1 guide](../tests/m1/README.md) documents deliberate fixture refresh and a separate timing probe. The [platform probe](../tests/platform/README.md) requires a writable test parent and establishes only local filesystem primitives. Save any new probe report to a separate location rather than overwriting a historical report.
+Every check/test run has a unique ignored `test-results/` directory with stage logs and `summary.json`. A failure returns nonzero and identifies the failing stage. The report compares all protected fixtures before and after the run; ordinary tests never rewrite `tests/m1/results/` or `tests/platform/results/`.
 
-`scripts/check_docs.py` validates repository Markdown links, fragments and confinement to the source tree. For an authoring workspace, add `--plan-dir /absolute/path/to/docs/observability-plan` to compare reviewed authoritative source digests. An independent source copy can perform the local checks without that optional directory. See [contract sources](contracts.md) for the review workflow.
+## Individual checks
+
+After setup, use the locked environment for a specific script. To reuse existing build tools across direct invocations:
+
+```bash
+make build
+SLEDRA_TEST_BIN_DIR="$PWD/build/bin" uv run --locked --offline python spec/verify.py
+SLEDRA_TEST_BIN_DIR="$PWD/build/bin" uv run --locked --offline python tests/shell/verify.py
+SLEDRA_TEST_BIN_DIR="$PWD/build/bin" uv run --locked --offline python tests/m1/replay.py tests/m1/results/handoff.json
+```
+
+Without `SLEDRA_TEST_BIN_DIR`, an individual helper builds its tool in a private temporary directory using the prepared Go cache. An explicit missing tool fails. Existing `python3` invocations still work when that interpreter has jsonschema installed; the uv environment is the reproducible default.
+
+## Demo and performance
+
+```bash
+make demo
+make benchmark
+```
+
+The [M1 guide](../tests/m1/README.md) describes the normal/failure/retry demonstration, frozen handoff and separate timing probe. Demo and benchmark write new report artifacts rather than replacing historical data. The [platform probe](../tests/platform/README.md) requires a writable test parent and establishes only local filesystem primitives; save new platform results separately. Public HPC parameters and reports belong to SLD-32.
+
+## Authoring source review
+
+`make check` checks repository-local Markdown links. In the authoring workspace, additionally run:
+
+```bash
+uv run --locked --offline python scripts/check_docs.py --plan-dir ../../docs/observability-plan
+```
+
+An independent source copy can run all daily targets without that neighboring directory. The optional source review checks recorded upstream digests, as described in [contract sources](contracts.md).

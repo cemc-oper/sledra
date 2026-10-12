@@ -5,11 +5,15 @@ from __future__ import annotations
 import json
 import os
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
+from scripts.test_tools import binary_for  # noqa: E402
+
 
 
 def save(path: Path, value: object) -> None:
@@ -20,11 +24,9 @@ def main() -> None:
     fixture = json.loads((ROOT / "spec/fixtures/1.0.0/valid-bundle.json").read_text())
     with tempfile.TemporaryDirectory(prefix="sledra-context-") as scratch:
         temp = Path(scratch)
-        binary = temp / "sledra"
+        binary = binary_for("sledra", temp)
         env = dict(os.environ, GOPROXY="off", GOSUMDB="off", SLEDRA_ROOT=str(temp),
                    SLEDRA_SPEC_DIR=str(ROOT / "spec/1.0.0"))
-        subprocess.run(["go", "build", "-o", str(binary), "./cmd/sledra"],
-                       cwd=ROOT / "recorder", env=env, check=True)
 
         def call(*args: str, code: str | None = None) -> None:
             completed = subprocess.run([str(binary), *args], cwd=temp, env=env,

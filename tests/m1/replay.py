@@ -5,11 +5,10 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import subprocess
 import tempfile
 from pathlib import Path, PurePosixPath
 
-from verify import RECORDER, SPEC, command, inspect, load, sha
+from verify import binary_for, SPEC, command, inspect, load, sha
 
 
 def main() -> None:
@@ -33,9 +32,7 @@ def main() -> None:
             target.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
             target.write_bytes(data)
             target.chmod(0o400 if relative.parts[0] == "contexts" else 0o600)
-        binary = Path(tmp) / "sledra"
-        subprocess.run(["go", "build", "-o", str(binary), "./cmd/sledra"], cwd=RECORDER,
-                       env=dict(os.environ, GOPROXY="off", GOSUMDB="off"), check=True)
+        binary = binary_for("sledra", Path(tmp))
         env = dict(os.environ, SLEDRA_ROOT=str(root), SLEDRA_SPEC_DIR=str(SPEC))
         for context in (root / "contexts").glob("*.json"):
             command(binary, env, "context", "validate", "--file", str(context))

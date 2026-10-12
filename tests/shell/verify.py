@@ -7,6 +7,7 @@ import os
 import select
 import signal
 import subprocess
+import sys
 import tempfile
 import time
 import unittest
@@ -14,6 +15,9 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT))
+from scripts.test_tools import binary_for  # noqa: E402
+
 EXAMPLE = ROOT / "examples/standalone/run.sh"
 LIBRARY = ROOT / "shell/sledra.sh"
 
@@ -22,13 +26,7 @@ class ShellIntegration(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls.build = tempfile.TemporaryDirectory(prefix="sledra-shell-build-")
-        cls.binary = Path(cls.build.name) / "sledra"
-        subprocess.run(
-            ["go", "build", "-o", str(cls.binary), "./cmd/sledra"],
-            cwd=ROOT / "recorder",
-            env=dict(os.environ, GOPROXY="off", GOSUMDB="off"),
-            check=True,
-        )
+        cls.binary = binary_for("sledra", Path(cls.build.name))
 
     @classmethod
     def tearDownClass(cls) -> None:

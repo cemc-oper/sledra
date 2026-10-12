@@ -1,0 +1,308 @@
+"""Public development commands; setup is online, daily commands are offline."""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import os
+import platform
+import subprocess
+import sys
+import time
+import uuid
+from datetime import datetime, timezone
+from pathlib import Path
+
+from test_tools import ROOT, TOOLS, offline_env
+
+UV = os.environ.get("UV", "uv")
+BIN = ROOT / "build/bin"
+
+
+def digest(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def write_json(path: Path, value: object) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n")
+
+
+def python_command(*args: str) -> list[str]:
+    return [
+        UV,
+        "run",
+        "--locked",
+        "--offline",
+        "--no-python-downloads",
+        "--python",
+        os.environ.get("UV_PYTHON", sys.executable),
+        "python",
+        *args,
+    ]
+
+
+def run(command: list[str], *, cwd: Path = ROOT, env: dict[str, str] | None = None) -> None:
+    subprocess.run(command, cwd=cwd, env=env or offline_env(), check=True)
+
+
+def setup() -> None:
+    env = dict(os.environ, GOTOOLCHAIN="local", PYTHONDONTWRITEBYTECODE="1", UV_OFFLINE="0")
+    print("Online setup: synchronize uv.lock and populate the Go module cache", flush=True)
+    run(
+        [
+            UV,
+            "sync",
+            "--locked",
+            "--no-python-downloads",
+            "--python",
+            os.environ.get("UV_PYTHON", sys.executable),
+        ],
+        env=env,
+    )
+    run(["go", "mod", "download"], cwd=ROOT / "recorder", env=env)
+    print("Setup complete. Daily build/check/test commands disable dependency network queries.")
+
+
+def build() -> None:
+    env = offline_env()
+    target = subprocess.check_output(
+        ["go", "env", "GOVERSION", "GOOS", "GOARCH"], cwd=ROOT / "recorder", env=env, text=True
+    ).splitlines()
+    inputs = [
+        p
+        for p in (ROOT / "recorder").rglob("*")
+        if p.is_file() and (p.suffix in {".go", ".json"} or p.name in {"go.mod", "go.sum"})
+    ]
+    recipe = {
+        "target": target,
+        "cgo_enabled": "0",
+        "flags": ["-trimpath", "-buildvcs=false"],
+        "inputs": {str(p.relative_to(ROOT)): digest(p) for p in sorted(inputs)},
+    }
+    manifest_path = ROOT / "build/manifest.json"
+    try:
+        previous = json.loads(manifest_path.read_text())
+    except (FileNotFoundError, json.JSONDecodeError):
+        previous = {}
+    BIN.mkdir(parents=True, exist_ok=True)
+    binaries = {}
+    for name in TOOLS:
+        binary = BIN / name
+        if (
+            previous.get("recipe") == recipe
+            and binary.is_file()
+            and os.access(binary, os.X_OK)
+            and previous.get("binaries", {}).get(name) == digest(binary)
+        ):
+            print(f"Reuse build/bin/{name}", flush=True)
+        else:
+            print(f"Build build/bin/{name}", flush=True)
+            temporary = BIN / f".{name}-{uuid.uuid4().hex}.tmp"
+            try:
+                run(
+                    ["go", "build", *recipe["flags"], "-o", str(temporary), f"./cmd/{name}"],
+                    cwd=ROOT / "recorder",
+                    env=env,
+                )
+                temporary.replace(binary)
+            finally:
+                temporary.unlink(missing_ok=True)
+        binaries[name] = digest(binary)
+    write_json(manifest_path, {"recipe": recipe, "binaries": binaries})
+
+
+def protected_files() -> dict[str, str]:
+    directories = (
+        "spec/1.0.0",
+        "spec/fixtures",
+        "recorder/event/contract",
+        "examples/standalone/fixtures",
+        "tests/m1/results",
+        "tests/platform/results",
+    )
+    return {
+        str(path.relative_to(ROOT)): digest(path)
+        for directory in directories
+        for path in sorted((ROOT / directory).rglob("*"))
+        if path.is_file()
+    }
+
+
+class Report:
+    def __init__(self, action: str) -> None:
+        stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+        self.directory = ROOT / "test-results" / f"{action}-{stamp}-{uuid.uuid4().hex[:8]}"
+        self.directory.mkdir(parents=True)
+        self.stages: list[dict] = []
+        self.action = action
+
+    def stage(
+        self, name: str, command: list[str], *, cwd: Path = ROOT, empty_output: bool = False
+    ) -> None:
+        log = self.directory / f"{name}.log"
+        start = time.monotonic()
+        print(f"[{name}] start", flush=True)
+        with log.open("w") as output:
+            result = subprocess.run(
+                command,
+                cwd=cwd,
+                env=dict(offline_env(), SLEDRA_TEST_BIN_DIR=str(BIN)),
+                stdout=output,
+                stderr=subprocess.STDOUT,
+            )
+        code = result.returncode
+        if empty_output and log.stat().st_size:
+            code = 1
+        self.stages.append(
+            {
+                "name": name,
+                "command": command,
+                "cwd": str(cwd),
+                "exit_code": code,
+                "seconds": round(time.monotonic() - start, 3),
+                "log": log.name,
+            }
+        )
+        print(
+            f"[{name}] {'pass' if code == 0 else 'FAIL'} ({self.stages[-1]['seconds']}s)",
+            flush=True,
+        )
+        if code:
+            print(log.read_text(), file=sys.stderr)
+            raise RuntimeError(f"{name} failed; see {log}")
+
+    def finish(self, error: str | None, before: dict[str, str]) -> bool:
+        after = protected_files()
+        changed = sorted(
+            name for name in before.keys() | after.keys() if before.get(name) != after.get(name)
+        )
+        if changed:
+            error = f"protected fixture bytes changed: {', '.join(changed)}; " + (error or "")
+        write_json(
+            self.directory / "summary.json",
+            {
+                "action": self.action,
+                "ok": error is None,
+                "error": error,
+                "stages": self.stages,
+                "python_bootstrap": platform.python_version(),
+                "platform": platform.platform(),
+                "uv_lock_sha256": digest(ROOT / "uv.lock"),
+                "go_sum_sha256": digest(ROOT / "recorder/go.sum"),
+                "protected_files_before": before,
+                "changed_protected_files": changed,
+                "handoff_sha256": digest(ROOT / "tests/m1/results/handoff.json"),
+                "dependency_network_queries": "disabled: uv offline, GOPROXY/GOSUMDB off, GOTOOLCHAIN local",
+            },
+        )
+        print(f"Report: {self.directory / 'summary.json'}", flush=True)
+        if error:
+            print(error, file=sys.stderr)
+        return error is None
+
+
+def suite(action: str) -> bool:
+    report = Report(action)
+    before = protected_files()
+    error = None
+    try:
+        if action == "check":
+            report.stage("lock", [UV, "lock", "--check", "--offline", "--no-python-downloads"])
+            report.stage(
+                "python-format", python_command("-m", "ruff", "format", "--check", "scripts")
+            )
+            report.stage("python-lint", python_command("-m", "ruff", "check", "."))
+            go_files = [str(path) for path in sorted((ROOT / "recorder").rglob("*.go"))]
+            report.stage("go-format", ["gofmt", "-l", *go_files], empty_output=True)
+            report.stage("go-vet", ["go", "vet", "./..."], cwd=ROOT / "recorder")
+            for path in sorted(ROOT.glob("**/*.sh")):
+                if not {"build", "test-results", ".venv"}.intersection(
+                    path.relative_to(ROOT).parts
+                ):
+                    report.stage(
+                        "bash-" + "-".join(path.relative_to(ROOT).parts), ["bash", "-n", str(path)]
+                    )
+            report.stage("generated-contracts", python_command("scripts/check_contracts.py"))
+            report.stage("docs", python_command("scripts/check_docs.py"))
+        else:
+            report.stage("build", [sys.executable, str(ROOT / "scripts/dev.py"), "build"])
+            if action == "test":
+                report.stage("go-tests", ["go", "test", "-count=1", "./..."], cwd=ROOT / "recorder")
+                report.stage(
+                    "engineering",
+                    python_command("-m", "unittest", "discover", "-s", "tests/engineering", "-v"),
+                )
+                for name, script in (
+                    ("contract", "spec/verify.py"),
+                    ("event", "spec/verify_event.py"),
+                    ("context", "spec/verify_context.py"),
+                    ("shell", "tests/shell/verify.py"),
+                    ("m1", "tests/m1/verify.py"),
+                ):
+                    report.stage(name, python_command(script))
+                report.stage(
+                    "frozen-replay",
+                    python_command("tests/m1/replay.py", "tests/m1/results/handoff.json"),
+                )
+            elif action == "demo":
+                handoff = report.directory / "handoff.json"
+                report.stage(
+                    "normal-failure-retry",
+                    python_command("tests/m1/verify.py", "--handoff-out", str(handoff)),
+                )
+                report.stage("demo-replay", python_command("tests/m1/replay.py", str(handoff)))
+            elif action == "benchmark":
+                report.stage(
+                    "benchmark",
+                    python_command(
+                        "tests/m1/benchmark.py",
+                        "--samples",
+                        str(int(os.environ.get("SLEDRA_BENCHMARK_SAMPLES", "20"))),
+                        "--out",
+                        str(report.directory / "benchmark.json"),
+                    ),
+                )
+    except (OSError, ValueError, RuntimeError, subprocess.SubprocessError) as exc:
+        error = str(exc)
+    return report.finish(error, before)
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "action", choices=("help", "setup", "build", "check", "test", "demo", "benchmark")
+    )
+    action = parser.parse_args().action
+    if sys.version_info < (3, 12):
+        parser.error("development commands require Python >=3.12")
+    if action == "help":
+        print(
+            "Sledra development targets (run from repository root):\n"
+            "  make setup      Online: sync uv.lock and download Go modules\n"
+            "  make build      Offline: build/reuse five tools in build/bin; build/manifest.json\n"
+            "  make check      Offline: lock, format, lint, vet, Bash, contract bytes, docs\n"
+            "  make test       Offline: Go, engineering, contract, Shell, M1, frozen replay\n"
+            "  make demo       Offline: isolated synthetic normal/failure/retry, export and replay\n"
+            "  make benchmark  Offline: separate raw timing samples and statistics (default 20)\n"
+            "Dependencies: Python >=3.12, uv >=0.11.2, Go >=1.25.0, Bash >=5.2, GNU Make >=4.0\n"
+            "Reports/demos/benchmarks: unique directories under test-results/; dist/ reserved for packaging\n"
+            "Offline commands require setup caches. Package targets follow in SLD-31."
+        )
+        return 0
+    try:
+        if action == "setup":
+            setup()
+        elif action == "build":
+            build()
+        else:
+            return int(not suite(action))
+    except (OSError, subprocess.SubprocessError) as exc:
+        print(f"{action} failed: {exc}", file=sys.stderr)
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

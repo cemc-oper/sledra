@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 
@@ -12,15 +13,16 @@ from check import canonical, read_json
 
 
 ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
+from scripts.test_tools import binary_for  # noqa: E402
+
 
 
 def main() -> None:
     with tempfile.TemporaryDirectory(prefix="sledra-event-") as scratch:
         temp = Path(scratch)
-        binary = temp / "sledra-event"
+        binary = binary_for("sledra-event", temp)
         env = dict(os.environ, GOPROXY="off", GOSUMDB="off")
-        subprocess.run(["go", "build", "-o", str(binary), "./cmd/sledra-event"],
-                       cwd=ROOT / "recorder", env=env, check=True)
         count = 0
         for filename in ("valid-bundle.json", "valid-future-extension.json"):
             bundle = read_json(ROOT / "spec" / "fixtures" / "1.0.0" / filename)

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import math
 import os
@@ -13,7 +12,7 @@ import tempfile
 import time
 from pathlib import Path
 
-from verify import EXAMPLE, FIXTURES, RECORDER, REPO, SPEC, command, load, save, sha
+from verify import binary_for, EXAMPLE, FIXTURES, REPO, SPEC, command, load, save, sha
 
 
 def quantiles(samples: list[int]) -> dict[str, int]:
@@ -113,9 +112,7 @@ def main() -> None:
         parser.error("samples must be 10..100")
     with tempfile.TemporaryDirectory(prefix="sledra-m1-bench-") as tmp:
         base = Path(tmp)
-        binary = base / "sledra"
-        subprocess.run(["go", "build", "-o", str(binary), "./cmd/sledra"], cwd=RECORDER,
-                       env=dict(os.environ, GOPROXY="off", GOSUMDB="off"), check=True)
+        binary = binary_for("sledra", base)
         data = measure(binary, base, args.samples)
         data.update({
             "kind": "m1_local_recorder_timing",

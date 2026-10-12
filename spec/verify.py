@@ -14,6 +14,9 @@ from check import canonical, content_sha, length_digest, read_json, registry_id,
 
 
 ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
+from scripts.test_tools import binary_for  # noqa: E402
+
 FIXTURES = ROOT / "spec" / "fixtures" / "1.0.0"
 
 
@@ -69,11 +72,7 @@ def main() -> None:
     cases = read_json(FIXTURES / "cases.json")
     positive_results = {}
     with tempfile.TemporaryDirectory(prefix="sledra-spec-") as temp:
-        binary = Path(temp) / "sledra-spec-check"
-        result = subprocess.run(["go", "build", "-o", str(binary), "./cmd/sledra-spec-check"],
-                                cwd=ROOT / "recorder", env={**os.environ, "GOPROXY": "off", "GOSUMDB": "off"},
-                                text=True, capture_output=True, check=False)
-        assert result.returncode == 0, result.stderr
+        binary = binary_for("sledra-spec-check", Path(temp))
         for name, expected in sorted(cases.items()):
             fixture = FIXTURES / name
             py_rc, py = run([sys.executable, str(ROOT / "spec" / "check.py"), str(fixture)])

@@ -23,24 +23,21 @@ Install resources separately from runtime data. Registry, contexts, documents an
 
 ## Quick start
 
-With Go, Bash and an existing Go module cache, run from this repository root:
+Install the [development toolchains](docs/development.md#toolchains), then run from this repository root:
 
 ```bash
-repo_dir=$(pwd -P)
-demo_dir=$(mktemp -d "${TMPDIR:-/tmp}/sledra-demo.XXXXXX")
-(cd recorder && GOPROXY=off GOSUMDB=off go build -o "$demo_dir/sledra" ./cmd/sledra)
-mkdir "$demo_dir/observability"
-STANDALONE_WORK_DIR="$demo_dir" SLEDRA_ROOT="$demo_dir/observability" \
-  SLEDRA_BIN="$demo_dir/sledra" SLEDRA_ENABLED=1 \
-  "$repo_dir/examples/standalone/run.sh"
-printf 'Demo files: %s\n' "$demo_dir"
+make setup
+make build
+make check
+make test
+make demo
 ```
 
-The payload prints synthetic output and creates `product.txt`. Inspect `observability/contexts/`, `observability/registry/`, `observability/finish/` and `observability/spool/` under that directory. See [quickstart](docs/quickstart.md) for dependency preparation and the verified normal/failure/retry scenario. Each manual demo uses a fresh directory.
+Setup is the explicit network step and works with empty dependency caches. Daily targets disable dependency network queries and reuse `build/bin/` tools. The synthetic demo verifies normal execution and failure/retry, then exports and replays a fresh handoff in a unique `test-results/` directory. See [quickstart](docs/quickstart.md) for a manual Bash owner example and [local testing](docs/testing-local.md) for detailed regression commands.
 
 ## Installation and testing
 
-Source builds are currently supported; an installable trial package is planned in SLD-31. [Local testing](docs/testing-local.md) lists the existing regression commands and required dependencies. Unified Make targets, locked developer setup, CLI help/version and portable default resource lookup are planned in SLD-29/30; use the documented existing commands and explicit absolute resource paths today.
+Source builds are currently supported; an installable trial package is planned in SLD-31. `make help` lists the current targets, dependencies and outputs. [Development](docs/development.md) explains locked setup, offline source builds, reports and the separate `make benchmark` measurement. CLI help/version and portable default resource lookup follow in SLD-30; direct recording calls currently use explicit absolute resources.
 
 ## Documentation and limits
 

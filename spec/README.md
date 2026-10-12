@@ -64,7 +64,7 @@ The SLD-06 offline event command returns only a classified code on stderr for fa
 
 The tested local toolchain is WSL2 x86_64, Go `1.27.0`, Python `3.12.3`, Bash `5.2.21`, `uv` `0.11.2`, `jsonschema` `4.10.3`. The recorder helper module is `github.com/cemc-oper/sledra/recorder` with pinned Go modules in [`go.mod`](../recorder/go.mod) and [`go.sum`](../recorder/go.sum); Python's direct test dependency is in [`requirements-test.txt`](requirements-test.txt). No Python runtime dependency is added to the future recorder. The module path follows the configured GitHub origin. Distribution license, deployment platform and static recorder qualification remain later decisions.
 
-From the Sledra root, the repeatable checks are:
+From the Sledra root, `make setup` prepares locked developer dependencies and `make check` / `make test` run the unified offline checks. See [development](../docs/development.md) for caches and build reuse. The individual repeatable checks also remain available:
 
 ```bash
 python3 spec/build_contract.py
