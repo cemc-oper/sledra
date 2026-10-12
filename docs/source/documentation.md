@@ -1,0 +1,37 @@
+# 文档维护
+
+中文说明位于 `docs/source/`，采用与 cemc-oper 项目一致的 Sphinx、PyData Sphinx Theme 和 MyST 写作方式；此处启用 MyST-NB 处理 Markdown 与 Notebook。组件、示例、测试及试用包的 README 也使用中文。命令、字段名、错误代码和原始夹具不翻译。
+
+## 构建与预览
+
+仓库根目录的公共入口：
+
+```bash
+make setup
+make docs
+python3 -m http.server --directory build/docs/html 8000
+```
+
+打开 `http://localhost:8000`。`make docs` 先检查仓库 Markdown 导航，再调用 Sphinx HTML 构建，启用 `-n -W --keep-going -E -a`：交叉引用严格检查，警告导致非零退出，每次完整读取并写出页面。HTML 位于 `build/docs/html/`，日志与摘要保存在新建 `test-results/docs-.../`。CI 调用相同入口。
+
+仅安装文档依赖并构建站点时可使用：
+
+```bash
+uv sync --only-group docs --locked --no-python-downloads --python 3.12
+uv run --only-group docs --locked --offline --no-python-downloads --python 3.12 \
+  python -m sphinx -n -W --keep-going -E -a -b html docs/source build/docs/html
+```
+
+示例显式选择已安装的 Python 3.12，与当前实测工具链一致；使用其他版本时须准备对应缓存并补验。首次同步需联网，后续构建使用准备好的缓存。只装 docs 组不提供完整开发检查所需的 Ruff；恢复完整开发环境请执行 `make setup`。文档工具不打入记录器试用包，也不增加记录运行依赖。
+
+## 写作约定
+
+`conf.py` 设置 `language = "zh_CN"`、`html_theme = "pydata_sphinx_theme"` 和 `extensions = ["myst_nb"]`。MyST-NB 已自动加载 Markdown 解析器，不重复启用 myst_parser。版本和传递依赖由根 uv.lock 锁定。
+
+新增页面放入 `docs/source/`，并加入 `index.md` 的 toctree。页面之间使用相对 Markdown 链接；标题和可见说明使用中文，保留文件路径与技术标识。仓库内源码导航使用真实相对路径；站点指向未收录的源码资源时，使用明确的 GitHub 文件链接，避免生成不可访问的本地链接。
+
+MyST 支持 fenced directive，例如 toctree、note 和代码块。Notebook 扩展已启用，但 `nb_execution_mode = "off"`，构建只渲染已有内容，不自动执行代码或需要业务环境/内核；当前没有计算 Notebook 示例。新增执行型文档时再明确其运行环境与验收条件。
+
+构建不抓取远端 intersphinx inventory，不依赖相邻规划目录。检查和 HTML 构建须无警告；本地构建通过不表示托管站点已发布。本次没有配置或触发文档公开发布。
+
+配置用法可查阅 [Sphinx 构建说明](https://www.sphinx-doc.org/en/master/man/sphinx-build.html)、[PyData 主题安装说明](https://pydata-sphinx-theme.readthedocs.io/en/stable/user_guide/install.html)和 [MyST-NB 入门](https://myst-nb.readthedocs.io/en/latest/quickstart.html)。

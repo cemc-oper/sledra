@@ -62,7 +62,7 @@ def main() -> None:
             ("tests/platform/probe.py", "tests/platform/probe.py"),
             ("tests/platform/shell_probe.sh", "tests/platform/shell_probe.sh"),
             ("tests/platform/cross_node.py", "tests/platform/cross_node.py"),
-            ("docs/testing-hpc.md", "docs/testing-hpc.md"),
+            ("docs/source/testing-hpc.md", "docs/testing-hpc.md"),
             ("scripts/package_tools.py", "test-tools/package_tools.py"),
             ("tests/package/verify_install.py", "test-tools/verify.py"),
             ("tests/m1/verify.py", "tests/m1/verify.py"),

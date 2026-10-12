@@ -1,24 +1,25 @@
-## Problem and resulting behavior
+## 问题与结果
 
-Describe the triggering input or user action, the previous result and the new result.
+说明触发输入或用户操作、原行为和修改后的结果。
 
-## Scope and compatibility
+## 范围与兼容性
 
-- Related issue/SLD task:
-- Affected components and configuration:
-- Identity/event-byte/payload behavior changes:
-- Frozen fixture SHA256 changes, reason and M2 reassessment (or unchanged):
-- Dependency, provenance or license changes:
+- 关联 Issue/SLD 任务：
+- 受影响组件和配置：
+- 身份/事件字节/payload 行为变化：
+- 冻结夹具 SHA256 变化、原因及 M2 再评估（或保持不变）：
+- 依赖与来源变化：
 
-## Validation
+## 验证
 
-List commands actually run and report locations. Distinguish pass, fail and unverified.
+列出实际执行的命令和报告，区分通过、失败与未验证。
 
-- `make check`:
-- `make test`:
-- `make test-platform` / demo, where relevant:
-- `make package` / `make test-package`, where relevant:
-- Remote CI run link, or unverified:
-- Required HPC/site checks and their status:
+- make check：
+- make docs：
+- make test：
+- make test-platform/demo（适用时）：
+- make package/test-package（适用时）：
+- 远端 CI 链接或未验证：
+- 必需 HPC/站点检查及状态：
 
-See the [CI guide](../docs/ci.md) for shared validation commands and the [engineering handoff](../docs/engineering-handoff.md) for frozen-input review.
+公共命令见[CI指南](../docs/source/ci.md)，冻结输入审查见[工程交接](../docs/source/engineering-handoff.md)。

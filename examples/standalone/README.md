@@ -1,8 +1,8 @@
-# Standalone synthetic recording example (SLD-08)
+# 独立合成记录示例（SLD-08）
 
-This example uses only Bash, the Go `sledra` recorder and a local test directory. It does not start an analyzer, scheduler, ecFlow or takflow, and does not run real MCV work. [`run.sh`](run.sh) owns its existing EXIT/TERM/HUP/INT handlers and callback file; it registers a Run and Attempt, records attempt/stage start, runs [`payload.sh`](payload.sh) once, records stage end and process exit, and declares Run finish on success. `payload.sh` writes a synthetic product, exercises a pipeline and background `wait`, and can return 7 or wait for a signal. The Shell library does not install handlers or run the payload.
+示例只用Bash、Go sledra和本地目录，不启动分析、scheduler、ecFlow/takflow，不执行真实MCV。[run.sh](run.sh)保留已有EXIT/TERM/HUP/INT handler及callback，登记Run/Attempt、记录start、只运行一次[payload.sh](payload.sh)、记录end/exit，成功时声明finish。payload生成合成产品，测试pipeline/background wait，可返回7或等待signal；Shell库不安装handler或执行业务。
 
-From the Sledra repository root:
+源码根运行：
 
 ```bash
 (cd recorder && GOPROXY=off GOSUMDB=off go build -o /tmp/sledra-example ./cmd/sledra)
@@ -14,6 +14,6 @@ SLEDRA_BIN=/tmp/sledra-example SLEDRA_ENABLED=1 \
 python3 tests/shell/verify.py
 ```
 
-The script locates the library, inputs and payload relative to its own location and uses embedded contracts by default. It can run from another cwd with a read-only resource tree; all output belongs to the explicit work directory. An explicit `SLEDRA_SPEC_DIR` is preserved and validated by the recorder. Use a fresh test directory for each run. To compare the original behavior, run the same script with `SLEDRA_ENABLED=0`. The fixture Run/Attempt tokens and the covered Attempt ID in `fixtures/finish-request.json` are fixed for this synthetic case; changing a fixture requires updating the finish fixture. `SLEDRA_CONFIG` may override the process config for failure tests. `STANDALONE_CONTEXT_OVERRIDE` is a synthetic fault input, not a production fallback mechanism. `STANDALONE_PAYLOAD_MODE=fail` returns 7; `hang` waits for a signal. The output and callback logs are written only under `STANDALONE_WORK_DIR`.
+脚本按自身位置查找库/输入/payload，默认内嵌契约，支持不同cwd和只读资源树，只写显式work目录；保留并校验显式SLEDRA_SPEC_DIR。每次使用新目录；SLEDRA_ENABLED=0为关闭基线。token与finish夹具的覆盖Attempt是固定合成值，改变身份须同步finish。SLEDRA_CONFIG用于配置故障，STANDALONE_CONTEXT_OVERRIDE是合成注入，不是生产兜底；PAYLOAD_MODE=fail返回7，hang等待signal，日志只在STANDALONE_WORK_DIR。
 
-The supported local profile is explicit owner hooks with ordinary success/failure and tested TERM/HUP re-raise behavior. SIGKILL leaves no tail event. On this non-interactive Bash background-`wait` profile, SIGINT does not interrupt promptly; the test records that limit and does not qualify it for deployment. No transparent `sledra exec` supervisor is delivered: launch failure after an uncertain start, process-group forwarding and internal `errexit` transparency require a separate proof. Target shared/HPC filesystem, scheduler and real business callback tests remain unverified.
+当前profile支持显式owner钩子、成功/失败及测试过的TERM/HUP重新抛出。KILL不生成尾事件；非交互Bash background-wait中INT不能即时中断，未作为部署资格。没有透明sledra exec，不确定start后的启动失败、进程组转发和errexit透明性需独立验证。真实共享/HPC、调度和业务callback仍未测。

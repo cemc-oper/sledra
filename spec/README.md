@@ -1,70 +1,70 @@
-# Sledra contract 1.0.0 draft (SLD-02)
+# Sledra 契约 1.0.0 草案（SLD-02）
 
-This is a development baseline for the public wire format, not a released contract or recorder. The JSON files in [`1.0.0/`](1.0.0/) are the portable resources; [`build_contract.py`](build_contract.py) regenerates them. Each schema uses [JSON Schema Draft 2020-12](https://json-schema.org/draft/2020-12/), has no remote `$ref`, and is embedded in the recorder from this canonical directory. Regenerate intentionally, then run `python3 scripts/sync_contracts.py`; `make check` verifies embed bytes in a private copy. The schema URI identifies the dialect; it is not fetched at validation time. The `event-types.json` catalog covers all 24 event types listed in the reviewed public information contracts described in [contract sources](../docs/contracts.md) and contains the known event payload schemas, association levels, source kinds and producer roles. [`capabilities.json`](1.0.0/capabilities.json) declares `read_contracts`, `write_contracts` and `known_event_types` separately from software versions.
+这是公开字节格式的开发基线，不是已发行契约或记录器。[1.0.0/](1.0.0/)保存可搬运资源，[build_contract.py](build_contract.py)重新生成。schema采用[JSON Schema Draft 2020-12](https://json-schema.org/draft/2020-12/)，无远端$ref；方言URI不在校验时抓取。canonical资源显式重新生成后运行python3 scripts/sync_contracts.py，check在私有副本核对embed字节。24类event-types目录包含已知payload、关联层次、source kind和producer role，权威来源见[契约来源](../docs/source/contracts.md)。capabilities分别声明read_contracts、write_contracts、known_event_types，不与软件版本混合。
 
-## Documents and semantic checks
+## 文档与语义校验
 
-| Document | Structural schema | Checks beyond JSON Schema |
+| 文档 | 结构schema | JSON Schema之外的校验 |
 |---|---|---|
-| DefinitionManifest | `definition_manifest.schema.json` | `definition_id = def_ + SHA256(content excluding definition_id/content_sha256)`; unique task keys; stage/dependency references; parameter default type/enum |
-| RunContext | `run_context.schema.json` | definition/expectation references; expanded task parameters and unique scope entries; context SHA256; cycle belongs to selected expectation |
-| AttemptContext | `attempt_context.schema.json` | parent Run digest, declared task/parameters in scope, recomputed task instance ID, retry not self, context SHA256 |
-| JobRef | `job_ref.schema.json` | platform/scheduler/cluster/job ID/submission generation compose the ID; Run/Attempt and platform parent match; reused scheduler number stays distinct |
-| ArtifactVersion | `artifact.schema.json` | cycle/producer parent identity; actual version ID derived from content (path alone is insufficient); Attempt requires Run |
-| ExpectedCycle/ProductExpectation | `expectation.schema.json` | plan ID derived from content, unique cycle/slot IDs, cancelled cycle reason, Run system/purpose/deployment and cycle match |
-| Event | `event.schema.json` + `event-types.json` | role/source authority, association, conditional exit fields, time basis, required evidence, finish set digest and registration context binding; same ID with different content conflicts |
+| DefinitionManifest | definition_manifest.schema.json | definition_id=def_+内容摘要，排除自身ID/摘要；task key唯一、stage/dependency引用、默认参数type/enum |
+| RunContext | run_context.schema.json | definition/expectation引用、展开参数和唯一scope、context摘要、选定expectation的cycle |
+| AttemptContext | attempt_context.schema.json | 父Run摘要、scope内task/参数、task instance重新推导、retry非自身、context摘要 |
+| JobRef | job_ref.schema.json | platform/scheduler/cluster/job ID/submission generation构成身份，父Run/Attempt/platform一致，复用job号仍不同身份 |
+| ArtifactVersion | artifact.schema.json | cycle/producer父身份，版本由实际内容推导而非仅路径，Attempt必有Run |
+| ExpectedCycle/ProductExpectation | expectation.schema.json | 内容推导plan ID，cycle/slot唯一，取消原因，Run的system/purpose/deployment/cycle一致 |
+| Event | event.schema.json及event-types.json | role/source权威、关联、exit条件、时间基准、必要证据、finish集合摘要、注册context绑定；同ID异内容冲突 |
 
-The checked-in helpers validate a **bundle** with one of each document and a list of events. That gives the tests enough parent context to check identities and authority. It is a contract test interface, not a producer or ingest service. A future standalone validator may load immutable parent documents from `SLEDRA_ROOT` using their references. Missing parents must fail validation; it must not search for the latest Run.
+辅助工具验证含各文档及事件列表的bundle，使测试有足够父上下文核对身份和权威。这不是producer/ingest服务。未来独立校验可按不可变引用加载SLEDRA_ROOT父文档；父级缺失必须失败，不能查“最新Run”。
 
-Schema objects are closed with `additionalProperties: false` unless a field explicitly says otherwise. Unrecognized data belongs in the namespaced `extensions` object (`vendor.feature` keys), where each value is an object. Known enum values are closed. Unknown `event_type` values with a valid 1.x envelope are preserved as opaque records, with association and extension data intact; they do not contribute success semantics. `task.success` is reserved and rejected because no one producer can attest to process, engine, product and delivery success together.
+除明确开放字段外，对象additionalProperties=false，已知enum闭合。未知数据置于extensions的vendor.feature命名空间键，每值为对象。有效1.x信封的未知event_type保留为不透明记录，关联和扩展不丢失，不推导成功。task.success保留且拒绝，因为单一producer无法同时证明进程、引擎、产品和交付成功。
 
-Time strings must be RFC3339 with an explicit `Z` or numeric offset. `occurred_at: null` requires `time_quality.reason`; `recorded_at` is never a substitute for the occurrence time. Direct process/stage boundaries require a known occurrence time. `duration_ns` and `lead_seconds` are signed-64-safe integers with explicit units; here they are nonnegative where appropriate. Source `seq` is session-local. `event_id` is UUIDv4 for ordinary facts or `evt_` plus a full SHA256 digest for stable source/registration facts; retransmission preserves the original ID and complete envelope.
+时间须RFC3339并含Z或数值offset。occurred_at=null要求time_quality.reason，recorded_at不能代替发生时间；直接process/stage边界必须有已知发生时间。duration_ns/lead_seconds为单位明确的有符号64位安全整数，适用位置非负。seq只在session内有效；普通event_id为UUIDv4，稳定source/注册为evt_加完整SHA256；重传保持原ID和完整信封。
 
-Evidence references carry an ID, controlled locator, source and availability (`present`/`expired`/`unknown`), with optional digest, byte range, storage generation and retention time. A locator is not proof that a referenced file is still available. `byte_end` must be no earlier than `byte_start`. Submission events must bind both the JobRef ID and submission generation. Artifact validation must bind the exact artifact version. Delivery confirmations must bind the expectation slot, artifact version, artifact ID, recipient and rule version to the selected parent documents. A reused scheduler job number needs a distinct `submission_instance`.
+证据引用含ID、受控locator、source及present/expired/unknown，可选摘要、字节范围、generation和保留时间。locator不证明文件仍在，byte_end不得早于byte_start。提交绑定JobRef与submission generation，artifact绑定精确版本；交付绑定expectation slot、artifact version/ID、recipient、rule version和父文档。复用scheduler job号必须使用不同submission_instance。
 
-## Canonical identity bytes
+## 规范身份字节
 
-1. Parameter names use ASCII snake_case. Parameters are declared in the DefinitionManifest. Missing defaults are expanded before storing Run scope or AttemptContext; an undeclared, missing required, wrong-type or null parameter is rejected. All declared values participate in identity.
-2. Strings and keys normalize to Unicode NFC. JSON objects sort keys lexicographically, omit insignificant whitespace, emit UTF-8 without ASCII escaping, and escape JSON control characters and U+2028/U+2029. Escaped surrogate pairs decode to one Unicode scalar; unpaired surrogates are invalid. Values are exact signed 64-bit integers, strings, booleans or null where schemas allow them; floats and NaN are forbidden, and JSON `-0` canonicalizes to `0`. `"01"` remains a string distinct from integer `1`. The wire format already uses `lead_seconds`: an upstream `0h` and `0s` both convert to integer `0` before validation, while raw unit strings are not valid `lead_seconds` values.
-3. `task_instance_id` is `ti_ + SHA256(length_pack(run_id, task_key, canonical_parameters_as_UTF8))`. `length_pack` concatenates, for each NFC UTF-8 part, its **8-byte unsigned big-endian byte length** then its bytes. No separator or NUL is added.
-4. A Run registry ID is `run_ + SHA256(length_pack(registry_id, "run", deployment_id, launch_token))`. An Attempt registry ID is `att_ + SHA256(length_pack(registry_id, "attempt", task_instance_id, execution_token))`. A JobRef ID is `job_ + SHA256(length_pack(platform_id, scheduler, cluster_id, scheduler_job_id, submission_instance))`. The raw tokens are caller-owned and are not recoverable from the public digest. The same token with changed request content is a conflict, not an occasion to issue another ID. Request SHA256 hashes the canonical normalized request object.
-5. A document's `content_sha256`/`context_sha256` omits only the digest field itself (DefinitionManifest also omits `definition_id`). Artifact and expectation IDs similarly omit only their own ID field. Event canonical hash covers the complete event; raw ingest bytes and byte offsets are separate facts.
+1. 参数名为ASCII snake_case，先在DefinitionManifest声明。默认值在保存scope/context前展开，未声明/缺必需/错类型/null拒绝；所有声明值参与身份。
+2. 字符串与键规范化为Unicode NFC，对象键按字典序排序，省略无意义空白，输出不作ASCII转义的UTF-8，转义控制字符和U+2028/U+2029。成对surrogate解码为单一scalar，孤立surrogate拒绝。值仅使用schema允许的精确有符号64位整数、字符串、bool或null，禁止float/NaN，JSON -0规范为0。字符串"01"与整数1不同。上游0h/0s先转为lead_seconds整数0，原单位字符串不是合法值。
+3. task_instance_id为ti_+SHA256(length_pack(run_id,task_key,canonical_parameters_UTF8))。length_pack对每份NFC UTF-8先写8字节无符号大端字节长度，再写原字节，不添加分隔符/NUL。
+4. Run为run_+SHA256(length_pack(registry_id,"run",deployment_id,launch_token))；Attempt为att_+SHA256(length_pack(registry_id,"attempt",task_instance_id,execution_token))；JobRef为job_+SHA256(length_pack(platform_id,scheduler,cluster_id,scheduler_job_id,submission_instance))。原token归调用方，公开摘要不可恢复。同token异request是冲突，不发新ID；request摘要覆盖规范化请求对象。
+5. content_sha256/context_sha256只排除自身摘要字段，DefinitionManifest还排除definition_id。artifact/expectation ID只排除自身ID；事件canonical hash覆盖完整事件，采集raw bytes/offset是独立事实。
 
-[`golden-vectors.json`](fixtures/1.0.0/golden-vectors.json) gives exact canonical bytes and full IDs/hashes. Fixture inputs are synthetic; [`SHA256SUMS`](fixtures/1.0.0/SHA256SUMS) pins every fixture file. This deliberately avoids GPL historical test strings and real operational logs.
+[golden-vectors.json](fixtures/1.0.0/golden-vectors.json)给出精确字节和完整ID/hash。[SHA256SUMS](fixtures/1.0.0/SHA256SUMS)固定全部合成夹具，不使用历史GPL测试文本或真实运行日志。
 
-## Compatibility matrix
+## 兼容矩阵
 
-| Writer → reader | Handling |
+| 写端 → 读端 | 处理 |
 |---|---|
-| 1.0 → 1.0 | Validate known events and semantics; duplicate identical ID/envelope is a retransmission |
-| Later 1.x → 1.0 | Stable envelope and namespaced extensions remain readable; unknown event types are retained opaque, reported as unsupported semantics, never counted as success |
-| 2.x → 1.x | `unsupported_major`; quarantine with original bytes in a future ingest implementation; do not apply 1.x semantics |
-| Legacy ecFlow log → 1.x | SLD-16 adapter only after source/permission and timezone evidence; observed/inferred provenance retained |
+| 1.0 → 1.0 | 校验已知语义，同ID同完整信封为重传 |
+| 后续1.x → 1.0 | 稳定信封/扩展可读，未知类型保留不透明并报语义不支持，不算成功 |
+| 2.x → 1.x | unsupported_major；未来采集保存原bytes隔离，不套1.x语义 |
+| legacy ecFlow log → 1.x | 来源/许可/时区证据齐备后由16适配，保留observed/inferred来源 |
 
-Adding an optional field is minor only in an already open extension location. A new core enum, required field, unit, identity algorithm or changed meaning needs a new major version or event type. Recorders keep a fixed write version until the reader and replay fixtures are upgraded. The positive future-extension fixture checks that both 1.0 helpers preserve its unknown event object, including extensions.
+新增可选字段只有位于既有开放extension时才是minor；新增核心enum、必需字段、单位、身份算法或语义须新major或event type。读端与回放向量升级前记录端固定write版本；future-extension正例核对未知对象/扩展完整保留。
 
-## CLI and errors
+## CLI与错误
 
-[Help/version and portable defaults](../docs/cli.md) are available without external contracts. Explicit overrides must match the installed contract and have classified resource errors. The SLD-05 Run/Attempt/finish/context commands and SLD-07 `sledra event` command are implemented by [`cmd/sledra`](../recorder/context/README.md). The existing bundle helper is `python3 spec/check.py BUNDLE.json` or `cd recorder && go run ./cmd/sledra-spec-check [-spec-dir DIR] BUNDLE.json`; it returns JSON status on stdout for success and JSON `{ok:false,code,detail}` on stderr for failure. SLD-06 additionally provides a standalone offline [`sledra-event` encoder/validator](../recorder/event/README.md), which does not record to a spool and keeps stdout empty.
+[帮助/版本及默认资源](../docs/source/cli.md)无需外部契约；显式覆盖必须准确兼容。context/lifecycle与sledra event已实现。bundle工具为python3 spec/check.py BUNDLE.json，或recorder/下go run ./cmd/sledra-spec-check [-spec-dir DIR] BUNDLE.json，成功stdout为JSON状态，失败stderr为{ok:false,code,detail}。离线[sledra-event](../recorder/event/README.md)编码/校验不写spool，stdout为空。
 
-| Recorder command | Required input | Output / behavior |
+| 记录命令 | 输入 | 行为 |
 |---|---|---|
-| `sledra registry run-create --request-file FILE --context-out FILE` | JSON request with explicit launch token, registry/deployment/system/cycle, `definition_file`, optional `expectation_file` and scope; `SLEDRA_ROOT` | Empty stdout; atomic immutable Run context at the requested path; identical request reuses winner |
-| `sledra registry attempt-create --context RUN.json --request-file FILE --context-out FILE` | Parent Run, task key/full parameters, execution token, optional `retry_of` | Empty stdout; immutable Attempt context; distinct execution token creates a distinct Attempt |
-| `sledra context validate --file FILE` | Existing context plus immutable parent references under `SLEDRA_ROOT` | Empty stdout; nonzero on invalid/unavailable parent; never emits executable Shell |
-| `sledra event --context ATTEMPT.json --type TYPE --payload-file FILE [--event-id ID] [--strict]` | Existing context, typed JSON payload; producer role from installed configuration, not arbitrary event flag | Empty stdout; business mode records bounded diagnostic and returns 0 on observation failure; `--strict` returns classified error; same-ID retry needs preserved full envelope, as explained in the [spool guide](../recorder/spool/README.md) |
-| `sledra event --context ATTEMPT.json --type attempt.started --invocation-id ID --process-role ROLE` or `--type attempt.exited --process-role ROLE (--exit-code N | --signal N)` | Typed process facts constructed in Go, without Shell JSON assembly | Same event failure policy; the [Shell API](../shell/README.md) captures rc/signal in the owning handler before invoking these forms |
-| `sledra run finish --context RUN.json --scope-file FILE` | Explicit immutable covered Attempt IDs, scope/rule version/reason | Empty stdout; appends a finish declaration; later Attempt remains possible |
+| registry run-create --request-file FILE --context-out FILE | 显式launch token、registry/deployment/system/cycle、definition_file、可选expectation和scope，SLEDRA_ROOT | 空stdout、原子不可变context，相同请求复用赢家 |
+| registry attempt-create --context RUN --request-file FILE --context-out FILE | 父Run、task key/完整参数、execution token、可选retry_of | 空stdout、不可变Attempt，新token创建新尝试 |
+| context validate --file FILE | context及不可变父引用 | 缺失/非法非零，不生成可执行Shell |
+| event --context ATTEMPT --type TYPE --payload-file FILE [--event-id ID] [--strict] | context、类型化payload、部署role | 空stdout，business观测失败有界诊断并返回0，strict返回错误；同ID重传须完整信封 |
+| event --type attempt.started --invocation-id ID --process-role ROLE，或attempt.exited --process-role ROLE (--exit-code N或--signal N) | 配合--context，用Go构造进程事实 | 同事件策略，[Shell](../shell/README.md)先保存rc/signal，不拼JSON |
+| run finish --context RUN --scope-file FILE | 显式不可变covered IDs、scope/rule/reason | 空stdout、追加声明，不禁止后来Attempt |
 
-Recorder failures must be machine-classified on stderr without exposing secrets. Contract helper codes are `duplicate_key`, `schema_invalid`, `semantic_invalid`, `missing_parameter`, `unknown_parameter`, `parent_mismatch`, `unauthorized_event`, `conflicting_event_id`, `unsupported_major`. The SLD-04 Go Registry package classifies `conflict`, `corrupt_record`, `registry_unavailable` and `indeterminate`. The CLI emits classified JSON on stderr and empty stdout; missing or invalid contexts are never replaced by a guessed Run. SLD-07 event recording adds `spool_unavailable`, `spool_full`, `writer_busy` and business/strict failure modes; see the [spool guide](../recorder/spool/README.md). `indeterminate` means retry lookup with the **same** request token, never resubmit the business action. The bundle helper exits 0 on valid bundle and 1 on invalid bundle; its status protocol is independent of the recorder CLI.
+契约错误为duplicate_key、schema_invalid、semantic_invalid、missing_parameter、unknown_parameter、parent_mismatch、unauthorized_event、conflicting_event_id、unsupported_major。Registry另有conflict、corrupt_record、registry_unavailable、indeterminate；事件另有spool_unavailable、spool_full、writer_busy，见[spool](../recorder/spool/README.md)。stderr错误机器分类，不暴露秘密，不通过猜Run替代缺失context。indeterminate只可同token重查，不重跑业务。bundle有效退出0、无效1，协议与记录器独立。
 
-The SLD-06 offline event command returns only a classified code on stderr for failure and empty stdout in both modes. Its additional codes include `limit_exceeded`, `sensitive_field`, `config_invalid`, `config_unavailable`, `input_unavailable`, `output_unavailable`, and `indeterminate`. The `encode` output file is an intermediate artifact, not a recording or ingestion acknowledgment. Event parent-reference checks still require the bundle helper or a later context-aware validator.
+离线event额外错误为limit_exceeded、sensitive_field、config_invalid/config_unavailable、input_unavailable、output_unavailable、indeterminate。encode输出只是中间产物，非记录或确认；父引用仍需bundle或context验证。
 
-## Development entry and evidence
+## 开发入口与证据
 
-The tested local toolchain is WSL2 x86_64, Go `1.27.0`, Python `3.12.3`, Bash `5.2.21`, `uv` `0.11.2`, `jsonschema` `4.10.3`. The recorder helper module is `github.com/cemc-oper/sledra/recorder` with pinned Go modules in [`go.mod`](../recorder/go.mod) and [`go.sum`](../recorder/go.sum); Python's direct test dependency is in [`requirements-test.txt`](requirements-test.txt). No Python runtime dependency is added to the future recorder. The module path follows the configured GitHub origin. Distribution license, deployment platform and static recorder qualification remain later decisions.
+本地工具链为WSL2 x86_64、Go1.27.0、Python3.12.3、Bash5.2.21、uv0.11.2、jsonschema4.10.3。Go module为github.com/cemc-oper/sledra/recorder，依赖固定于[go.mod](../recorder/go.mod)/[go.sum](../recorder/go.sum)，窄Python依赖为[requirements-test.txt](requirements-test.txt)。未增加记录器Python运行依赖；发行/平台资格继续单列。
 
-From the Sledra root, `make setup` prepares locked developer dependencies and `make check` / `make test` run the unified offline checks. See [development](../docs/development.md) for caches and build reuse. The individual repeatable checks also remain available:
+源码根setup准备缓存，check/test离线运行，详见[开发](../docs/source/development.md)。单项入口仍可用：
 
 ```bash
 python3 spec/build_contract.py
@@ -74,4 +74,4 @@ cd recorder && GOPROXY=off GOSUMDB=off go test ./...
 cd recorder && GOPROXY=off GOSUMDB=off go build -o /tmp/sledra-spec-check ./cmd/sledra-spec-check
 ```
 
-The build helpers regenerate checked-in JSON; reviewers can compare bytes before and after. `verify.py` builds the Go helper with network module lookup disabled, runs every checked-in synthetic case through both implementations, compares classifications and complete successful outputs, verifies source SHA256 and golden identities. There is no scheduler submission, production workflow execution, recorder event write, Python ingest or HPC platform claim in SLD-02.
+build_contract/build_fixtures会显式重生成提交的JSON，仅在有意更新时运行并审查前后字节；普通check在副本中执行。verify离线构建Go helper，比较每个合成例的分类/成功输出、夹具摘要与golden身份。SLD-02不提交scheduler、执行生产流程、写记录事件、启动Python ingest或证明HPC资格。

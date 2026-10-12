@@ -1,29 +1,25 @@
 # Sledra
 
-Sledra records workflow Run and Attempt identities, immutable contexts and process events without coupling the business payload to an analysis service. The current local implementation provides a Go recorder, a thin Bash API and synthetic examples. Observation failures preserve the payload's output and exit behavior in the tested owner-hook profile.
+Sledra 为工作流保存可追溯的运行事实。当前提供独立 Go 记录器、Bash 生命周期钩子、版本化 JSON 契约、合成示例和 Linux 本地试用包。
 
-## Current capabilities
+M1 独立记录与 M1.5 工程化的本地验收已完成。离线分析、查询、真实采集确认及透明 `sledra exec` supervisor 尚未实现；下一阶段为 M2。
 
-The recorder provides atomic Run/Attempt registration, context validation, canonical event encoding, session JSONL spools, capacity guards and explicit Run finish declarations. A frozen [M1 handoff](tests/m1/README.md) exercises normal execution and failure followed by retry. The contract is a **1.0.0 development draft**.
+## 项目结构
 
-Analysis, queries, real ingestion acknowledgements and a transparent `sledra exec` supervisor are future work. The retention helper is a [test fixture](recorder/retention/README.md), unsuitable for production cleanup.
-
-## Components and deployment
-
-| Directory | Purpose and placement |
+| 目录 | 用途 |
 |---|---|
-| [recorder](recorder/) | Go module `github.com/cemc-oper/sledra/recorder`; build the `sledra` binary for the execution host |
-| [shell](shell/README.md) | Bash functions sourced by a known lifecycle owner |
-| [spec](spec/README.md) | Portable schemas, event catalog, canonical identity rules and synthetic vectors |
-| [examples/standalone](examples/standalone/README.md) | Synthetic payload with explicit owner hooks |
-| [tests](docs/testing-local.md) | Contract, Go, Shell, M1 and local filesystem checks |
-| [docs](docs/README.md) | User and developer documentation usable from an independent source copy |
+| [recorder](recorder/context/README.md) | Go 记录器：Registry、context、事件、spool 和隔离保留夹具 |
+| [shell](shell/README.md) | 由明确的生命周期 owner 调用的 Bash API |
+| [spec](spec/README.md) | 1.0.0 契约草案、生成脚本和合成正反例 |
+| [examples](examples/standalone/README.md) | 独立示例与 HPC 站点模板 |
+| [tests](docs/source/testing-local.md) | 契约、Go、Shell、M1 和本地文件系统回归 |
+| [docs](docs/README.md) | Sphinx + PyData Sphinx Theme + MyST-NB 中文文档 |
 
-Install resources separately from runtime data. Registry, contexts, documents and spool files live under one explicit `SLEDRA_ROOT`. A shared/HPC deployment requires qualification of the actual target filesystem; current evidence covers local WSL/ext4 and explicitly reported tmpfs measurements only. No `analysis/` package exists yet.
+安装资源与运行数据分开放置。Registry、context、document、finish 和 spool 共用显式的 `SLEDRA_ROOT`。当前证据覆盖 WSL/ext4 和明确登记的 tmpfs 测试；共享/HPC 部署仍需验证目标文件系统。
 
-## Quick start
+## 源码快速开始
 
-Install the [development toolchains](docs/development.md#toolchains), then run from this repository root:
+先安装[开发工具链](docs/source/development.md#工具链)，再从仓库根目录执行：
 
 ```bash
 make setup
@@ -33,25 +29,27 @@ make test
 make demo
 ```
 
-Setup is the explicit network step and works with empty dependency caches. Daily targets disable dependency network queries and reuse `build/bin/` tools. The synthetic demo verifies normal execution and failure/retry, then exports and replays a fresh handoff in a unique `test-results/` directory. See [quickstart](docs/quickstart.md) for a manual Bash owner example and [local testing](docs/testing-local.md) for detailed regression commands.
+`make setup` 是显式联网步骤，支持空依赖缓存。日常命令使用已准备的缓存离线运行，不提交 HPC 作业。构建产物位于 `build/bin/`，每次检查、测试或演示的日志与摘要保存在独立的 `test-results/` 子目录。
 
-## Installation and testing
-
-Source builds and a Linux local trial archive are available. To build and accept the native trial after setup:
+## 安装与试用
 
 ```bash
 make package
 make test-package
 ```
 
-[Installation](docs/installation.md) covers `make package`, isolated `make test-package` and user-directory use. `make help` lists the current targets, dependencies and outputs. [Development](docs/development.md) explains locked setup, offline source builds, reports and the separate `make benchmark` measurement. The [CLI guide](docs/cli.md) covers environment-free help/version, embedded default contracts and explicit compatible overrides.
+[安装指南](docs/source/installation.md)说明试用包校验、用户目录安装、独立运行和隔离验收。[CLI 指南](docs/source/cli.md)说明帮助、版本、默认内嵌契约及兼容资源覆盖。`make help` 显示公共入口。
 
-## Documentation and limits
+## 中文文档
 
-Start with the [documentation index](docs/README.md), [architecture](docs/architecture.md), [configuration](docs/configuration.md) and [contract source policy](docs/contracts.md). The [name and path migration](docs/migration.md) explains old names in historical evidence.
+```bash
+make setup
+make docs
+python3 -m http.server --directory build/docs/html 8000
+```
 
-Local passing tests do not establish HPC qualification, approved performance budgets or permission for a public release. License selection remains open. M1 recording is complete locally; M1.5 has completed its engineering/local exit; M2 will add offline analysis, M3 integration, and M4 business reports and delivery qualification.
+在浏览器打开 `http://localhost:8000`。文档源码位于 `docs/source/`，HTML 生成到 `build/docs/html/`；构建将警告视为错误，不自动执行 Notebook。文档依赖只用于开发，不成为 Go/Bash 记录器的运行依赖。仅构建文档的依赖安装方法见[文档维护](docs/source/documentation.md)。
 
-Local and compute-node test tools share [binary, spec, work and report parameters](docs/testing-hpc.md). `make test-platform` exercises single-node primitives and the local two-role harness; [site templates](examples/hpc/README.md) prepare reviewable jobs without submitting them. Real HPC qualification remains unverified.
+从[文档首页](docs/source/index.md)、[架构](docs/source/architecture.md)和[配置](docs/source/configuration.md)了解当前实现。[CI](docs/source/ci.md)、[支持矩阵](docs/source/support.md)、[版本规则](docs/source/versioning.md)及[工程交接](docs/source/engineering-handoff.md)区分本地通过与远端/平台未验证状态。问题联系入口为 [Issues](https://github.com/cemc-oper/sledra/issues)。
 
-Contact maintainers through [Issues](https://github.com/cemc-oper/sledra/issues). The [CI guide](docs/ci.md), [support matrix](docs/support.md), [versioning policy](docs/versioning.md) and [engineering handoff](docs/engineering-handoff.md) separate verified local behavior from pending remote/platform/release branches.
+真实 HPC、跨计算节点、批准的性能预算和公开发行资格仍未验证。原始契约和冻结 M1 样本继续保持兼容性约束。历史名称与路径见[迁移说明](docs/source/migration.md)。

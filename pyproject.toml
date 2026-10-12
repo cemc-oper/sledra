@@ -1,14 +1,20 @@
 [project]
 name = "sledra-development"
 version = "0.0.0"
-description = "Development and verification tools for the Sledra recorder"
+description = "Sledra 记录器的开发、文档与验证工具"
 requires-python = ">=3.12"
 dependencies = []
 
 [dependency-groups]
 dev = [
+    { include-group = "docs" },
     "jsonschema==4.10.3",
     "ruff==0.16.9",
+]
+docs = [
+    "sphinx>=8,<10",
+    "pydata-sphinx-theme>=0.16,<0.23",
+    "myst-nb>=1,<2",
 ]
 
 [tool.uv]

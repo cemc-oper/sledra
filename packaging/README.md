@@ -1,6 +1,6 @@
-# Local trial packaging
+# 本地试用包
 
-`make package` builds a local Linux trial from the current source using the shared build recipe, then emits a tar.gz, detached manifest and archive checksum in `dist/`. `make test-package` checks the existing artifact; it does not rebuild a broken or missing package. See [installation](../docs/installation.md) for use and verification.
+make package用共享构建配方生成Linux试用tar.gz、独立manifest和摘要，位于dist/。test-package验证已有产物，不重建缺失/损坏包。使用方法见[安装](../docs/source/installation.md)。
 
 ```text
 sledra-<software-label>-linux-<arch>/
@@ -19,12 +19,10 @@ sledra-<software-label>-linux-<arch>/
     └── test-tools/{verify.py,package_tools.py,bin/}
 ```
 
-The installed Python verifier reuses M1 assertions with an explicit precompiled recorder path. Test helpers are sledra-spec-check and sledra-event; sledra-retention and sledra-spool are omitted. No Go source, module cache, virtual environment, analysis package or Python third-party library ships.
+安装校验器以显式预编译bin复用M1。仅bin/sledra是记录入口，测试helper为spec-check/event，省略retention/spool；不带Go源码、缓存、虚拟环境、analysis或Python第三方库。
 
-The build defaults to software label dev, supports linux/amd64 and linux/arm64, and records actual ELF headers/linkage. All binaries must have no PT_INTERP or DT_NEEDED entries. CGO_ENABLED=0 is a build setting, separately checked against actual ELF bytes. A package manifest leaves runtime validation unverified; the acceptance report records an actual native run. Cross-compilation alone never qualifies a target.
+默认dev，支持amd64/arm64构建，逐ELF核对架构及无PT_INTERP/DT_NEEDED，独立验证CGO_ENABLED=0实际结果。manifest运行状态先标未验证，acceptance记录实际native执行，交叉构建不算资格。
 
-Payload file size/mode/SHA-256 entries are in manifest.json. SHA256SUMS also hashes the manifest; the detached .tar.gz.sha256 hashes the archive. Archive ownership and timestamps are normalized. With unchanged inputs, cached build provenance and package bytes repeat; SOURCE_DATE_EPOCH supplies reproducible embedded build time. Content changing under the same software label replaces that local ignored artifact deliberately. This is not a signed public distribution.
+manifest记录文件size/mode/SHA；SHA256SUMS包含manifest，独立.tar.gz.sha256覆盖archive。archive owner/时间规范化，输入/缓存来源不变时字节可重复；SOURCE_DATE_EPOCH固定内嵌时间。同标识新内容会替换本地忽略产物，不是签名发行。
 
-Third-party license files come from the modules actually linked into these binaries and the installed Go toolchain. Sledra's own release license remains undecided; the local trial manifest records that status. No old reference implementation is copied. Public release, upgrade/rollback qualification and real HPC deployment remain later work.
-
-Trial payloads also carry shared test-session support, M1 timing, Shell assertions, single-node primitives, the two-role harness and Slurm site preparation templates. The [HPC guide](../docs/testing-hpc.md) records their dependencies and qualification scope. Package integrity covers these tools as well.
+第三方现有许可文本来自实际链接模块和Go工具链，manifest如实记录项目许可未决；不复制旧reference实现。完整发行/升级回滚/HPC属后续工作。包还包含test session、M1/Shell/性能、原语、双角色、Slurm准备工具，依赖及边界见[HPC指南](../docs/source/testing-hpc.md)，全部纳入完整性校验。

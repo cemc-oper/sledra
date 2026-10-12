@@ -1,13 +1,13 @@
-# Site test templates
+# 站点测试模板
 
-`site.example.json` is an input template, not a verified site configuration. Copy it to a new user-owned file and supply the scheduler, partition, account, Python, installation/test-home paths, explicit shared work parent and report parent. This implementation supports Slurm; another scheduler needs a site adapter. All paths must exist and must be identically visible on both compute nodes. Python >=3.12, Bash >=5.2 and basic example utilities are test dependencies; Go is unnecessary with an explicit recorder binary.
+site.example.json只是输入模板，复制到新的用户文件后补scheduler、partition、account、Python、安装/test-home、共享work父根和report父根。当前仅支持Slurm，其他scheduler需适配。路径必须已存在且两计算节点同位置可见。测试需Python>=3.12、Bash>=5.2及示例工具；显式bin不需Go。
 
 ```bash
 python3 examples/hpc/site.py --config /absolute/path/to/site.json
 ```
 
-Preparation creates a unique report directory, a unique shared test child and a rendered `job.sh`. It prints the submission and collection commands; it does not submit. Review the generated job before running the printed `sbatch` command in the site's test window. The job runs two roles with one task per node, bounded barriers and a configured timeout. Collect after completion even if the job failed. Missing nodes return nonzero and retain the prepared tree and available results. Keep scheduler job ID, allocation/node information, logs and archive checksum beside the report.
+准备生成唯一report、共享测试子目录和job.sh，打印提交/收集命令，不自动提交。站点窗口内审查job后再执行打印的sbatch。每节点一个task运行双角色，有界barrier及timeout；完成后即使失败也收集，失联非零退出并保留树/已有结果。报告旁保存job ID、allocation/node、日志和archive摘要。
 
-For a single node, invoke `tests/platform/probe.py`, `tests/m1/verify.py`, `tests/shell/verify.py` and optionally `tests/m1/benchmark.py` with `--mode hpc --bin ... --work-root ... --report-dir ... --keep-work`. Each report directory must be new. Run these on a compute node, not the login node, according to site policy. Details and the manual two-role procedure are in the repository `docs/testing-hpc.md` or the installed copy under `share/sledra/docs/`.
+单节点可用probe、M1、Shell及可选benchmark，加--mode hpc --bin/--work-root/--report-dir/--keep-work，每个report须新建；按站点策略在计算节点执行。手动双角色流程见源码docs/source/testing-hpc.md，安装版位于share/sledra/docs/testing-hpc.md。
 
-No template, login-node run or local simulation certifies shared storage, scheduling, MPI, signals, power-loss durability or an A6 performance budget.
+模板、登录节点运行或本地模拟不证明共享存储、调度、MPI、signal、断电持久性或A6预算达标。

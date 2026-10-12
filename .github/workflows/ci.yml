@@ -65,6 +65,8 @@ jobs:
         run: make setup
       - name: Static and generated-resource checks
         run: make check
+      - name: Build Chinese documentation with warnings treated as errors
+        run: make docs
       - name: Recorder and frozen-handoff regressions
         run: make test
       - name: Single-node primitives and local two-role harness

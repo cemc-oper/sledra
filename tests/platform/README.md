@@ -1,9 +1,9 @@
-# Platform probes and node harness
+# 平台探针与节点工具
 
-See [common parameters and HPC workflow](../../docs/testing-hpc.md) for source/installed invocations, dependencies and scoped reports. `make test-platform` runs the single-node probe and the local two-role harness with an existing shared development binary. `make test` covers parallel isolation, owned cleanup, missing-node deadlines, foreign architecture and missing dependency reports.
+[公共参数与HPC流程](../../docs/source/testing-hpc.md)说明源码/安装调用、依赖及报告边界。test-platform以共享开发bin运行单节点原语和本地双角色；test覆盖并发隔离、owner清理、失联时限、错误架构与缺依赖报告。
 
-`probe.py` still accepts `--parent` as a legacy alias for `--work-root`. Always use a new `--report-dir`; do not overwrite the [historical WSL2 result](results/wsl2-ext4-2026-10-11.json). Version 2 reports include raw filesystem latency samples, actual recorder ELF/version startup measurements and actual work mount information. The test tree remains bounded to 200 files and 10 MiB excluding any externally supplied recorder. Go cache costs are outside the test tree.
+probe仍将--parent作为work-root别名。使用新的report-dir，不覆盖[历史WSL2结果](results/wsl2-ext4-2026-10-11.json)。v2报告含文件系统原始延迟、实际ELF/version启动和真实mount。测试树除外部bin外限制200文件/10MiB，Go缓存不在树中。
 
-`cross_node.py` offers prepare, worker, collect and local simulate commands. Registry/context/spool share one newly owned test tree, with the same absolute context read by both roles. Atomic barriers have deadlines; results preserve role commands, nodes, mount metadata, registration timings, flock exclusion/release and spool visibility. Local simulation is not real cross-node evidence. Prepared/failed trees are retained; each role can be claimed only once.
+cross_node提供prepare/worker/collect/本地simulate。Registry/context/spool共用新拥有的测试树，两角色校验相同绝对context，有界原子barrier。结果保存命令、节点/mount、登记时间、flock排斥/释放与spool可见性。角色只领取一次，准备/失败树保留；模拟不是真实跨节点。
 
-A synthetic pass qualifies only the observed operations on the named mounts and nodes. Real shared/HPC storage, power-loss durability, scheduler signals, MPI and A6 budgets remain separate unverified branches until site evidence exists.
+合成通过只验证指定mount/节点的操作，不证明共享HPC、断电、scheduler信号、MPI或A6预算。

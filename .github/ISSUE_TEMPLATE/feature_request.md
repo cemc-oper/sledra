@@ -1,19 +1,19 @@
 ---
-name: Feature request
-about: Describe a behavior change and its acceptance evidence
+name: 功能建议
+about: 描述行为变化及验收证据
 labels: ''
 ---
 
-## Problem and proposed behavior
+## 问题与预期行为
 
-Describe the user action, current limitation and desired result.
+说明用户操作、当前限制和希望达到的结果。
 
-## Scope and compatibility
+## 范围与兼容性
 
-- Affected recorder/Shell/test/future-analysis components:
-- Identity, event-byte, configuration and business-payload compatibility:
-- Related issue or SLD task:
-- Synthetic acceptance cases:
-- Required platform/HPC evidence and remaining unknowns:
+- 受影响的 recorder/Shell/test/未来 analysis 组件：
+- 身份、事件字节、配置和业务 payload 兼容性：
+- 关联 Issue 或 SLD 任务：
+- 合成验收场景：
+- 所需平台/HPC 证据及未知项：
 
-The current recorder does not implement analysis or real ingestion acknowledgements. See the [support matrix](../../docs/support.md) for scope and validation limits.
+当前记录器尚未实现分析或真实采集确认，范围见[支持矩阵](../../docs/source/support.md)。

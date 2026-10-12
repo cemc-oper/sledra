@@ -1,14 +1,14 @@
-# SLD-04 file Registry foundation
+# 文件 Registry（SLD-04）
 
-`Registry.Register` accepts a completed RunContext or AttemptContext, the registry namespace, the parent identity and a caller-owned request token. It verifies the public context schema, context digest, token digest and deterministic ID before touching the registry path. The [SLD-05 context service](../../context/README.md) constructs contexts, validates their full parent/scope semantics and exposes the `sledra registry run-create` / `attempt-create` commands. This package does not submit work or create an identity when an event is emitted.
+Registry.Register 接收完成的 Run/Attempt context、命名空间、父身份和调用方 token，在操作路径前校验 schema、context/token 摘要和确定性 ID。[context 服务](../../context/README.md)负责父级/scope 语义及公开 CLI；Registry 不提交业务，也不在事件产生时补身份。
 
-Authority path: `SLEDRA_ROOT/registry/<sha256(registry_id)>/<run|attempt>/<first two ID hex digits>/<id>.json`. The path is derived only from a full ID and a registry namespace; cycle is not in the Run key. The root must already exist as a real absolute directory on a filesystem qualified for hardlink create-if-absent and directory fsync.
+权威路径为 SLEDRA_ROOT/registry/<sha256(registry_id)>/<run|attempt>/<ID前两位hex>/<id>.json，只由完整 ID 和 namespace 推导，cycle 不进入 Run key。根必须是支持 hardlink create-if-absent 和目录 fsync 的真实绝对目录。
 
-Each authority file is canonical UTF-8 JSON with a closed internal field set: schema/object kind, registry/parent/identity, token and normalized registration-request SHA256 hashes, complete public context and its SHA256, creation time/role, complete `run.registered` or `attempt.registered` outbox event, and a full record SHA256. The raw request token is never stored. The stable `evt_` event ID is derived from the registration identity and event type; a duplicate returns the **winner's exact record**, including its original timestamp and event envelope. There is no separate outbox write to lose.
+记录是闭合字段集的规范 UTF-8 JSON，包含对象种类、registry/parent/identity、token 和规范 request 摘要、完整 context/摘要、创建时间/role、完整注册 outbox 与记录摘要；不存原 token。evt_ ID 由注册身份和类型推导，重复请求返回赢家原记录、时间及事件；没有单独可能丢失的 outbox 写入。
 
-The publication sequence is: create/fsync the directory chain; create a mode-0600 temporary file in the target directory; write and fsync the complete record; hardlink it to the authority path without replacement; fsync that directory; remove the temporary name and fsync again. Losers also fsync the directory before reading the winner. A changed request for the same key returns `conflict`; malformed/changed authority returns `corrupt_record` and is never overwritten. Failures before publication return `registry_unavailable`; uncertain link or post-link sync/acknowledgment failures return `indeterminate`. Both are observational errors; a caller must retry lookup with the **same token**, never re-submit business work. The separate `CleanupStaleTemps` method removes old orphan names, including a published record's old temporary hardlink, without deleting an authority file.
+发布依次创建/fsync 目录链，写/fsync 同目录0600临时文件，hardlink 不替换发布，fsync 目录，删除临时名并再次 fsync。输家在读赢家前也 fsync。异请求为 conflict，权威损坏为 corrupt_record，不覆盖；发布前错误为 registry_unavailable，不确定 link 或发布后同步/确认失败为 indeterminate。观测错误只允许同 token 重查，不能重提业务。CleanupStaleTemps 清理旧孤儿临时名/旧临时硬链接，不删除权威文件。
 
-Run on the qualified local WSL/ext4 development volume:
+本地 WSL/ext4 验证：
 
 ```bash
 cd recorder
@@ -17,4 +17,4 @@ GOPROXY=off GOSUMDB=off go test -race ./internal/registry -count=1
 GOPROXY=off GOSUMDB=off go vet ./...
 ```
 
-Tests use only temporary directories and the checked-in SLD-02 synthetic fixture. They cover 100 same-token and 100 distinct-token concurrent registrations for **both** Run and Attempt, independent processes, conflict/corruption, deterministic golden IDs, every publication fault point, abrupt process exit and stale temporary cleanup. These results qualify this package for the tested local filesystem only. Cross-node locks/visibility, power loss, shared/HPC mounts, production context construction and recorder overhead need later evidence.
+临时目录和合成输入覆盖 Run/Attempt 各100个同 token及不同 token竞争、独立进程、冲突/损坏、golden ID、全部发布故障点、进程退出和临时名清理。只说明实测本地操作，跨节点/共享卷、断电持久性、生产 context 和开销需独立证据。

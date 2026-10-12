@@ -294,6 +294,24 @@ def suite(action: str) -> bool:
             report.stage("generated-contracts", python_command("scripts/check_contracts.py"))
             report.stage("docs", python_command("scripts/check_docs.py"))
             report.stage("workflow", [sys.executable, str(ROOT / "scripts/check_ci.py")])
+        elif action == "docs":
+            report.stage("links", python_command("scripts/check_docs.py"))
+            report.stage(
+                "sphinx-html",
+                python_command(
+                    "-m",
+                    "sphinx",
+                    "-n",
+                    "-W",
+                    "--keep-going",
+                    "-E",
+                    "-a",
+                    "-b",
+                    "html",
+                    "docs/source",
+                    "build/docs/html",
+                ),
+            )
         elif action == "package":
             report.stage("package", [sys.executable, str(ROOT / "scripts/package_trial.py")])
         elif action == "test-package":
@@ -403,6 +421,7 @@ def main() -> int:
             "package",
             "test-package",
             "test-platform",
+            "docs",
         ),
     )
     action = parser.parse_args().action
@@ -410,19 +429,20 @@ def main() -> int:
         parser.error("development commands require Python >=3.12")
     if action == "help":
         print(
-            "Sledra development targets (run from repository root):\n"
-            "  make setup      Online: sync uv.lock, Go modules and pinned CI validator\n"
-            "  make build      Offline: build/reuse five tools in build/bin; build/manifest.json\n"
-            "  make check      Offline: lock, format, lint, vet, Bash, contract bytes, docs, workflow\n"
-            "  make test       Offline: Go, engineering, contract, portable CLI, Shell, M1, frozen replay\n"
-            "  make demo       Offline: isolated synthetic normal/failure/retry, export and replay\n"
-            "  make benchmark  Offline: separate raw timing samples and statistics (default 20)\n"
-            "  make test-platform Single-node primitives and local two-role simulation\n"
-            "  make package    Offline: build a Linux trial archive, manifest and checksums\n"
-            "  make test-package Verify the existing archive without source, Go or runtime network\n"
-            "Dependencies: Python >=3.12, uv >=0.11.2, Go >=1.25.0, Bash >=5.2, GNU Make >=4.0\n"
-            "Reports/demos/benchmarks: unique directories under test-results/; trial archives in dist/\n"
-            "Offline source builds require setup caches. Package tests also require bwrap and ldd."
+            "Sledra 开发入口（从仓库根目录执行）：\n"
+            "  make setup      联网同步 uv.lock、Go 模块和固定工作流校验器\n"
+            "  make build      离线构建/复用五份工具，输出到 build/bin\n"
+            "  make check      离线检查锁文件、格式、静态规则、契约、链接与工作流\n"
+            "  make docs       离线严格构建中文文档，输出到 build/docs/html\n"
+            "  make test       Go、工程、契约、CLI、Shell、M1 与冻结回放\n"
+            "  make demo       隔离的正常/失败/重试示例及新快照回放\n"
+            "  make benchmark  独立原始性能样本与统计，默认20组\n"
+            "  make test-platform 单节点原语与本地双角色模拟\n"
+            "  make package    离线生成 Linux 试用包、清单和校验和\n"
+            "  make test-package 验收已有包，隔离原源码、Go 和运行网络\n"
+            "依赖：Python>=3.12、uv>=0.11.2、Go>=1.25.0、Bash>=5.2、GNU Make>=4.0\n"
+            "独立日志/报告：test-results/；试用包：dist/；文档：build/docs/html/\n"
+            "离线源码构建需先 setup；隔离包测试另需 bwrap 和 ldd。"
         )
         return 0
     try:

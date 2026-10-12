@@ -1,12 +1,12 @@
-# Offline event codec (SLD-06)
+# 离线事件编码（SLD-06）
 
-`event.New(installedRole)` compiles embedded copies of the public `1.0.0` event envelope and 24-type catalog. `Codec.Encode(Envelope)` and `Codec.Validate([]byte)` use the same validation path and return canonical JSON with one trailing LF. The Go test compares both embedded resources byte-for-byte with `spec/1.0.0`. `NewID()` generates an ordinary UUIDv4; persist the emitted bytes and reuse the entire event on retransmission. Registration/source-stable `evt_` IDs come from their owner, not this generator.
+event.New(installedRole) 编译内嵌 1.0.0 信封与24类事件目录。Encode/Validate 使用同一校验路径，输出规范 JSON 加一个 LF；Go 测试逐字节核对 embed 与 canonical。NewID 生成 UUIDv4，重传须保存并重用完整事件字节；稳定 evt_ ID 由注册/source owner 生成。
 
-The codec checks the envelope, known payload schema, installed producer role, source kind, association level, time/exit/finish rules, size and UTF-8/duplicate-key limits. It strips raw validation details from returned errors, rejects obvious secret keys, control characters and raw absolute/home/traversal/`file://` paths, and preserves unknown 1.x event types and namespaced extensions as opaque canonical JSON. Known payload schemas are closed. Producers remain responsible for redacting allowed string values and using approved locator aliases. A field denylist cannot detect every secret hidden in allowed values.
+校验器核对信封、已知 payload schema、部署 role、source kind、关联层次、时间/exit/finish、大小、UTF-8 与重复键。错误去除原始校验细节，拒绝明显敏感键、控制字符和原始绝对/home/traversal/file:// 路径；保留未知 1.x 事件和 namespaced extensions 为不透明规范 JSON。已知 payload 是闭合 schema；producer 仍负责允许值脱敏和受控 locator，字段拒绝列表无法发现所有值中的秘密。
 
-`Codec.Validate` does not load Run/Attempt/Job/Artifact/Expectation parent documents. Identity bindings that need those parents must also pass the SLD-02 bundle checker now, then the SLD-05 context lookup in the recorder. Opaque events never establish success. Major 2.x is rejected. The codec writes no event; the [SLD-07 spool](../spool/README.md) owns persistence and the business/strict failure mode.
+Validate 不读取 Run/Attempt/Job/Artifact/Expectation 父文档。依赖父级的身份绑定须经 bundle checker 或记录器的 context 验证；不透明事件不代表成功，2.x 拒绝。编码不持久化，写入和 business/strict 策略由 [spool](../spool/README.md)负责。
 
-The standalone command is an offline encoding stage, separate from the implemented `sledra event` recording command:
+独立命令属于离线编码阶段，与 sledra event 记录命令分开：
 
 ```bash
 cd recorder
@@ -15,6 +15,6 @@ GOPROXY=off GOSUMDB=off go build -o /tmp/sledra-event ./cmd/sledra-event
 /tmp/sledra-event encode -config /path/to/installed-role.json -input /path/to/event.json -output-dir /path/to/existing-dir
 ```
 
-The config is JSON such as `{"producer_role":"process_owner"}` and is provisioned by the deployment, not supplied as a role on each event. `encode` atomically creates `<event_id>.json` with mode 0600 under the existing directory. Identical retries succeed; a different event with that ID returns `conflicting_event_id`. Both commands keep stdout empty. Errors are classified as a single JSON object on stderr with nonzero exit status and no input content. The output file is an offline artifact, not a spool segment or ingestion acknowledgment. The caller must choose a trusted directory; the command rejects directory symlinks in its path.
+配置由部署提供，如 {"producer_role":"process_owner"}，不允许每次事件任意覆写 role。encode 在已有目录原子创建 0600 的 <event_id>.json，相同字节重试成功，异内容为 conflicting_event_id。stdout 为空，失败 stderr 单条分类 JSON、非零退出、不含输入内容。输出文件不是 spool 或采集确认，目标目录须可信且路径不能含目录软链接。
 
-Run `python3 spec/verify_event.py` at the repository root for the Go/Python byte comparison over synthetic fixtures. Build/runtime use embedded resources and no network; parent-document and shared/HPC checks belong to later tasks.
+源码根运行 python3 spec/verify_event.py 比较 Go/Python 字节和错误分类。
