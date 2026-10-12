@@ -37,7 +37,7 @@ make demo
 make benchmark
 ```
 
-The [M1 guide](../tests/m1/README.md) describes the normal/failure/retry demonstration, frozen handoff and separate timing probe. Demo and benchmark write new report artifacts rather than replacing historical data. The [platform probe](../tests/platform/README.md) requires a writable test parent and establishes only local filesystem primitives; save new platform results separately. Public HPC parameters and reports belong to SLD-32.
+The [M1 guide](../tests/m1/README.md) describes the normal/failure/retry demonstration, frozen handoff and separate timing probe. Demo and benchmark write new report artifacts rather than replacing historical data. The [platform probe](../tests/platform/README.md) requires a writable test parent and establishes only local filesystem primitives; save new platform results separately. The common parameters, installed test tools and HPC report scope are described in [HPC testing](testing-hpc.md). `make test-platform` runs single-node primitives and the local two-role simulation; `make test` includes isolation/lost-worker/preflight regressions.
 
 ## Authoring source review
 

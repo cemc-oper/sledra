@@ -15,7 +15,7 @@ Install these tools before setup. Minimum versions are the supported development
 | GNU Make | 4.0 | 4.3 |
 | Platform | Linux with the required filesystem primitives | WSL2 x86_64, ext4 |
 
-The timing probe also uses `findmnt` from util-linux. Actual shared/HPC qualification remains separate. You can select the bootstrap interpreter with `make PYTHON=/path/to/python3 ...`, the uv executable with `UV=/path/to/uv`, and the project interpreter with `UV_PYTHON=/path/to/python3`.
+The platform probe uses `findmnt` from util-linux; Shell assertions use `grep`. Actual shared/HPC qualification remains separate. You can select the bootstrap interpreter with `make PYTHON=/path/to/python3 ...`, the uv executable with `UV=/path/to/uv`, and the project interpreter with `UV_PYTHON=/path/to/python3`.
 
 ## Online preparation
 
@@ -57,3 +57,5 @@ Do not overwrite the frozen M1 or historical platform/timing reports during dail
 ## Source and package modes
 
 Source development requires the tools above and prepared Python/Go dependencies. The [precompiled local trial](installation.md) requires the target binary and Bash for recording; its synthetic example also uses dirname/cat/sleep. Standard-library Python verification is separate. `make package` and `make test-package` deliver and accept the local trial, without claiming full offline release/upgrade qualification. The recorder embeds its default contract; [CLI help/version](cli.md) and [configuration](configuration.md) describe portable calls and explicit runtime paths.
+
+`make test-platform` runs the single-node primitives and local cross-node simulation. Individual source/installed scripts share [binary, spec, work, report and retention parameters](testing-hpc.md); compute-node mode requires an explicit work parent.

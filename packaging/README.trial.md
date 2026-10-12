@@ -41,3 +41,5 @@ This checks the manifest, executable architecture/linkage, binary version, norma
 Only `bin/sledra` is a recording entry point. The helpers under `share/sledra/test-tools/bin` validate synthetic inputs; they are not additional production services. The fixture-only retention cleaner is omitted. Architecture labels describe executable format; consult the separate acceptance report for actual execution evidence. A cross-compiled archive is unverified until run on its named platform. Target shared/HPC filesystem qualification remains separate.
 
 See `share/sledra/docs/runtime.md` for paths and output behavior.
+
+Standard-library M1, Shell, timing and platform tools are included under `share/sledra/tests/`. See `share/sledra/docs/testing-hpc.md` and `share/sledra/examples/hpc/` for explicit binary/shared-work/report parameters and site preparation. Local simulation does not qualify HPC.

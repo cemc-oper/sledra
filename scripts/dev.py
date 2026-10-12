@@ -306,6 +306,36 @@ def suite(action: str) -> bool:
             )
         else:
             report.stage("build", [sys.executable, str(ROOT / "scripts/dev.py"), "build"])
+            if action == "test-platform":
+                report.stage(
+                    "platform",
+                    python_command(
+                        "tests/platform/probe.py",
+                        "--bin",
+                        str(BIN / "sledra"),
+                        "--work-root",
+                        str(report.directory),
+                        "--report-dir",
+                        str(report.directory / "primitives"),
+                        "--samples",
+                        "10",
+                    ),
+                )
+                report.stage(
+                    "cross-node-simulation",
+                    python_command(
+                        "tests/platform/cross_node.py",
+                        "simulate",
+                        "--bin",
+                        str(BIN / "sledra"),
+                        "--work-root",
+                        str(report.directory),
+                        "--report-dir",
+                        str(report.directory / "cross-node"),
+                        "--samples",
+                        "8",
+                    ),
+                )
             if action == "test":
                 report.stage("go-tests", ["go", "test", "-count=1", "./..."], cwd=ROOT / "recorder")
                 report.stage(
@@ -315,6 +345,10 @@ def suite(action: str) -> bool:
                 report.stage(
                     "package-unit",
                     python_command("-m", "unittest", "discover", "-s", "tests/package", "-v"),
+                )
+                report.stage(
+                    "platform-harness",
+                    python_command("-m", "unittest", "discover", "-s", "tests/platform", "-v"),
                 )
                 for name, script in (
                     ("contract", "spec/verify.py"),
@@ -366,6 +400,7 @@ def main() -> int:
             "benchmark",
             "package",
             "test-package",
+            "test-platform",
         ),
     )
     action = parser.parse_args().action
@@ -380,6 +415,7 @@ def main() -> int:
             "  make test       Offline: Go, engineering, contract, portable CLI, Shell, M1, frozen replay\n"
             "  make demo       Offline: isolated synthetic normal/failure/retry, export and replay\n"
             "  make benchmark  Offline: separate raw timing samples and statistics (default 20)\n"
+            "  make test-platform Single-node primitives and local two-role simulation\n"
             "  make package    Offline: build a Linux trial archive, manifest and checksums\n"
             "  make test-package Verify the existing archive without source, Go or runtime network\n"
             "Dependencies: Python >=3.12, uv >=0.11.2, Go >=1.25.0, Bash >=5.2, GNU Make >=4.0\n"

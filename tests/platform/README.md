@@ -1,11 +1,9 @@
-# SLD-03 local platform probe
+# Platform probes and node harness
 
-Run only on a writable test filesystem. The probe creates a uniquely named child of `--parent`, writes synthetic files there, and removes that child on exit. It does not call a scheduler or modify an existing file in `--parent`.
+See [common parameters and HPC workflow](../../docs/testing-hpc.md) for source/installed invocations, dependencies and scoped reports. `make test-platform` runs the single-node probe and the local two-role harness with an existing shared development binary. `make test` covers parallel isolation, owned cleanup, missing-node deadlines, foreign architecture and missing dependency reports.
 
-```bash
-python3 tests/platform/probe.py --parent . --samples 64 > tests/platform/results/wsl2-ext4-2026-10-11.json
-```
+`probe.py` still accepts `--parent` as a legacy alias for `--work-root`. Always use a new `--report-dir`; do not overwrite the [historical WSL2 result](results/wsl2-ext4-2026-10-11.json). Version 2 reports include raw filesystem latency samples, actual recorder ELF/version startup measurements and actual work mount information. The test tree remains bounded to 200 files and 10 MiB excluding any externally supplied recorder. Go cache costs are outside the test tree.
 
-The checked-in result is from the WSL2 ext4 development volume. For another mount, choose an existing writable test parent on that mount and save a separate report. `--samples` accepts 10–1000; each 4096-byte latency sample is removed before the next. The probe tests hardlink create-if-absent, file and directory fsync, same-node contention, process-exit recovery visibility, advisory `flock`, a fixed absolute path read from another process, Bash signal traps and background `wait`, and a `CGO_ENABLED=0` static build of the **contract test helper**. It records latency distributions and asserts a test tree limit of 200 files and 10 MiB of logical file content. Go's build cache is outside that test tree and is not included in this limit.
+`cross_node.py` offers prepare, worker, collect and local simulate commands. Registry/context/spool share one newly owned test tree, with the same absolute context read by both roles. Atomic barriers have deadlines; results preserve role commands, nodes, mount metadata, registration timings, flock exclusion/release and spool visibility. Local simulation is not real cross-node evidence. Prepared/failed trees are retained; each role can be claimed only once.
 
-`status: pass` applies only to the tested local mount and these synthetic operations. A process exit is not a power-loss durability test. Same-host contenders are not cross-node visibility or lock tests. The binary is not the future production recorder. Production recorder overhead, shared/HPC mounts, real storage quotas, network faults and deployment latency thresholds require separate evidence.
+A synthetic pass qualifies only the observed operations on the named mounts and nodes. Real shared/HPC storage, power-loss durability, scheduler signals, MPI and A6 budgets remain separate unverified branches until site evidence exists.

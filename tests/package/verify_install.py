@@ -12,7 +12,9 @@ import tempfile
 import time
 from pathlib import Path
 
-from package_tools import verify_install, sha
+sys.dont_write_bytecode = True
+
+from package_tools import verify_install, sha  # noqa: E402
 
 
 def save(path: Path, value: object) -> None:
@@ -125,9 +127,24 @@ class Acceptance:
         self.call("help", [str(self.package / "bin/sledra"), "--help"], quiet=False)
         self.shell_examples()
         handoff = self.report / "handoff.json"
+        common = [
+            "--bin",
+            str(self.package / "bin/sledra"),
+            "--work-root",
+            str(self.work),
+            "--keep-work",
+        ]
         result = self.call(
             "m1-normal-failure-retry",
-            [sys.executable, str(self.share / "tests/m1/verify.py"), "--handoff-out", str(handoff)],
+            [
+                sys.executable,
+                str(self.share / "tests/m1/verify.py"),
+                "--handoff-out",
+                str(handoff),
+                *common,
+                "--report-dir",
+                str(self.report / "m1"),
+            ],
             quiet=False,
         )
         m1 = json.loads(result.stdout)
@@ -137,12 +154,22 @@ class Acceptance:
                 sys.executable,
                 str(self.share / "tests/m1/replay.py"),
                 str(self.share / "tests/m1/results/handoff.json"),
+                *common,
+                "--report-dir",
+                str(self.report / "frozen-replay"),
             ],
             quiet=False,
         )
         self.call(
             "fresh-replay",
-            [sys.executable, str(self.share / "tests/m1/replay.py"), str(handoff)],
+            [
+                sys.executable,
+                str(self.share / "tests/m1/replay.py"),
+                str(handoff),
+                *common,
+                "--report-dir",
+                str(self.report / "fresh-replay"),
+            ],
             quiet=False,
         )
         self.call(
@@ -179,7 +206,39 @@ class Acceptance:
             )
         if len(events) != 19 or m1["summary"]["payload_return_codes"] != [0, 7, 0]:
             raise ValueError("M1 event count or business return codes differ")
-        return {"m1": m1, "validated_events": len(events), "shell_payload_comparison": "pass"}
+        platform_reports = {}
+        for name, script, extra in (
+            ("shell", "tests/shell/verify.py", []),
+            (
+                "cross-node",
+                "tests/platform/cross_node.py",
+                ["simulate", "--samples", "2", "--timeout", "30"],
+            ),
+            ("primitives", "tests/platform/probe.py", ["--samples", "10"]),
+            ("timing", "tests/m1/benchmark.py", ["--samples", "10"]),
+        ):
+            directory = self.report / name
+            self.call(
+                name,
+                [
+                    sys.executable,
+                    str(self.share / script),
+                    *extra,
+                    *common,
+                    "--report-dir",
+                    str(directory),
+                ],
+                quiet=False,
+            )
+            platform_reports[name] = json.loads((directory / "summary.json").read_text())
+            if platform_reports[name]["status"] != "pass":
+                raise ValueError(f"installed {name} verification failed")
+        return {
+            "platform_tools": platform_reports,
+            "m1": m1,
+            "validated_events": len(events),
+            "shell_payload_comparison": "pass",
+        }
 
 
 def main() -> int:

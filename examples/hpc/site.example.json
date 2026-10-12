@@ -1,0 +1,14 @@
+{
+  "scheduler": "slurm",
+  "partition": "REPLACE_WITH_SITE_PARTITION",
+  "account": "REPLACE_WITH_SITE_ACCOUNT",
+  "python": "/usr/bin/python3",
+  "test_home": "/shared/REPLACE/sledra/share/sledra",
+  "binary": "/shared/REPLACE/sledra/bin/sledra",
+  "spec_dir": "/shared/REPLACE/sledra/share/sledra/spec/1.0.0",
+  "work_root": "/shared/REPLACE/sledra-test-parent",
+  "output_parent": "/shared/REPLACE/sledra-reports",
+  "samples": 8,
+  "timeout": 120,
+  "time_limit": "00:10:00"
+}

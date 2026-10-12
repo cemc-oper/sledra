@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+#SBATCH --nodes=2
+#SBATCH --ntasks=2
+#SBATCH --ntasks-per-node=1
+#SBATCH --partition=@PARTITION@
+#SBATCH --account=@ACCOUNT@
+#SBATCH --time=@TIME_LIMIT@
+#SBATCH --output=@OUTPUT@
+set -euo pipefail
+export PYTHONDONTWRITEBYTECODE=1
+srun --nodes=2 --ntasks=2 --ntasks-per-node=1 --kill-on-bad-exit=1 \
+    bash @NODE_SCRIPT@ @PYTHON@ @TEST_HOME@ @RUN_DIR@

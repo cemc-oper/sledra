@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import argparse
 import json
 import os
 import select
+import shlex
+import shutil
 import signal
 import subprocess
 import sys
@@ -15,8 +18,9 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[2]
+sys.dont_write_bytecode = True
 sys.path.insert(0, str(ROOT))
-from scripts.test_tools import binary_for  # noqa: E402
+from scripts.test_session import TestSession, add_arguments  # noqa: E402
 
 EXAMPLE = ROOT / "examples/standalone/run.sh"
 LIBRARY = ROOT / "shell/sledra.sh"
@@ -25,21 +29,16 @@ LIBRARY = ROOT / "shell/sledra.sh"
 class ShellIntegration(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        cls.build = tempfile.TemporaryDirectory(prefix="sledra-shell-build-")
-        cls.binary = binary_for("sledra", Path(cls.build.name))
+        cls.binary = cls.session.binary
 
-    @classmethod
-    def tearDownClass(cls) -> None:
-        cls.build.cleanup()
-
-    def setup_case(self, *, enabled: bool, mode: str = "success", fault: str = "") -> tuple[Path, dict[str, str]]:
-        scratch = tempfile.TemporaryDirectory(prefix="sledra-shell-case-")
-        self.addCleanup(scratch.cleanup)
-        base = Path(scratch.name)
+    def setup_case(
+        self, *, enabled: bool, mode: str = "success", fault: str = ""
+    ) -> tuple[Path, dict[str, str]]:
+        base = Path(tempfile.mkdtemp(prefix="case-", dir=self.session.work))
         root = base / "observability"
         root.mkdir()
         env = dict(
-            os.environ,
+            self.session.env,
             STANDALONE_WORK_DIR=str(base),
             SLEDRA_ROOT=str(root),
             SLEDRA_BIN=str(self.binary),
@@ -57,8 +56,8 @@ class ShellIntegration(unittest.TestCase):
         elif fault == "write_failure":
             fake = base / "fault-sledra"
             fake.write_text(
-                '#!/usr/bin/env bash\n'
-                'if [[ ${1:-} == event ]]; then exit 73; fi\n'
+                "#!/usr/bin/env bash\n"
+                "if [[ ${1:-} == event ]]; then exit 73; fi\n"
                 'exec "$REAL_SLEDRA" "$@"\n'
             )
             fake.chmod(0o700)
@@ -122,17 +121,21 @@ class ShellIntegration(unittest.TestCase):
     def test_observation_faults_do_not_repeat_payload(self) -> None:
         for fault in ("missing_tool", "missing_context", "spool_permission", "write_failure"):
             for mode in ("success", "fail"):
-                with self.subTest(fault=fault,mode=mode):
-                    before = self.run_case(enabled=False,mode=mode)
-                    after = self.run_case(enabled=True,mode=mode,fault=fault)
+                with self.subTest(fault=fault, mode=mode):
+                    before = self.run_case(enabled=False, mode=mode)
+                    after = self.run_case(enabled=True, mode=mode, fault=fault)
                     self.assert_business_equal(before, after, diagnostic=True)
                     self.assertNotIn(b"synthetic product", after["stderr"])
 
     def signal_case(self, *, enabled: bool, number: int, probe_int: bool = False) -> dict:
         base, env = self.setup_case(enabled=enabled, mode="hang")
         process = subprocess.Popen(
-            [str(EXAMPLE)], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-            start_new_session=True, bufsize=0,
+            [str(EXAMPLE)],
+            env=env,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            start_new_session=True,
+            bufsize=0,
         )
         prefix = bytearray()
         deadline = time.monotonic() + 12
@@ -183,7 +186,11 @@ class ShellIntegration(unittest.TestCase):
 
     def test_source_preserves_options_traps_and_pipeline(self) -> None:
         for mask in range(8):
-            settings = [option for bit, option in enumerate(("-e", "-u", "-o pipefail")) if mask & (1 << bit)]
+            settings = [
+                option
+                for bit, option in enumerate(("-e", "-u", "-o pipefail"))
+                if mask & (1 << bit)
+            ]
             setup = "\n".join("set " + option for option in settings)
             script = f"""
                 {setup}
@@ -191,7 +198,7 @@ class ShellIntegration(unittest.TestCase):
                 before_flags=$-
                 before_pipe=$(set -o | grep '^pipefail')
                 before_trap=$(trap -p EXIT)
-                source '{LIBRARY}'
+                source {shlex.quote(str(LIBRARY))}
                 sledra_attempt_exited 7 forecast_program
                 [[ $- == "$before_flags" ]]
                 [[ $(set -o | grep '^pipefail') == "$before_pipe" ]]
@@ -199,25 +206,55 @@ class ShellIntegration(unittest.TestCase):
                 printf 'pipeline\\n' | cat
             """
             with self.subTest(mask=mask):
-                result = subprocess.run(["bash", "-c", script], env=dict(os.environ, SLEDRA_ENABLED="0"), capture_output=True)
+                result = subprocess.run(
+                    ["bash", "-c", script],
+                    env=dict(os.environ, SLEDRA_ENABLED="0"),
+                    capture_output=True,
+                )
                 self.assertEqual(result.returncode, 0, result.stderr)
                 self.assertEqual(result.stdout, b"pipeline\n")
                 self.assertEqual(result.stderr, b"callback")
 
-        pipeline = "set +e; set -o pipefail; false | true; status=(\"${PIPESTATUS[@]}\"); printf '%s\\n' \"${status[*]}\""
+        pipeline = 'set +e; set -o pipefail; false | true; status=("${PIPESTATUS[@]}"); printf \'%s\\n\' "${status[*]}"'
         baseline = subprocess.run(["bash", "-c", pipeline], capture_output=True, check=True)
-        observed = subprocess.run(["bash", "-c", f"source '{LIBRARY}'; {pipeline}"], capture_output=True, check=True)
+        observed = subprocess.run(
+            ["bash", "-c", f"source {shlex.quote(str(LIBRARY))}; {pipeline}"],
+            capture_output=True,
+            check=True,
+        )
         self.assertEqual(baseline.stdout, b"1 0\n")
         self.assertEqual(observed.stdout, baseline.stdout)
 
     def test_unqualified_supervisor_is_unavailable(self) -> None:
-        base,env=self.setup_case(enabled=True)
-        env["SLEDRA_SPEC_DIR"]=str(ROOT/"spec/1.0.0")
-        result = subprocess.run([str(self.binary), "exec", "--", "/bin/true"], capture_output=True,env=env)
+        base, env = self.setup_case(enabled=True)
+        env["SLEDRA_SPEC_DIR"] = str(self.session.spec)
+        result = subprocess.run(
+            [str(self.binary), "exec", "--", "/bin/true"], capture_output=True, env=env
+        )
         self.assertEqual(result.returncode, 1)
         self.assertEqual(result.stdout, b"")
         self.assertEqual(json.loads(result.stderr), {"ok": False, "code": "usage"})
 
 
 if __name__ == "__main__":
-    unittest.main(verbosity=2)
+    parser = argparse.ArgumentParser(description=__doc__)
+    add_arguments(parser)
+    args = parser.parse_args()
+    with TestSession(args, "shell") as session:
+        if shutil.which("grep") is None:
+            raise ValueError("missing Shell test dependency: grep")
+        ShellIntegration.session = session
+        with (session.report / "assertions.log").open("w") as log:
+            result = unittest.TextTestRunner(stream=log, verbosity=2).run(
+                unittest.defaultTestLoader.loadTestsFromTestCase(ShellIntegration)
+            )
+        session.data.update(
+            sample_count=result.testsRun,
+            failures=len(result.failures),
+            errors=len(result.errors),
+            cases=[str(p) for p in session.work.glob("case-*")],
+        )
+        if not result.wasSuccessful():
+            raise AssertionError(
+                f"Shell assertions failed; see {session.report / 'assertions.log'}"
+            )

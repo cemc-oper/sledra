@@ -43,12 +43,26 @@ def main() -> None:
         copy_file(output / "bin/sledra", stage / "bin/sledra")
         for tool in TOOLS[1:]:
             copy_file(output / "bin" / tool, share / "test-tools/bin" / tool)
-        for directory in ("shell", "spec/1.0.0", "spec/fixtures/1.0.0", "examples/standalone"):
+        for directory in (
+            "shell",
+            "spec/1.0.0",
+            "spec/fixtures/1.0.0",
+            "examples/standalone",
+            "examples/hpc",
+        ):
             for path in sorted((ROOT / directory).rglob("*")):
                 if path.is_file() and path.suffix != ".pyc":
                     copy_file(path, share / path.relative_to(ROOT))
         for name_in, name_out in (
             ("scripts/test_tools.py", "scripts/test_tools.py"),
+            ("scripts/test_session.py", "scripts/test_session.py"),
+            ("scripts/package_tools.py", "scripts/package_tools.py"),
+            ("tests/m1/benchmark.py", "tests/m1/benchmark.py"),
+            ("tests/shell/verify.py", "tests/shell/verify.py"),
+            ("tests/platform/probe.py", "tests/platform/probe.py"),
+            ("tests/platform/shell_probe.sh", "tests/platform/shell_probe.sh"),
+            ("tests/platform/cross_node.py", "tests/platform/cross_node.py"),
+            ("docs/testing-hpc.md", "docs/testing-hpc.md"),
             ("scripts/package_tools.py", "test-tools/package_tools.py"),
             ("tests/package/verify_install.py", "test-tools/verify.py"),
             ("tests/m1/verify.py", "tests/m1/verify.py"),

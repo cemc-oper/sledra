@@ -53,6 +53,8 @@ def sandbox(install: Path, work: Path, *, python: bool = False) -> list[str]:
     }
     binaries["/usr/bin/env"] = Path(shutil.which("env") or "")
     if python:
+        for name in ("grep", "findmnt"):
+            binaries[f"/runtime/bin/{name}"] = Path(shutil.which(name) or "")
         binaries["/usr/bin/python3"] = Path("/usr/bin/python3").resolve()
         stdlib = subprocess.check_output(
             [

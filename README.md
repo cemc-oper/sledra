@@ -44,3 +44,5 @@ Source builds and a Linux local trial archive are available. [Installation](docs
 Start with the [documentation index](docs/README.md), [architecture](docs/architecture.md), [configuration](docs/configuration.md) and [contract source policy](docs/contracts.md). The [name and path migration](docs/migration.md) explains old names in historical evidence.
 
 Local passing tests do not establish HPC qualification, approved performance budgets or permission for a public release. License selection remains open. M1 recording is complete locally; M1.5 is preparing engineering and trial delivery, M2 will add offline analysis, M3 integration, and M4 business reports and delivery qualification.
+
+Local and compute-node test tools share [binary, spec, work and report parameters](docs/testing-hpc.md). `make test-platform` exercises single-node primitives and the local two-role harness; [site templates](examples/hpc/README.md) prepare reviewable jobs without submitting them. Real HPC qualification remains unverified.
