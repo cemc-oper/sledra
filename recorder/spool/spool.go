@@ -529,7 +529,7 @@ func Code(err error) string {
 		return ve.Code
 	}
 	switch err.Error() {
-	case "root_missing", "config_invalid", "input_unavailable", "contract_unavailable", "schema_invalid", "context_missing", "context_invalid", "parent_mismatch", "limit_exceeded", "spool_full", "writer_busy":
+	case "root_missing", "config_invalid", "input_unavailable", "contract_unavailable", "contract_incompatible", "contract_path_invalid", "schema_invalid", "context_missing", "context_invalid", "parent_mismatch", "limit_exceeded", "spool_full", "writer_busy":
 		return err.Error()
 	}
 	return "spool_unavailable"

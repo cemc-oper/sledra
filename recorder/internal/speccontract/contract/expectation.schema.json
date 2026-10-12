@@ -1,0 +1,143 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "expectation",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "kind",
+    "plan_id",
+    "system_id",
+    "purpose",
+    "deployment_id",
+    "approved_by_ref",
+    "cycles",
+    "slots"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "pattern": "^1\\.(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)$"
+    },
+    "kind": {
+      "const": "expectation"
+    },
+    "plan_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "system_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "purpose": {
+      "type": "string",
+      "minLength": 1
+    },
+    "deployment_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "approved_by_ref": {
+      "type": "string",
+      "minLength": 1
+    },
+    "cycles": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "cycle",
+          "status",
+          "reason"
+        ],
+        "properties": {
+          "cycle": {
+            "type": "object",
+            "required": [
+              "cycle_time",
+              "cycle_kind"
+            ],
+            "properties": {
+              "cycle_time": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "cycle_kind": {
+                "enum": [
+                  "forecast",
+                  "assimilation"
+                ]
+              }
+            },
+            "additionalProperties": false
+          },
+          "status": {
+            "enum": [
+              "expected",
+              "cancelled"
+            ]
+          },
+          "reason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "slots": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "slot_id",
+          "artifact_id",
+          "rule_id",
+          "rule_version",
+          "deadline_at",
+          "recipient"
+        ],
+        "properties": {
+          "slot_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "artifact_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "rule_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "rule_version": {
+            "type": "string",
+            "minLength": 1
+          },
+          "deadline_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "recipient": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "extensions": {
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$"
+      },
+      "additionalProperties": {
+        "type": "object"
+      }
+    }
+  },
+  "additionalProperties": false
+}

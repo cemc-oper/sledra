@@ -6,7 +6,7 @@ Public contexts are canonical JSON files at one caller-selected absolute path un
 
 `run finish` saves a separate immutable record under `SLEDRA_ROOT/finish/` with a `run.finish_declared` outbox event. Its `scope_ref` is `scope_` plus the canonical SHA256 of the Run scope, and its sorted `covered_attempt_ids` and digest freeze the explicit Attempt set. Identical declaration requests reuse the winner. Same `declaration_id` with different content conflicts. Concurrent different declarations coexist. A later Attempt remains in the original Run and never rewrites an earlier declaration; M2 reconstructs `needs_finalization` from the facts. The outbox is not a spool segment or an analysis projection.
 
-From `recorder/`, build `GOPROXY=off GOSUMDB=off go build -o /tmp/sledra ./cmd/sledra`. Set `SLEDRA_ROOT` to an existing real absolute directory on a filesystem that passed SLD-03. Set `SLEDRA_SPEC_DIR` to the absolute `spec/1.0.0` directory for offline development; the local default is `../spec/1.0.0` when running from `recorder/`. The commands are:
+From `recorder/`, build `GOPROXY=off GOSUMDB=off go build -o /tmp/sledra ./cmd/sledra`. Set `SLEDRA_ROOT` to an existing real absolute directory on a filesystem that passed SLD-03. The default context contract is embedded. Optional `SLEDRA_SPEC_DIR` must be absolute and compatible; see [CLI help, version and resource errors](../../docs/cli.md). The commands are:
 
 ```text
 sledra registry run-create --request-file run-request.json --context-out /shared/root/contexts/run.json

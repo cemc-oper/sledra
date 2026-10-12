@@ -1,6 +1,6 @@
 # Thin Bash API (SLD-08)
 
-Source [`sledra.sh`](sledra.sh) from a known Bash lifecycle owner. It only defines functions: no option, trap, payload command or callback is installed or replaced. Set `SLEDRA_ENABLED=1` and absolute `SLEDRA_BIN`, `SLEDRA_ROOT`, `SLEDRA_SPEC_DIR`, `SLEDRA_CONFIG` paths. If disabled, the functions are inert. Identity calls set `SLEDRA_RUN_ACTIVE` and `SLEDRA_ATTEMPT_ACTIVE`; on any failure they disable later observation and always return 0 to the owner. Every event call is best effort and returns 0. A missing binary or failed recorder call adds at most one fixed, payload-free diagnostic line per sourced shell to stderr, never stdout. This does not impose a hard latency bound on kernel I/O.
+Source [`sledra.sh`](sledra.sh) from a known Bash lifecycle owner. It only defines functions: no option, trap, payload command or callback is installed or replaced. Set `SLEDRA_ENABLED=1` and absolute `SLEDRA_BIN`, `SLEDRA_ROOT`, `SLEDRA_CONFIG` paths. `SLEDRA_SPEC_DIR` is optional: unset/empty uses embedded contracts; a nonempty override must be absolute and compatible. If disabled, the functions are inert. Identity calls set `SLEDRA_RUN_ACTIVE` and `SLEDRA_ATTEMPT_ACTIVE`; on any failure they disable later observation and always return 0 to the owner. Every event call is best effort and returns 0. A missing binary or failed recorder call adds at most one fixed, payload-free diagnostic line per sourced shell to stderr, never stdout. This does not impose a hard latency bound on kernel I/O.
 
 ```bash
 source /path/to/sledra.sh

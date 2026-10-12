@@ -12,7 +12,8 @@ _sledra_shell_diag_once() {
 _sledra_shell_ready() {
     [[ ${SLEDRA_ENABLED:-0} == 1 ]] || return 1
     if [[ ${SLEDRA_BIN:-} != /* || ! -x ${SLEDRA_BIN:-} || ! -f ${SLEDRA_BIN:-} ||
-          ${SLEDRA_ROOT:-} != /* || ${SLEDRA_SPEC_DIR:-} != /* || ${SLEDRA_CONFIG:-} != /* ]]; then
+          ${SLEDRA_ROOT:-} != /* ||
+          ( -n ${SLEDRA_SPEC_DIR:-} && ${SLEDRA_SPEC_DIR:-} != /* ) || ${SLEDRA_CONFIG:-} != /* ]]; then
         _sledra_shell_diag_once
         return 1
     fi

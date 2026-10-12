@@ -37,7 +37,7 @@ Setup is the explicit network step and works with empty dependency caches. Daily
 
 ## Installation and testing
 
-Source builds are currently supported; an installable trial package is planned in SLD-31. `make help` lists the current targets, dependencies and outputs. [Development](docs/development.md) explains locked setup, offline source builds, reports and the separate `make benchmark` measurement. CLI help/version and portable default resource lookup follow in SLD-30; direct recording calls currently use explicit absolute resources.
+Source builds are currently supported; an installable trial package is planned in SLD-31. `make help` lists the current targets, dependencies and outputs. [Development](docs/development.md) explains locked setup, offline source builds, reports and the separate `make benchmark` measurement. The [CLI guide](docs/cli.md) covers environment-free help/version, embedded default contracts and explicit compatible overrides.
 
 ## Documentation and limits
 

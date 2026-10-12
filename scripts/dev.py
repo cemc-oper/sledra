@@ -7,6 +7,7 @@ import hashlib
 import json
 import os
 import platform
+import re
 import subprocess
 import sys
 import time
@@ -65,6 +66,37 @@ def setup() -> None:
     print("Setup complete. Daily build/check/test commands disable dependency network queries.")
 
 
+def provenance(inputs: dict[str, str]) -> dict[str, str]:
+    version = os.environ.get("SLEDRA_VERSION", "dev")
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9.+-]*", version):
+        raise ValueError("SLEDRA_VERSION must contain only letters, digits, dots, plus or hyphens")
+    commit = "unknown"
+    try:
+        top = subprocess.check_output(
+            ["git", "rev-parse", "--show-toplevel"], cwd=ROOT, stderr=subprocess.DEVNULL, text=True
+        ).strip()
+        if Path(top).resolve() == ROOT.resolve():
+            commit = subprocess.check_output(
+                ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True
+            ).strip()
+            if subprocess.check_output(["git", "status", "--porcelain"], cwd=ROOT):
+                commit += "-dirty"
+    except (OSError, subprocess.SubprocessError):
+        pass
+    source = hashlib.sha256(json.dumps(inputs, sort_keys=True).encode()).hexdigest()
+    return {"software_version": version, "commit": commit, "source_sha256": source}
+
+
+def build_timestamp() -> str:
+    if epoch := os.environ.get("SOURCE_DATE_EPOCH"):
+        if not epoch.isdecimal():
+            raise ValueError("SOURCE_DATE_EPOCH must be a nonnegative integer timestamp")
+        value = datetime.fromtimestamp(int(epoch), timezone.utc)
+    else:
+        value = datetime.now(timezone.utc)
+    return value.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
 def build() -> None:
     env = offline_env()
     target = subprocess.check_output(
@@ -75,17 +107,35 @@ def build() -> None:
         for p in (ROOT / "recorder").rglob("*")
         if p.is_file() and (p.suffix in {".go", ".json"} or p.name in {"go.mod", "go.sum"})
     ]
+    input_hashes = {str(p.relative_to(ROOT)): digest(p) for p in sorted(inputs)}
+    metadata = provenance(input_hashes)
+    timestamp = build_timestamp()
     recipe = {
         "target": target,
         "cgo_enabled": "0",
         "flags": ["-trimpath", "-buildvcs=false"],
-        "inputs": {str(p.relative_to(ROOT)): digest(p) for p in sorted(inputs)},
+        "inputs": input_hashes,
+        "provenance": metadata,
+        "source_date_epoch": os.environ.get("SOURCE_DATE_EPOCH"),
     }
     manifest_path = ROOT / "build/manifest.json"
     try:
         previous = json.loads(manifest_path.read_text())
     except (FileNotFoundError, json.JSONDecodeError):
         previous = {}
+    if previous.get("recipe") == recipe:
+        timestamp = previous.get("build_time", timestamp)
+    metadata = dict(metadata, build_time=timestamp)
+    symbols = {
+        "Version": "software_version",
+        "Commit": "commit",
+        "BuildTime": "build_time",
+        "SourceSHA256": "source_sha256",
+    }
+    ldflags = " ".join(
+        f"-X github.com/cemc-oper/sledra/recorder/internal/buildinfo.{name}={metadata[key]}"
+        for name, key in symbols.items()
+    )
     BIN.mkdir(parents=True, exist_ok=True)
     binaries = {}
     for name in TOOLS:
@@ -102,7 +152,16 @@ def build() -> None:
             temporary = BIN / f".{name}-{uuid.uuid4().hex}.tmp"
             try:
                 run(
-                    ["go", "build", *recipe["flags"], "-o", str(temporary), f"./cmd/{name}"],
+                    [
+                        "go",
+                        "build",
+                        *recipe["flags"],
+                        "-ldflags",
+                        ldflags,
+                        "-o",
+                        str(temporary),
+                        f"./cmd/{name}",
+                    ],
                     cwd=ROOT / "recorder",
                     env=env,
                 )
@@ -110,7 +169,10 @@ def build() -> None:
             finally:
                 temporary.unlink(missing_ok=True)
         binaries[name] = digest(binary)
-    write_json(manifest_path, {"recipe": recipe, "binaries": binaries})
+    write_json(
+        manifest_path,
+        {"recipe": recipe, "build_time": timestamp, "ldflags": ldflags, "binaries": binaries},
+    )
 
 
 def protected_files() -> dict[str, str]:
@@ -118,6 +180,7 @@ def protected_files() -> dict[str, str]:
         "spec/1.0.0",
         "spec/fixtures",
         "recorder/event/contract",
+        "recorder/internal/speccontract/contract",
         "examples/standalone/fixtures",
         "tests/m1/results",
         "tests/platform/results",
@@ -238,6 +301,7 @@ def suite(action: str) -> bool:
                     ("contract", "spec/verify.py"),
                     ("event", "spec/verify_event.py"),
                     ("context", "spec/verify_context.py"),
+                    ("cli", "tests/cli/verify.py"),
                     ("shell", "tests/shell/verify.py"),
                     ("m1", "tests/m1/verify.py"),
                 ):
@@ -283,7 +347,7 @@ def main() -> int:
             "  make setup      Online: sync uv.lock and download Go modules\n"
             "  make build      Offline: build/reuse five tools in build/bin; build/manifest.json\n"
             "  make check      Offline: lock, format, lint, vet, Bash, contract bytes, docs\n"
-            "  make test       Offline: Go, engineering, contract, Shell, M1, frozen replay\n"
+            "  make test       Offline: Go, engineering, contract, portable CLI, Shell, M1, frozen replay\n"
             "  make demo       Offline: isolated synthetic normal/failure/retry, export and replay\n"
             "  make benchmark  Offline: separate raw timing samples and statistics (default 20)\n"
             "Dependencies: Python >=3.12, uv >=0.11.2, Go >=1.25.0, Bash >=5.2, GNU Make >=4.0\n"
@@ -298,7 +362,7 @@ def main() -> int:
             build()
         else:
             return int(not suite(action))
-    except (OSError, subprocess.SubprocessError) as exc:
+    except (OSError, ValueError, OverflowError, subprocess.SubprocessError) as exc:
         print(f"{action} failed: {exc}", file=sys.stderr)
         return 1
     return 0

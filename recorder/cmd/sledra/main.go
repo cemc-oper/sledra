@@ -31,6 +31,13 @@ func main() {
 }
 
 func run(args []string) error {
+	return runWithOutput(args, os.Stdout)
+}
+
+func runWithOutput(args []string, output io.Writer) error {
+	if handled, err := information(args, output); handled {
+		return err
+	}
 	if len(args) == 0 {
 		return errors.New("usage")
 	}
@@ -45,8 +52,8 @@ func run(args []string) error {
 		return errors.New("root_missing")
 	}
 	spec := os.Getenv("SLEDRA_SPEC_DIR")
-	if spec == "" {
-		spec = "../spec/1.0.0"
+	if spec != "" && !filepath.IsAbs(spec) {
+		return errors.New("contract_path_invalid")
 	}
 	s, err := context.New(root, spec)
 	if err != nil {

@@ -16,4 +16,4 @@ A digest mismatch requires reviewing the upstream change, updating affected repo
 
 ## Machine contracts and compatibility
 
-Edit the canonical authoring scripts under `spec/` for generated schema changes. Keep the portable resources and Go embedded event resources consistent using the existing verification commands. The [canonical identity rules](../spec/README.md#canonical-identity-bytes) and [compatibility matrix](../spec/README.md#compatibility-matrix) govern event bytes and IDs. Name/path migration changes no schema, identity or frozen handoff bytes.
+Edit the canonical authoring scripts under `spec/` for generated schema changes. After intentional canonical regeneration, run `python3 scripts/sync_contracts.py` to copy resources into both Go embed directories. `make check` compares their inventories and bytes against a private regeneration; never edit embeds independently. The [canonical identity rules](../spec/README.md#canonical-identity-bytes) and [compatibility matrix](../spec/README.md#compatibility-matrix) govern event bytes and IDs. Name/path migration changes no schema, identity or frozen handoff bytes.

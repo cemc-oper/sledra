@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	specDir := flag.String("spec-dir", "../spec/1.0.0", "local contract directory")
+	specDir := flag.String("spec-dir", "", "override contract directory (default: embedded 1.0.0)")
 	flag.Parse()
 	if flag.NArg() != 1 {
 		fmt.Fprintln(os.Stderr, "usage: sledra-spec-check [-spec-dir DIR] BUNDLE.json")
@@ -33,7 +33,7 @@ func main() {
 	}
 	checker, err := speccontract.NewChecker(*specDir)
 	if err != nil {
-		report("schema_invalid", err.Error())
+		reportError(err)
 		return
 	}
 	result, err := checker.CheckBundle(bundle)

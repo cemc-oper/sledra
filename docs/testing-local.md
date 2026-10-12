@@ -8,7 +8,7 @@ make check
 make test
 ```
 
-See [development](development.md) for minimum/tested toolchains, dependency-cache requirements, build reuse and report locations. `make check` validates format/static checks, locked metadata, generated contract/fixture bytes and local documentation links. Generation happens in a temporary copy. `make test` builds or reuses each Go helper once and executes Go, engineering, contract/event/context, Shell, M1 normal/failure/retry and frozen replay tests.
+See [development](development.md) for minimum/tested toolchains, dependency-cache requirements, build reuse and report locations. `make check` validates format/static checks, locked metadata, generated contract/fixture bytes and local documentation links. Generation happens in a temporary copy. `make test` builds or reuses each Go helper once and executes Go, engineering, contract/event/context, portable CLI, Shell, M1 normal/failure/retry and frozen replay tests.
 
 Every check/test run has a unique ignored `test-results/` directory with stage logs and `summary.json`. A failure returns nonzero and identifies the failing stage. The report compares all protected fixtures before and after the run; ordinary tests never rewrite `tests/m1/results/` or `tests/platform/results/`.
 
@@ -19,6 +19,7 @@ After setup, use the locked environment for a specific script. To reuse existing
 ```bash
 make build
 SLEDRA_TEST_BIN_DIR="$PWD/build/bin" uv run --locked --offline python spec/verify.py
+SLEDRA_TEST_BIN_DIR="$PWD/build/bin" uv run --locked --offline python tests/cli/verify.py
 SLEDRA_TEST_BIN_DIR="$PWD/build/bin" uv run --locked --offline python tests/shell/verify.py
 SLEDRA_TEST_BIN_DIR="$PWD/build/bin" uv run --locked --offline python tests/m1/replay.py tests/m1/results/handoff.json
 ```

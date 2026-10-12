@@ -16,6 +16,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 from scripts.check_contracts import check_generated  # noqa: E402
 from scripts.test_tools import binary_for  # noqa: E402
+from scripts.sync_contracts import sync  # noqa: E402
 
 
 class DevelopmentChecks(unittest.TestCase):
@@ -40,7 +41,11 @@ class DevelopmentChecks(unittest.TestCase):
     def test_generation_drift_is_detected_without_rewriting_source(self) -> None:
         with tempfile.TemporaryDirectory(prefix="sledra-generation-") as tmp:
             root = Path(tmp)
-            for directory in ("spec", "recorder/event/contract"):
+            for directory in (
+                "spec",
+                "recorder/event/contract",
+                "recorder/internal/speccontract/contract",
+            ):
                 shutil.copytree(ROOT / directory, root / directory)
             shutil.copyfile(ROOT / "pyproject.toml", root / "pyproject.toml")
             schema = root / "spec/1.0.0/event.schema.json"
@@ -53,7 +58,9 @@ class DevelopmentChecks(unittest.TestCase):
     def test_failed_stage_is_reported_and_returns_failure(self) -> None:
         # Load the command module without changing public project state.
         sys.path.insert(0, str(ROOT / "scripts"))
-        spec = importlib.util.spec_from_file_location("development_commands", ROOT / "scripts/dev.py")
+        spec = importlib.util.spec_from_file_location(
+            "development_commands", ROOT / "scripts/dev.py"
+        )
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
         with tempfile.TemporaryDirectory(prefix="sledra-report-") as tmp:
@@ -62,12 +69,34 @@ class DevelopmentChecks(unittest.TestCase):
                     with patch.object(module, "digest", return_value="synthetic-test-digest"):
                         report = module.Report("injected-failure")
                         with self.assertRaisesRegex(RuntimeError, "broken-case failed"):
-                            report.stage("broken-case", [sys.executable, "-c", "raise SystemExit(17)"])
+                            report.stage(
+                                "broken-case", [sys.executable, "-c", "raise SystemExit(17)"]
+                            )
                         self.assertFalse(report.finish("broken-case failed", {}))
                         summary = json.loads((report.directory / "summary.json").read_text())
                         self.assertFalse(summary["ok"])
                         self.assertEqual(summary["stages"][0]["exit_code"], 17)
                         self.assertTrue((report.directory / "broken-case.log").is_file())
+
+    def test_embed_drift_is_detected_and_canonical_sync_restores_it(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="sledra-embed-drift-") as tmp:
+            root = Path(tmp)
+            for directory in (
+                "spec",
+                "recorder/event/contract",
+                "recorder/internal/speccontract/contract",
+            ):
+                shutil.copytree(ROOT / directory, root / directory)
+            shutil.copyfile(ROOT / "pyproject.toml", root / "pyproject.toml")
+            embedded = root / "recorder/internal/speccontract/contract/run_context.schema.json"
+            embedded.write_bytes(b"{}\n")
+            with self.assertRaisesRegex(
+                ValueError, "run_context.schema.json: differs from canonical"
+            ):
+                check_generated(root)
+            self.assertEqual(embedded.read_bytes(), b"{}\n")
+            sync(root)
+            check_generated(root)
 
 
 if __name__ == "__main__":

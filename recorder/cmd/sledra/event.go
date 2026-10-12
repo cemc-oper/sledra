@@ -6,6 +6,7 @@ import (
 	"flag"
 	"io"
 	"os"
+	"path/filepath"
 	"strconv"
 	"time"
 
@@ -63,8 +64,8 @@ func recordEvent(args []string, diagnostics io.Writer) error {
 	if cfgPath == "" {
 		return failure(errors.New("config_invalid"))
 	}
-	if spec == "" {
-		spec = "../spec/1.0.0"
+	if spec != "" && !filepath.IsAbs(spec) {
+		return failure(errors.New("contract_path_invalid"))
 	}
 	var cfg eventConfig
 	if err := readJSON(cfgPath, &cfg); err != nil {

@@ -23,7 +23,7 @@ func writeJSON(t *testing.T, path string, v any) {
 func TestCLIContextLifecycle(t *testing.T) {
 	root := t.TempDir()
 	t.Setenv("SLEDRA_ROOT", root)
-	t.Setenv("SLEDRA_SPEC_DIR", "../../../spec/1.0.0")
+	t.Setenv("SLEDRA_SPEC_DIR", "")
 	b, err := os.ReadFile("../../../spec/fixtures/1.0.0/valid-bundle.json")
 	if err != nil {
 		t.Fatal(err)

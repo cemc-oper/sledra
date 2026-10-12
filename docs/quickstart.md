@@ -38,6 +38,6 @@ STANDALONE_WORK_DIR="$demo_dir" SLEDRA_ROOT="$demo_dir/observability" \
 printf 'Demo files: %s\n' "$demo_dir"
 ```
 
-The example locates resources relative to the script. `product.txt`, `executions.log` and `callbacks.log` show the business output and one payload invocation. Under `observability/`, `contexts/`, `registry/`, `spool/` and `finish/` contain raw recording facts; no analysis result is produced. Each manual example uses a fresh directory. Direct recorder calls should set explicit absolute resources as described in [configuration](configuration.md).
+The example locates resources relative to the script. `product.txt`, `executions.log` and `callbacks.log` show the business output and one payload invocation. Under `observability/`, `contexts/`, `registry/`, `spool/` and `finish/` contain raw recording facts; no analysis result is produced. Each manual example uses a fresh directory. Direct recorder calls use embedded default contracts and explicit absolute runtime/input paths as described in [configuration](configuration.md).
 
-See [local testing](testing-local.md) for individual checks and [development](development.md) for reports and dependency modes. Trial packages and portable default resource lookup follow in SLD-30/31.
+See [local testing](testing-local.md) for individual checks and [development](development.md) for reports and dependency modes. See [CLI help and version](cli.md) for portable recording. Trial packages follow in SLD-31.

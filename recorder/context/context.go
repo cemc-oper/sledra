@@ -49,13 +49,17 @@ func New(root, specDir string) (*Service, error) {
 	if err != nil || !info.IsDir() || info.Mode()&os.ModeSymlink != 0 {
 		return nil, fail("path_unavailable")
 	}
+	c, err := speccontract.NewChecker(specDir)
+	if err != nil {
+		var resourceError *speccontract.ContractError
+		if errors.As(err, &resourceError) {
+			return nil, fail(resourceError.Code)
+		}
+		return nil, fail("contract_unavailable")
+	}
 	r, err := registry.New(root, specDir)
 	if err != nil {
 		return nil, fail("registry_unavailable")
-	}
-	c, err := speccontract.NewChecker(specDir)
-	if err != nil {
-		return nil, fail("contract_unavailable")
 	}
 	codec, err := event.New("lifecycle_owner")
 	if err != nil {

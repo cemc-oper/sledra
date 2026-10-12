@@ -11,8 +11,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os"
-	"path/filepath"
 	"reflect"
 	"regexp"
 	"sort"
@@ -272,22 +270,25 @@ var kinds = []string{"definition_manifest", "run_context", "attempt_context", "j
 var uuidV4 = regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$`)
 
 func NewChecker(specDir string) (*Checker, error) {
+	files, err := resources(specDir)
+	if err != nil {
+		return nil, err
+	}
 	checker := &Checker{Schemas: map[string]*jsonschema.Schema{}, PayloadSchemas: map[string]*jsonschema.Schema{}}
 	for _, kind := range kinds {
 		compiler := jsonschema.NewCompiler()
 		compiler.AssertFormat = true
-		path := filepath.Join(specDir, kind+".schema.json")
+		path := "https://sledra.invalid/contract/" + kind + ".schema.json"
+		if err := compiler.AddResource(path, bytes.NewReader(files[kind+".schema.json"])); err != nil {
+			return nil, err
+		}
 		schema, err := compiler.Compile(path)
 		if err != nil {
 			return nil, fmt.Errorf("compile %s: %w", path, err)
 		}
 		checker.Schemas[kind] = schema
 	}
-	data, err := os.ReadFile(filepath.Join(specDir, "event-types.json"))
-	if err != nil {
-		return nil, err
-	}
-	v, err := Decode(data)
+	v, err := Decode(files["event-types.json"])
 	if err != nil {
 		return nil, err
 	}

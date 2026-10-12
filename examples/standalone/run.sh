@@ -8,7 +8,6 @@ cd -- "$example_dir"
 : "${STANDALONE_WORK_DIR:?set an existing writable test directory}"
 export STANDALONE_WORK_DIR
 export SLEDRA_ROOT=${SLEDRA_ROOT:-$STANDALONE_WORK_DIR/observability}
-export SLEDRA_SPEC_DIR=${SLEDRA_SPEC_DIR:-$repo_dir/spec/1.0.0}
 export SLEDRA_CONFIG=${SLEDRA_CONFIG:-$example_dir/fixtures/process-config.json}
 export SLEDRA_ENABLED=${SLEDRA_ENABLED:-0}
 export STANDALONE_EXECUTION_LOG=${STANDALONE_EXECUTION_LOG:-$STANDALONE_WORK_DIR/executions.log}
