@@ -27,10 +27,12 @@ func bad(code string) error    { return &Error{Code: code} }
 // Limits are deployment settings. Zero values select synthetic local defaults,
 // not a qualified HPC capacity or latency budget.
 type Limits struct {
-	SegmentBytes int64
-	SessionBytes int64
-	Segments     int
-	SegmentAge   time.Duration
+	SegmentBytes  int64
+	SessionBytes  int64
+	Segments      int
+	SegmentAge    time.Duration
+	MaxSpoolBytes int64
+	MaxSpoolFiles int64
 }
 
 func (l Limits) normalized() (Limits, error) {
@@ -46,7 +48,7 @@ func (l Limits) normalized() (Limits, error) {
 	if l.SegmentAge == 0 {
 		l.SegmentAge = 5 * time.Minute
 	}
-	if l.SegmentBytes < event.MaxEventBytes+512 || l.SessionBytes < l.SegmentBytes || l.Segments < 1 || l.SegmentAge < 0 {
+	if l.SegmentBytes < event.MaxEventBytes+512 || l.SessionBytes < l.SegmentBytes || l.Segments < 1 || l.SegmentAge < 0 || l.MaxSpoolBytes < 0 || l.MaxSpoolFiles < 0 || (l.MaxSpoolBytes == 0) != (l.MaxSpoolFiles == 0) {
 		return Limits{}, bad("config_invalid")
 	}
 	return l, nil
@@ -58,6 +60,7 @@ type Stats struct {
 }
 type Writer struct {
 	mu                 sync.Mutex
+	root               string
 	dir                string
 	source, session    string
 	run, task, attempt string
@@ -94,6 +97,21 @@ func Open(root, role, source, run, task, attempt, session string, limits Limits)
 	if err = safeRoot(root); err != nil {
 		return nil, err
 	}
+	if l.MaxSpoolBytes > 0 {
+		unlock, err := lockCapacity(root)
+		if err != nil {
+			return nil, err
+		}
+		defer unlock()
+		bytes, files, err := spoolUsage(root)
+		if err != nil {
+			return nil, err
+		}
+		// Reserve a session lock and one new segment before creating paths.
+		if exceeds(bytes, int64(event.MaxEventBytes+512), l.MaxSpoolBytes) || exceeds(files, 2, l.MaxSpoolFiles) {
+			return nil, bad("spool_full")
+		}
+	}
 	parts := []string{"spool", digest(source), digest(run), digest(task), digest(attempt)}
 	dir := root
 	for _, part := range parts {
@@ -118,7 +136,7 @@ func Open(root, role, source, run, task, attempt, session string, limits Limits)
 		}
 		return nil, bad("spool_unavailable")
 	}
-	w := &Writer{dir: dir, source: source, session: session, run: run, task: task, attempt: attempt, limits: l, codec: codec, lock: lock, write: func(f *os.File, b []byte) (int, error) { return f.Write(b) }}
+	w := &Writer{root: root, dir: dir, source: source, session: session, run: run, task: task, attempt: attempt, limits: l, codec: codec, lock: lock, write: func(f *os.File, b []byte) (int, error) { return f.Write(b) }}
 	if err = w.resume(); err != nil {
 		w.Close()
 		return nil, err
@@ -291,6 +309,31 @@ func (w *Writer) Append(input []byte) error {
 	}
 	if e.Association.RunID != w.run || e.Association.TaskInstanceID != w.task || e.Association.AttemptID != w.attempt {
 		return bad("parent_mismatch")
+	}
+	if w.limits.MaxSpoolBytes > 0 {
+		unlock, err := lockCapacity(w.root)
+		if err != nil {
+			return err
+		}
+		defer unlock()
+		bytes, files, err := spoolUsage(w.root)
+		if err != nil {
+			return err
+		}
+		reserve := int64(len(result.Bytes))
+		newFile := int64(0)
+		if w.file == nil {
+			reserve += 512
+			newFile = 1
+		} else if st, e := w.file.Stat(); e != nil {
+			return bad("spool_unavailable")
+		} else if st.Size()+int64(len(result.Bytes)) > w.limits.SegmentBytes || time.Since(w.created) >= w.limits.SegmentAge {
+			reserve += 512
+			newFile = 1
+		}
+		if exceeds(bytes, reserve, w.limits.MaxSpoolBytes) || exceeds(files, newFile, w.limits.MaxSpoolFiles) {
+			return bad("spool_full")
+		}
 	}
 	bytes, count, err := w.usage()
 	if err != nil {

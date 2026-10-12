@@ -23,6 +23,8 @@ type eventConfig struct {
 	SegmentBytes    int64  `json:"segment_bytes"`
 	SessionBytes    int64  `json:"session_bytes"`
 	Segments        int    `json:"segments"`
+	MaxSpoolBytes   int64  `json:"max_spool_bytes"`
+	MaxSpoolFiles   int64  `json:"max_spool_files"`
 }
 
 // recordEvent binds the event to a validated Attempt context. SLD-08 adds the
@@ -119,7 +121,7 @@ func recordEvent(args []string, diagnostics io.Writer) error {
 	if err != nil {
 		return failure(err)
 	}
-	w, err := spool.Open(root, cfg.ProducerRole, cfg.SourceID, envelope.Association.RunID, envelope.Association.TaskInstanceID, envelope.Association.AttemptID, cfg.SessionID, spool.Limits{SegmentBytes: cfg.SegmentBytes, SessionBytes: cfg.SessionBytes, Segments: cfg.Segments})
+	w, err := spool.Open(root, cfg.ProducerRole, cfg.SourceID, envelope.Association.RunID, envelope.Association.TaskInstanceID, envelope.Association.AttemptID, cfg.SessionID, spool.Limits{SegmentBytes: cfg.SegmentBytes, SessionBytes: cfg.SessionBytes, Segments: cfg.Segments, MaxSpoolBytes: cfg.MaxSpoolBytes, MaxSpoolFiles: cfg.MaxSpoolFiles})
 	if err != nil {
 		return failure(err)
 	}

@@ -119,6 +119,55 @@ func TestSessionReuseRotationAndBounds(t *testing.T) {
 	}
 }
 
+func TestGlobalCapacityStopsNewFilesAndBytes(t *testing.T) {
+	root := t.TempDir()
+	limits := Limits{MaxSpoolBytes: 1 << 20, MaxSpoolFiles: 3}
+	w := open(t, root, "node-a", "session-a", limits)
+	if err := w.Append(fixture(t, "node-a", "session-a")); err != nil {
+		t.Fatal(err)
+	}
+	if err := w.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Open(root, "future_role", "node-b", "run_eeff24fb97bc287ebc5cddea33eafa8c8e958847ba82e653b501c17fd2662959", "", "", "session-b", limits); Code(err) != "spool_full" {
+		t.Fatalf("file cap: %v", err)
+	}
+	if len(segments(t, root)) != 1 {
+		t.Fatal("second source created segment")
+	}
+	root = t.TempDir()
+	limits = Limits{MaxSpoolBytes: event.MaxEventBytes + 1024, MaxSpoolFiles: 100}
+	w = open(t, root, "node-a", "session-a", limits)
+	input := fixture(t, "node-a", "session-a")
+	var stopped bool
+	for i := 0; i < 500; i++ {
+		if err := w.Append(input); err != nil {
+			if Code(err) != "spool_full" {
+				t.Fatal(err)
+			}
+			stopped = true
+			break
+		}
+	}
+	if !stopped {
+		t.Fatal("byte cap did not stop appends")
+	}
+	before := segments(t, root)
+	if Code(w.Append(input)) != "spool_full" {
+		t.Fatal("append resumed above cap")
+	}
+	after := segments(t, root)
+	if len(before) != len(after) {
+		t.Fatal("capacity failure created file")
+	}
+	for path, b := range before {
+		if !bytes.Equal(b, after[path]) {
+			t.Fatal("capacity failure changed segment")
+		}
+	}
+	_ = w.Close()
+}
+
 func TestConcurrentSourcesAndLockConflict(t *testing.T) {
 	root := t.TempDir()
 	const n = 12
