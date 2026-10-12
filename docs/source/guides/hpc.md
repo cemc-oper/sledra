@@ -1,4 +1,4 @@
-# 本地与 HPC 测试参数
+# 本地与 HPC 验证工具
 
 源码与 Linux 试用包提供相同标准库 Python 工具。TEST_HOME 指向源码根或安装的 share/sledra，SLEDRA 指向已有 native 二进制，支持任意 cwd。测试需 Python >=3.12、Bash >=5.2、dirname/cat/sleep；Shell 还需 grep，单节点原语需 Linux flock/fsync/hardlink、findmnt 等工具。显式 bin 不需 Go，未提供 bin 的源码调用使用共享覆盖或独立离线构建。
 

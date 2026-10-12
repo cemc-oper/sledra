@@ -12,14 +12,14 @@ M1 独立记录与 M1.5 工程化的本地验收已完成。离线分析、查�
 | [shell](shell/README.md) | 由明确的生命周期 owner 调用的 Bash API |
 | [spec](spec/README.md) | 1.0.0 契约草案、生成脚本和合成正反例 |
 | [examples](examples/standalone/README.md) | 独立示例与 HPC 站点模板 |
-| [tests](docs/source/testing-local.md) | 契约、Go、Shell、M1 和本地文件系统回归 |
+| [tests](docs/source/development/testing/local.md) | 契约、Go、Shell、M1 和本地文件系统回归 |
 | [docs](docs/README.md) | Sphinx + PyData Sphinx Theme + MyST-NB 中文文档 |
 
 安装资源与运行数据分开放置。Registry、context、document、finish 和 spool 共用显式的 `SLEDRA_ROOT`。当前证据覆盖 WSL/ext4 和明确登记的 tmpfs 测试；共享/HPC 部署仍需验证目标文件系统。
 
 ## 源码快速开始
 
-先安装[开发工具链](docs/source/development.md#工具链)，再从仓库根目录执行：
+先安装[开发工具链](docs/source/development/workflow.md#工具链)，再从仓库根目录执行：
 
 ```bash
 make setup
@@ -38,7 +38,7 @@ make package
 make test-package
 ```
 
-[安装指南](docs/source/installation.md)说明试用包校验、用户目录安装、独立运行和隔离验收。[CLI 指南](docs/source/cli.md)说明帮助、版本、默认内嵌契约及兼容资源覆盖。`make help` 显示公共入口。
+[安装指南](docs/source/getting-started/installation.md)说明试用包校验、用户目录安装、独立运行和隔离验收。[CLI 指南](docs/source/reference/cli.md)说明帮助、版本、默认内嵌契约及兼容资源覆盖。`make help` 显示公共入口。
 
 ## 中文文档
 
@@ -48,8 +48,17 @@ make docs
 python3 -m http.server --directory build/docs/html 8000
 ```
 
-在浏览器打开 `http://localhost:8000`。文档源码位于 `docs/source/`，HTML 生成到 `build/docs/html/`；构建将警告视为错误，不自动执行 Notebook。文档依赖只用于开发，不成为 Go/Bash 记录器的运行依赖。仅构建文档的依赖安装方法见[文档维护](docs/source/documentation.md)。
+在浏览器打开 `http://localhost:8000`。文档源码位于 `docs/source/`，HTML 生成到 `build/docs/html/`；构建将警告视为错误，不自动执行 Notebook。文档依赖只用于开发，不成为 Go/Bash 记录器的运行依赖。仅构建文档的依赖安装方法见[文档维护](docs/source/development/documentation.md)。
 
-从[文档首页](docs/source/index.md)、[架构](docs/source/architecture.md)和[配置](docs/source/configuration.md)了解当前实现。[CI](docs/source/ci.md)、[支持矩阵](docs/source/support.md)、[版本规则](docs/source/versioning.md)及[工程交接](docs/source/engineering-handoff.md)区分本地通过与远端/平台未验证状态。问题联系入口为 [Issues](https://github.com/cemc-oper/sledra/issues)。
+[文档首页](docs/source/index.md)按四个顶层章节组织：
 
-真实 HPC、跨计算节点、批准的性能预算和公开发行资格仍未验证。原始契约和冻结 M1 样本继续保持兼容性约束。历史名称与路径见[迁移说明](docs/source/migration.md)。
+| 章节 | 阅读目标 |
+|---|---|
+| [开始使用](docs/source/getting-started/index.md) | 安装试用包或从源码运行第一个示例 |
+| [指南](docs/source/guides/index.md) | 配置记录环境，使用本地与 HPC 验证工具 |
+| [开发](docs/source/development/index.md) | 开发、测试、维护文档及核对工程交接 |
+| [参考](docs/source/reference/index.md) | 查询架构、CLI、契约及兼容性资料 |
+
+问题联系入口为 [Issues](https://github.com/cemc-oper/sledra/issues)。
+
+真实 HPC、跨计算节点、批准的性能预算和公开发行资格仍未验证。原始契约和冻结 M1 样本继续保持兼容性约束。历史名称与路径见[迁移说明](docs/source/reference/compatibility/migration.md)。

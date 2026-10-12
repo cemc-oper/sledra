@@ -53,4 +53,4 @@ build/bin/sledra --version
 
 `make check` 在私有副本中重新生成 canonical 资源，并逐字节核对两个 Go embed 目录。显式契约更新时修改 `spec/build_contract.py`，重新生成后执行 `python3 scripts/sync_contracts.py`，再审查差异和完整回归；不得独立编辑 embed。
 
-`make test` 验证无记录环境的帮助/版本、含空格路径、移除源码契约的只读副本、不同 cwd、无效覆盖与业务输出等价性。canonical 向量和冻结 M1 handoff 保留为兼容输入。安装隔离验收见[安装](installation.md)，目标 HPC 资格另行验证。
+`make test` 验证无记录环境的帮助/版本、含空格路径、移除源码契约的只读副本、不同 cwd、无效覆盖与业务输出等价性。canonical 向量和冻结 M1 handoff 保留为兼容输入。安装隔离验收见[安装](../getting-started/installation.md)，目标 HPC 资格另行验证。

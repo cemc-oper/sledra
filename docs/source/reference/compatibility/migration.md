@@ -21,4 +21,6 @@ SLD-28 于 2026-10-12 迁移外层开发目录与内部 Git 仓库。产品、�
 
 ## 中文文档布局
 
-本次用户要求将 README 与说明改为中文，并启用 Sphinx、PyData Sphinx Theme、MyST-NB。原 `docs/*.md` 指南迁入 `docs/source/`，`docs/README.md` 保留入口，规范来源 manifest 保留在 `docs/contracts-sources.json`。文档构建与试用包引用随之同步；不迁移规范权威来源或冻结测试数据。
+中文文档使用 Sphinx、PyData Sphinx Theme 和 MyST-NB。原 `docs/*.md` 指南迁入 `docs/source/`，现按 `getting-started/`、`guides/`、`development/`、`reference/` 分层组织；测试与验证、兼容性与迁移各有子目录。各章节 `index.md` 组织子页面，`docs/README.md` 保留仓库入口。
+
+规范来源 manifest 保留在 `docs/contracts-sources.json`。文档构建与试用包来源路径随目录调整同步；包内 HPC 说明仍位于 `share/sledra/docs/testing-hpc.md`。规范权威来源和冻结测试数据保持原位置及字节。

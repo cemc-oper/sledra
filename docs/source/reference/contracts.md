@@ -12,7 +12,7 @@
 python3 scripts/check_docs.py --plan-dir /absolute/path/to/docs/observability-plan
 ```
 
-摘要不匹配时审查上游变化，必要时一起更新受影响指南、schema、生成脚本和 golden，再记录已复核的摘要。检查只能发现版本漂移，不能证明语义等价。语义修改后运行[完整回归](testing-local.md)，不能只重生成 manifest 来绕过审查。
+摘要不匹配时审查上游变化，必要时一起更新受影响指南、schema、生成脚本和 golden，再记录已复核的摘要。检查只能发现版本漂移，不能证明语义等价。语义修改后运行[完整回归](../development/testing/local.md)，不能只重生成 manifest 来绕过审查。
 
 ## 机器契约与兼容性
 

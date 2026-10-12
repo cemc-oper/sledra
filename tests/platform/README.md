@@ -1,6 +1,6 @@
 # 平台探针与节点工具
 
-[公共参数与HPC流程](../../docs/source/testing-hpc.md)说明源码/安装调用、依赖及报告边界。test-platform以共享开发bin运行单节点原语和本地双角色；test覆盖并发隔离、owner清理、失联时限、错误架构与缺依赖报告。
+[公共参数与HPC流程](../../docs/source/guides/hpc.md)说明源码/安装调用、依赖及报告边界。test-platform以共享开发bin运行单节点原语和本地双角色；test覆盖并发隔离、owner清理、失联时限、错误架构与缺依赖报告。
 
 probe仍将--parent作为work-root别名。使用新的report-dir，不覆盖[历史WSL2结果](results/wsl2-ext4-2026-10-11.json)。v2报告含文件系统原始延迟、实际ELF/version启动和真实mount。测试树除外部bin外限制200文件/10MiB，Go缓存不在树中。
 

@@ -16,4 +16,4 @@ labels: ''
 - 合成验收场景：
 - 所需平台/HPC 证据及未知项：
 
-当前记录器尚未实现分析或真实采集确认，范围见[支持矩阵](../../docs/source/support.md)。
+当前记录器尚未实现分析或真实采集确认，范围见[支持矩阵](../../docs/source/reference/compatibility/support.md)。

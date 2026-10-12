@@ -28,7 +28,26 @@ uv run --only-group docs --locked --offline --no-python-downloads --python 3.12 
 
 `conf.py` 设置 `language = "zh_CN"`、`html_theme = "pydata_sphinx_theme"` 和 `extensions = ["myst_nb"]`。MyST-NB 已自动加载 Markdown 解析器，不重复启用 myst_parser。版本和传递依赖由根 uv.lock 锁定。
 
-新增页面放入 `docs/source/`，并加入 `index.md` 的 toctree。页面之间使用相对 Markdown 链接；标题和可见说明使用中文，保留文件路径与技术标识。仓库内源码导航使用真实相对路径；站点指向未收录的源码资源时，使用明确的 GitHub 文件链接，避免生成不可访问的本地链接。
+### 目录与导航
+
+站点首页只收录“开始使用、指南、开发、参考”四个顶层章节。按读者任务放置页面，加入所属目录 `index.md` 的 toctree，不在首页平铺单篇文档。测试与验证、兼容性与迁移分别作为开发和参考的子章节：
+
+```text
+docs/source/
+├── index.md
+├── getting-started/          # 开始使用：安装、源码快速开始
+├── guides/                   # 指南：记录配置、本地与 HPC 验证工具
+├── development/              # 开发：流程、文档维护、工程交接
+│   └── testing/              # 测试与验证：本地回归、CI
+└── reference/                # 参考：架构、CLI、契约来源
+    └── compatibility/        # 兼容性与迁移：支持、版本、路径迁移
+```
+
+每个章节目录都有 `index.md`，简要说明适用任务并导航到子页面。章节用 toctree 组织页面，设置 `:titlesonly:` 仅列出页面标题；单篇文档的二级、三级标题由页内目录导航，无需为每个小节创建页面。
+
+### 链接与内容
+
+页面之间使用相对 Markdown 链接；标题和可见说明使用中文，保留文件路径与技术标识。仓库内源码导航使用真实相对路径；站点指向未收录的源码资源时，使用明确的 GitHub 文件链接，避免生成不可访问的本地链接。移动页面时同步更新 README、组件说明和打包脚本中的路径，并运行 `make docs`。
 
 MyST 支持 fenced directive，例如 toctree、note 和代码块。Notebook 扩展已启用，但 `nb_execution_mode = "off"`，构建只渲染已有内容，不自动执行代码或需要业务环境/内核；当前没有计算 Notebook 示例。新增执行型文档时再明确其运行环境与验收条件。
 

@@ -4,7 +4,7 @@ spool.Open 用 SHA256 路径创建 source/Run/task/Attempt 目录，并取得非
 
 事件按SLD-06限制，段/session按 segment_bytes、session_bytes、segments 限制。零值采用合成本地默认1MiB、64MiB、64段、五分钟，不是站点预算。max_spool_bytes/max_spool_files 同时设置启用全树容量保护，同时为零则关闭。Stats 的成功/丢弃/字节/新段计数只存进程内存。business 每个失败CLI输出不含payload的分类诊断，strict 返回错误；持久诊断尚未提供。[确认保留工具](../retention/README.md)仅限夹具。文件0600、目录0700，身份路径不暴露原 task key 或产品路径。
 
-sledra event 使用已有可信 SLEDRA_ROOT 和部署 JSON SLEDRA_CONFIG，固定 producer_role/name/version、source_id、session_id，可选上述容量值。并发 producer 采用不同 session。默认内嵌契约；覆盖规则见 [CLI](../../docs/source/cli.md)，role 不按事件覆写。
+sledra event 使用已有可信 SLEDRA_ROOT 和部署 JSON SLEDRA_CONFIG，固定 producer_role/name/version、source_id、session_id，可选上述容量值。并发 producer 采用不同 session。默认内嵌契约；覆盖规则见 [CLI](../../docs/source/reference/cli.md)，role 不按事件覆写。
 
 ```bash
 sledra event --context /trusted/attempt.json --type attempt.started \

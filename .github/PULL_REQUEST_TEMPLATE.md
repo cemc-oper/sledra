@@ -22,4 +22,4 @@
 - 远端 CI 链接或未验证：
 - 必需 HPC/站点检查及状态：
 
-公共命令见[CI指南](../docs/source/ci.md)，冻结输入审查见[工程交接](../docs/source/engineering-handoff.md)。
+公共命令见[CI指南](../docs/source/development/testing/ci.md)，冻结输入审查见[工程交接](../docs/source/development/engineering-handoff.md)。

@@ -1,6 +1,6 @@
 # Sledra 契约 1.0.0 草案（SLD-02）
 
-这是公开字节格式的开发基线，不是已发行契约或记录器。[1.0.0/](1.0.0/)保存可搬运资源，[build_contract.py](build_contract.py)重新生成。schema采用[JSON Schema Draft 2020-12](https://json-schema.org/draft/2020-12/)，无远端$ref；方言URI不在校验时抓取。canonical资源显式重新生成后运行python3 scripts/sync_contracts.py，check在私有副本核对embed字节。24类event-types目录包含已知payload、关联层次、source kind和producer role，权威来源见[契约来源](../docs/source/contracts.md)。capabilities分别声明read_contracts、write_contracts、known_event_types，不与软件版本混合。
+这是公开字节格式的开发基线，不是已发行契约或记录器。[1.0.0/](1.0.0/)保存可搬运资源，[build_contract.py](build_contract.py)重新生成。schema采用[JSON Schema Draft 2020-12](https://json-schema.org/draft/2020-12/)，无远端$ref；方言URI不在校验时抓取。canonical资源显式重新生成后运行python3 scripts/sync_contracts.py，check在私有副本核对embed字节。24类event-types目录包含已知payload、关联层次、source kind和producer role，权威来源见[契约来源](../docs/source/reference/contracts.md)。capabilities分别声明read_contracts、write_contracts、known_event_types，不与软件版本混合。
 
 ## 文档与语义校验
 
@@ -45,7 +45,7 @@
 
 ## CLI与错误
 
-[帮助/版本及默认资源](../docs/source/cli.md)无需外部契约；显式覆盖必须准确兼容。context/lifecycle与sledra event已实现。bundle工具为python3 spec/check.py BUNDLE.json，或recorder/下go run ./cmd/sledra-spec-check [-spec-dir DIR] BUNDLE.json，成功stdout为JSON状态，失败stderr为{ok:false,code,detail}。离线[sledra-event](../recorder/event/README.md)编码/校验不写spool，stdout为空。
+[帮助/版本及默认资源](../docs/source/reference/cli.md)无需外部契约；显式覆盖必须准确兼容。context/lifecycle与sledra event已实现。bundle工具为python3 spec/check.py BUNDLE.json，或recorder/下go run ./cmd/sledra-spec-check [-spec-dir DIR] BUNDLE.json，成功stdout为JSON状态，失败stderr为{ok:false,code,detail}。离线[sledra-event](../recorder/event/README.md)编码/校验不写spool，stdout为空。
 
 | 记录命令 | 输入 | 行为 |
 |---|---|---|
@@ -64,7 +64,7 @@
 
 本地工具链为WSL2 x86_64、Go1.27.0、Python3.12.3、Bash5.2.21、uv0.11.2、jsonschema4.10.3。Go module为github.com/cemc-oper/sledra/recorder，依赖固定于[go.mod](../recorder/go.mod)/[go.sum](../recorder/go.sum)，窄Python依赖为[requirements-test.txt](requirements-test.txt)。未增加记录器Python运行依赖；发行/平台资格继续单列。
 
-源码根setup准备缓存，check/test离线运行，详见[开发](../docs/source/development.md)。单项入口仍可用：
+源码根setup准备缓存，check/test离线运行，详见[开发](../docs/source/development/workflow.md)。单项入口仍可用：
 
 ```bash
 python3 spec/build_contract.py

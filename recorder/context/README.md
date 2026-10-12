@@ -6,7 +6,7 @@
 
 run finish 在 finish/ 保存不可变声明及 run.finish_declared outbox。scope_ref 为 scope_ 加 Run scope 规范摘要，排序的 covered_attempt_ids 及摘要冻结覆盖集合。重复相同声明复用，同 declaration_id 异内容冲突，不同声明可并存；后来 Attempt 不改旧声明，needs_finalization 解释由 M2 负责。outbox 不是 spool 段或投影。
 
-在 recorder/ 以 GOPROXY=off GOSUMDB=off go build -o /tmp/sledra ./cmd/sledra 构建，SLEDRA_ROOT 须为已有真实绝对目录。默认契约内嵌；资源覆盖错误见 [CLI](../../docs/source/cli.md)。
+在 recorder/ 以 GOPROXY=off GOSUMDB=off go build -o /tmp/sledra ./cmd/sledra 构建，SLEDRA_ROOT 须为已有真实绝对目录。默认契约内嵌；资源覆盖错误见 [CLI](../../docs/source/reference/cli.md)。
 
 ```text
 sledra registry run-create --request-file run-request.json --context-out /shared/root/contexts/run.json

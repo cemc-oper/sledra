@@ -67,7 +67,7 @@ def check_sources(plan_dir: Path) -> tuple[int, list[str]]:
             errors.append(f"source {name}: missing or outside plan directory")
         elif hashlib.sha256(path.read_bytes()).hexdigest() != expected:
             errors.append(
-                f"source {name}: changed since review; reconcile docs/source/contracts.md"
+                f"source {name}: changed since review; reconcile docs/source/reference/contracts.md"
             )
     return len(manifest["sources"]), errors
 

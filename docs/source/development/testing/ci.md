@@ -1,6 +1,6 @@
 # CI 与本地复现
 
-GitHub Actions 在 main push、pull request 和手动 dispatch 时运行。配置使用 Ubuntu 24.04 amd64、Python 3.12.3、Go 1.27.0、uv 0.11.2，第三方 Actions 固定完整提交。配置与本地等价命令已验证，真实远端 Actions 仍未执行；平台区别见[支持矩阵](support.md)。
+GitHub Actions 在 main push、pull request 和手动 dispatch 时运行。配置使用 Ubuntu 24.04 amd64、Python 3.12.3、Go 1.27.0、uv 0.11.2，第三方 Actions 固定完整提交。配置与本地等价命令已验证，真实远端 Actions 仍未执行；平台区别见[支持矩阵](../../reference/compatibility/support.md)。
 
 ## 共享入口
 
@@ -21,7 +21,7 @@ make test-package
 
 未来一次性的 hosted runner 会安装 bubblewrap/util-linux，在 AppArmor sysctl 存在时启用非特权 namespace；这不修改本地或 HPC 策略。隔离不支持时失败，不回退主机运行。包验收还要求系统 `/usr/bin/python3` >=3.12。
 
-check 调用 `scripts/check_ci.py` 和固定的 actionlint 1.7.11，配方为 `.github/ci-tools.json`。缺失或损坏缓存提示 setup；可显式使用 `python3 scripts/check_ci.py --binary /absolute/path/to/actionlint`，报告保留覆盖来源和摘要。关闭可选 shellcheck/pyflakes 集成，避免工具是否安装改变门槛；Bash 语法另行检查。docs 调用[严格中文文档构建](documentation.md)。
+check 调用 `scripts/check_ci.py` 和固定的 actionlint 1.7.11，配方为 `.github/ci-tools.json`。缺失或损坏缓存提示 setup；可显式使用 `python3 scripts/check_ci.py --binary /absolute/path/to/actionlint`，报告保留覆盖来源和摘要。关闭可选 shellcheck/pyflakes 集成，避免工具是否安装改变门槛；Bash 语法另行检查。docs 调用[严格中文文档构建](../documentation.md)。
 
 ## 权限与证据
 

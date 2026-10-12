@@ -1,6 +1,6 @@
 # 源码快速开始
 
-在本地使用 Go 记录器和合成 Bash payload。先安装[开发工具链](development.md#工具链)。源码准备需要联网，日常命令离线使用已准备的缓存。
+在本地使用 Go 记录器和合成 Bash payload。先安装[开发工具链](../development/workflow.md#工具链)。源码准备需要联网，日常命令离线使用已准备的缓存。
 
 ## 准备依赖
 
@@ -39,6 +39,6 @@ STANDALONE_WORK_DIR="$demo_dir" SLEDRA_ROOT="$demo_dir/observability" \
 printf '示例文件：%s\n' "$demo_dir"
 ```
 
-示例按脚本位置查找资源。`product.txt`、`executions.log` 和 `callbacks.log` 保存业务结果及一次调用的证据。`observability/` 下的 `contexts/`、`registry/`、`spool/` 和 `finish/` 保存原始事实，不生成分析结论。每次手动运行使用新目录；直接调用记录器时使用默认内嵌契约和显式绝对输入/运行路径，见[配置](configuration.md)。
+示例按脚本位置查找资源。`product.txt`、`executions.log` 和 `callbacks.log` 保存业务结果及一次调用的证据。`observability/` 下的 `contexts/`、`registry/`、`spool/` 和 `finish/` 保存原始事实，不生成分析结论。每次手动运行使用新目录；直接调用记录器时使用默认内嵌契约和显式绝对输入/运行路径，见[配置](../guides/configuration.md)。
 
-单项检查见[本地测试](testing-local.md)，报告与依赖模式见[开发](development.md)。脱离源码试用请按[安装指南](installation.md)执行 `make package` 和 `make test-package`。
+单项检查见[本地测试](../development/testing/local.md)，报告与依赖模式见[开发](../development/workflow.md)。脱离源码试用请按[安装指南](installation.md)执行 `make package` 和 `make test-package`。

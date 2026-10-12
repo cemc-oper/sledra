@@ -41,7 +41,7 @@ make benchmark
 
 命令禁止 uv 联网、Go proxy/sum database 查询、私有模块代理绕过及工具链下载。源码离线构建需要 setup 已准备的缓存，不支持空缓存离线初始化。项目环境不存在时，uv 可从已有缓存同步。
 
-build 在 `build/bin/` 生成 sledra、sledra-spec-check、sledra-event、sledra-spool、sledra-retention。`build/manifest.json` 记录输入、工具链、目标、参数和二进制 SHA256。采用 CGO_ENABLED=0、-trimpath、-buildvcs=false，支持无 Git 元数据的源码；输入或二进制字节变化时重建，其余情况复用。版本来源见 [CLI](cli.md#帮助与版本)。
+build 在 `build/bin/` 生成 sledra、sledra-spec-check、sledra-event、sledra-spool、sledra-retention。`build/manifest.json` 记录输入、工具链、目标、参数和二进制 SHA256。采用 CGO_ENABLED=0、-trimpath、-buildvcs=false，支持无 Git 元数据的源码；输入或二进制字节变化时重建，其余情况复用。版本来源见 [CLI](../reference/cli.md#帮助与版本)。
 
 check 检查锁文件、Python 格式/静态规则、Go 格式/vet、Bash 语法、canonical/fixture/embed 生成字节、文档链接及真实 actionlint。生成在私有副本中完成，不覆写源树。docs 执行中文文档严格构建，见[文档维护](documentation.md)。
 
@@ -55,4 +55,4 @@ demo 创建正常/失败/重试场景，在新的报告目录导出 context、Re
 
 日常运行不覆盖冻结 M1 或历史平台/性能结果，显式刷新见[工程交接](engineering-handoff.md)。规范来源核对是可选作者工作区检查，独立源码无需相邻规划目录。
 
-源码模式依赖开发工具和缓存；[试用包](installation.md)记录仅依赖目标二进制、Bash 及示例使用的 dirname/cat/sleep，标准库 Python 结果验证独立提供。test-platform 运行单节点原语和本地双角色模拟；源码/安装工具共用[测试参数](testing-hpc.md)，HPC 模式必须显式指定共享工作父目录。CI 使用相同入口，见 [CI](ci.md)和[支持矩阵](support.md)。
+源码模式依赖开发工具和缓存；[试用包](../getting-started/installation.md)记录仅依赖目标二进制、Bash 及示例使用的 dirname/cat/sleep，标准库 Python 结果验证独立提供。test-platform 运行单节点原语和本地双角色模拟；源码/安装工具共用[测试参数](../guides/hpc.md)，HPC 模式必须显式指定共享工作父目录。CI 使用相同入口，见 [CI](testing/ci.md)和[支持矩阵](../reference/compatibility/support.md)。

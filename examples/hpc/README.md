@@ -8,6 +8,6 @@ python3 examples/hpc/site.py --config /absolute/path/to/site.json
 
 准备生成唯一report、共享测试子目录和job.sh，打印提交/收集命令，不自动提交。站点窗口内审查job后再执行打印的sbatch。每节点一个task运行双角色，有界barrier及timeout；完成后即使失败也收集，失联非零退出并保留树/已有结果。报告旁保存job ID、allocation/node、日志和archive摘要。
 
-单节点可用probe、M1、Shell及可选benchmark，加--mode hpc --bin/--work-root/--report-dir/--keep-work，每个report须新建；按站点策略在计算节点执行。手动双角色流程见源码docs/source/testing-hpc.md，安装版位于share/sledra/docs/testing-hpc.md。
+单节点可用probe、M1、Shell及可选benchmark，加--mode hpc --bin/--work-root/--report-dir/--keep-work，每个report须新建；按站点策略在计算节点执行。手动双角色流程见源码docs/source/guides/hpc.md，安装版位于share/sledra/docs/testing-hpc.md。
 
 模板、登录节点运行或本地模拟不证明共享存储、调度、MPI、signal、断电持久性或A6预算达标。

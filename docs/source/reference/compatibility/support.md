@@ -18,4 +18,4 @@
 | 公开发行、签名与完整离线升级/回滚 | 后续工作 | A7 和26独立收口 |
 | 分析、查询、真实采集确认 | 尚未实现 | M2；隔离保留夹具不是采集器 |
 
-最低/实测工具见[开发](development.md)，产物身份与运行依赖见[安装](installation.md)，节点/mount 和命令边界见 [HPC 测试](testing-hpc.md)。[工程交接](engineering-handoff.md)保留兼容输入及未完成分支。
+最低/实测工具见[开发](../../development/workflow.md)，产物身份与运行依赖见[安装](../../getting-started/installation.md)，节点/mount 和命令边界见 [HPC 测试](../../guides/hpc.md)。[工程交接](../../development/engineering-handoff.md)保留兼容输入及未完成分支。
