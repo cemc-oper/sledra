@@ -1,6 +1,6 @@
 # SLD-04 file Registry foundation
 
-`Registry.Register` accepts a completed RunContext or AttemptContext, the registry namespace, the parent identity and a caller-owned request token. It verifies the public context schema, context digest, token digest and deterministic ID before touching the registry path. SLD-05 will construct contexts, validate their full parent/scope semantics and expose the `sledra registry run-create` / `attempt-create` commands. This package does not submit work or create an identity when an event is emitted.
+`Registry.Register` accepts a completed RunContext or AttemptContext, the registry namespace, the parent identity and a caller-owned request token. It verifies the public context schema, context digest, token digest and deterministic ID before touching the registry path. The [SLD-05 context service](../../context/README.md) constructs contexts, validates their full parent/scope semantics and exposes the `sledra registry run-create` / `attempt-create` commands. This package does not submit work or create an identity when an event is emitted.
 
 Authority path: `SLEDRA_ROOT/registry/<sha256(registry_id)>/<run|attempt>/<first two ID hex digits>/<id>.json`. The path is derived only from a full ID and a registry namespace; cycle is not in the Run key. The root must already exist as a real absolute directory on a filesystem qualified for hardlink create-if-absent and directory fsync.
 

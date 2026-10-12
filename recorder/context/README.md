@@ -1,0 +1,20 @@
+# Run/Attempt context lifecycle (SLD-05)
+
+`context.Service` constructs Run and Attempt contexts from explicit caller-owned launch/execution tokens. A Run request supplies a validated DefinitionManifest, an optional ProductExpectation, an explicit cycle and scope. Task defaults are expanded before IDs are computed. The service publishes immutable copies of the referenced documents under `SLEDRA_ROOT/documents/`, then calls the SLD-04 Registry. A duplicate token with the same request returns the winning record; changed content conflicts. A new launch token makes a different Run even for the same cycle. A new execution token makes a different Attempt; `retry_of` must name an existing Attempt in the same Run and TaskInstance. Branches are retained.
+
+Public contexts are canonical JSON files at one caller-selected absolute path under `SLEDRA_ROOT`, published without replacement and mode 0400. The Attempt uses `extensions["sledra.parent"].registry_id` to locate the exact Run authority record without searching by cycle. `context validate` checks context digest, Registry authority, parent Run, DefinitionManifest, optional ProductExpectation, scope parameters and retry parent. If a context file is missing or corrupt, it returns a classified error and creates no replacement identity. `Registry.Read` is read-only; it does not create directory entries for missing IDs.
+
+`run finish` saves a separate immutable record under `SLEDRA_ROOT/finish/` with a `run.finish_declared` outbox event. Its `scope_ref` is `scope_` plus the canonical SHA256 of the Run scope, and its sorted `covered_attempt_ids` and digest freeze the explicit Attempt set. Identical declaration requests reuse the winner. Same `declaration_id` with different content conflicts. Concurrent different declarations coexist. A later Attempt remains in the original Run and never rewrites an earlier declaration; M2 reconstructs `needs_finalization` from the facts. The outbox is not a spool segment or an analysis projection.
+
+From `recorder/`, build `GOPROXY=off GOSUMDB=off go build -o /tmp/sledra ./cmd/sledra`. Set `SLEDRA_ROOT` to an existing real absolute directory on a filesystem that passed SLD-03. Set `SLEDRA_SPEC_DIR` to the absolute `spec/1.0.0` directory for offline development; the local default is `../spec/1.0.0` when running from `recorder/`. The commands are:
+
+```text
+sledra registry run-create --request-file run-request.json --context-out /shared/root/contexts/run.json
+sledra registry attempt-create --context /shared/root/contexts/run.json --request-file attempt-request.json --context-out /shared/root/contexts/attempt.json
+sledra context validate --file /shared/root/contexts/attempt.json
+sledra run finish --context /shared/root/contexts/run.json --scope-file finish-request.json
+```
+
+The Run request uses `registry_id`, `launch_token`, `system_id`, `purpose`, `deployment_id`, `platform_id`, `cycle`, `scope`, `definition_file`, optional `expectation_file`, `config_refs` and `rerun_of`. The Attempt request uses `task_key`, `parameters`, `execution_token`, optional `retry_of` and `process_role`. The finish request uses `declaration_id`, `rule_version`, `covered_attempt_ids`, `reason`, `result` (`finished`, `abandoned`, `unknown`), `source_id` and `session_id`. Files are JSON; unknown request fields and duplicate keys are rejected. All successful commands have empty stdout and stderr. Failures emit only JSON `{ "ok": false, "code": "..." }` on stderr with exit status 1. A failed `context-out` after Registry publication can be retried with the same token and absolute output path; it must not trigger another business invocation.
+
+Run `python3 spec/verify_context.py` from the repository root for the synthetic CLI scenario. `go test ./context ./cmd/sledra ./internal/registry` covers same-cycle Runs, retries, scope/parameter rejection, read-only/tampered/missing contexts, concurrent finish, a later Attempt and a late old event fixture. Tests use local WSL/ext4 semantics only. No business command, scheduler, spool, target shared/HPC filesystem or analysis projection is exercised.

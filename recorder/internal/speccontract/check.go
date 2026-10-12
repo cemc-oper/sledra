@@ -445,6 +445,12 @@ func checkParameters(values, task map[string]any) (map[string]any, error) {
 	return n.(map[string]any), nil
 }
 
+// ExpandParameters applies declared defaults and rejects undeclared, missing,
+// null or incorrectly typed values. Inputs should use json.Number for integers.
+func ExpandParameters(values, task map[string]any) (map[string]any, error) {
+	return checkParameters(values, task)
+}
+
 func same(a, b any) bool                   { return reflect.DeepEqual(a, b) }
 func ref(id, digest string) map[string]any { return map[string]any{"id": id, "sha256": digest} }
 func needed(ok bool, code, detail string) error {

@@ -1,5 +1,5 @@
 // Package registry publishes immutable Run and Attempt registration records.
-// Context construction and lifecycle validation belong to SLD-05.
+// Context construction and lifecycle validation are implemented in context.
 package registry
 
 import (
@@ -11,6 +11,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"syscall"
 	"time"
@@ -368,7 +369,7 @@ func (r *Registry) loadWinner(path string, req Request, id, requestHash string, 
 	}
 	if asString(record["schema_version"]) != "1.0.0" || asString(record["record_kind"]) != "registry_record" ||
 		asString(record["object_kind"]) != req.Kind || asString(record["registry_id"]) != req.RegistryID ||
-		asString(record["parent_id"]) != req.ParentID || asString(record["id"]) != id ||
+		(req.ParentID != "" && asString(record["parent_id"]) != req.ParentID) || asString(record["id"]) != id ||
 		asString(record["creator_role"]) != "registry" {
 		return nil, problem("corrupt_record", "winning registration identity mismatch", nil)
 	}
@@ -376,7 +377,7 @@ func (r *Registry) loadWinner(path string, req Request, id, requestHash string, 
 	if !ok {
 		return nil, problem("corrupt_record", "winning context is absent", nil)
 	}
-	if err := r.checkContext(req.Kind, req.RegistryID, req.ParentID, id, asString(record["token_sha256"]), context); err != nil {
+	if err := r.checkContext(req.Kind, req.RegistryID, asString(record["parent_id"]), id, asString(record["token_sha256"]), context); err != nil {
 		return nil, problem("corrupt_record", "winning context is invalid", err)
 	}
 	if asString(record["context_sha256"]) != asString(context["context_sha256"]) {
@@ -395,10 +396,33 @@ func (r *Registry) loadWinner(path string, req Request, id, requestHash string, 
 	if errA != nil || errB != nil || !bytes.Equal(a, b) {
 		return nil, problem("corrupt_record", "winning outbox does not match context", nil)
 	}
-	if asString(record["token_sha256"]) != shaBytes([]byte(req.Token)) || asString(record["request_sha256"]) != requestHash {
+	if req.Token != "" && (asString(record["token_sha256"]) != shaBytes([]byte(req.Token)) || asString(record["request_sha256"]) != requestHash) {
 		return nil, problem("conflict", "same registration key has different request content", nil)
 	}
 	return &Result{ID: id, Path: path, Created: created, Record: record}, nil
+}
+
+var runIDPattern = regexp.MustCompile(`^run_[0-9a-f]{64}$`)
+var attemptIDPattern = regexp.MustCompile(`^att_[0-9a-f]{64}$`)
+
+// Read returns a validated immutable registration by its exact ID. It never
+// searches by cycle or selects a latest Run. The caller must separately check
+// its parent context and manifest/expectation references.
+func (r *Registry) Read(registryID, kind, id string) (*Result, error) {
+	if registryID == "" || (kind != "run" && kind != "attempt") ||
+		(kind == "run" && !runIDPattern.MatchString(id)) ||
+		(kind == "attempt" && !attemptIDPattern.MatchString(id)) {
+		return nil, problem("schema_invalid", "invalid registration lookup key", nil)
+	}
+	bucket := r.root
+	for _, part := range []string{"registry", shaBytes([]byte(registryID)), kind, id[4:6]} {
+		bucket = filepath.Join(bucket, part)
+		info, err := os.Lstat(bucket)
+		if err != nil || !info.IsDir() || info.Mode()&os.ModeSymlink != 0 {
+			return nil, problem("registry_unavailable", "registration directory unavailable", err)
+		}
+	}
+	return r.loadWinner(filepath.Join(bucket, id+".json"), Request{Kind: kind, RegistryID: registryID}, id, "", false)
 }
 
 // CleanupStaleTemps removes only old, unlinked-by-name temporary files in

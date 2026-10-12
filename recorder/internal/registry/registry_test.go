@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"sync"
 	"testing"
@@ -136,6 +137,29 @@ func TestRegistrationAndOutbox(t *testing.T) {
 		if err != nil || len(entries) != 1 {
 			t.Fatalf("published temporary file was not cleaned: %v %v", entries, err)
 		}
+	}
+}
+
+func TestReadExactRegistration(t *testing.T) {
+	root := t.TempDir()
+	r := newRegistry(t, root)
+	req := runRequest(t, "read-token")
+	created, err := r.Register(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := r.Read(req.RegistryID, "run", created.ID)
+	if err != nil || !reflect.DeepEqual(got.Record, created.Record) {
+		t.Fatalf("read: %v", err)
+	}
+	if _, err := r.Read(req.RegistryID, "run", "../../other"); err == nil {
+		t.Fatal("unsafe lookup accepted")
+	}
+	if _, err := r.Read("other-registry", "run", created.ID); err == nil {
+		t.Fatal("wrong namespace accepted")
+	}
+	if _, err := os.Stat(filepath.Join(root, "registry", shaBytes([]byte("other-registry")))); !errors.Is(err, os.ErrNotExist) {
+		t.Fatal("read created a registry directory")
 	}
 }
 
