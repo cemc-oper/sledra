@@ -1,0 +1,7 @@
+{
+  "producer_name": "standalone-shell",
+  "producer_role": "stage_owner",
+  "producer_version": "0.1.0",
+  "session_id": "standalone-stage",
+  "source_id": "standalone-node"
+}

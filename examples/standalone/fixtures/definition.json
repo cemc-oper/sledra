@@ -1,0 +1,40 @@
+{
+  "application_revision": "synthetic-revision-1",
+  "content_sha256": "410ae316e8cad27947d48a9bdb198028f695212bc91a2a19be44a30f298c9d8f",
+  "definition_id": "def_410ae316e8cad27947d48a9bdb198028f695212bc91a2a19be44a30f298c9d8f",
+  "generator": {
+    "name": "synthetic-generator",
+    "version": "0.1.0"
+  },
+  "kind": "definition_manifest",
+  "mapping_version": "1",
+  "product_rule_refs": [],
+  "schema_version": "1.0.0",
+  "stage_definitions": [
+    "forecast"
+  ],
+  "tasks": [
+    {
+      "depends_on": [],
+      "engine_path_template": "/synthetic/main/{member}/forecast",
+      "parameters": {
+        "domain": {
+          "default": "global",
+          "required": false,
+          "type": "string"
+        },
+        "lead_seconds": {
+          "required": true,
+          "type": "integer"
+        },
+        "member": {
+          "required": true,
+          "type": "string"
+        }
+      },
+      "stage_key": "forecast",
+      "task_key": "main.forecast",
+      "task_kind": "forecast"
+    }
+  ]
+}

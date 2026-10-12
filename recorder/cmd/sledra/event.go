@@ -6,6 +6,7 @@ import (
 	"flag"
 	"io"
 	"os"
+	"strconv"
 	"time"
 
 	"sledra.local/recorder/context"
@@ -32,9 +33,16 @@ func recordEvent(args []string, diagnostics io.Writer) error {
 	contextPath := f.String("context", "", "")
 	typ := f.String("type", "", "")
 	payloadPath := f.String("payload-file", "", "")
+	invocationID := f.String("invocation-id", "", "")
+	processRole := f.String("process-role", "", "")
+	exitCode := f.String("exit-code", "", "")
+	signal := f.String("signal", "", "")
 	eventID := f.String("event-id", "", "")
 	strict := f.Bool("strict", false, "")
-	if f.Parse(args) != nil || f.NArg() != 0 || *contextPath == "" || *typ == "" || *payloadPath == "" {
+	if f.Parse(args) != nil || f.NArg() != 0 || *contextPath == "" || *typ == "" {
+		return errors.New("usage")
+	}
+	if *payloadPath != "" && (*invocationID != "" || *processRole != "" || *exitCode != "" || *signal != "") {
 		return errors.New("usage")
 	}
 	failure := func(err error) error {
@@ -74,14 +82,22 @@ func recordEvent(args []string, diagnostics io.Writer) error {
 	if ctx["kind"] != "attempt_context" {
 		return failure(errors.New("parent_mismatch"))
 	}
-	payloadFile, err := os.Open(*payloadPath)
-	if err != nil {
-		return failure(errors.New("input_unavailable"))
-	}
-	defer payloadFile.Close()
-	payload, err := event.ReadBounded(payloadFile)
-	if err != nil {
-		return failure(err)
+	var payload []byte
+	if *payloadPath != "" {
+		payloadFile, err := os.Open(*payloadPath)
+		if err != nil {
+			return failure(errors.New("input_unavailable"))
+		}
+		defer payloadFile.Close()
+		payload, err = event.ReadBounded(payloadFile)
+		if err != nil {
+			return failure(err)
+		}
+	} else {
+		payload, err = typedPayload(*typ, *invocationID, *processRole, *exitCode, *signal)
+		if err != nil {
+			return failure(err)
+		}
 	}
 	if *eventID == "" {
 		*eventID, err = event.NewID()
@@ -118,4 +134,32 @@ func recordEvent(args []string, diagnostics io.Writer) error {
 		return failure(errors.New(stats.LastError))
 	}
 	return nil
+}
+
+func typedPayload(typ, invocationID, role, exitCode, signal string) ([]byte, error) {
+	switch typ {
+	case "attempt.started":
+		if invocationID == "" || role == "" || exitCode != "" || signal != "" {
+			return nil, errors.New("schema_invalid")
+		}
+		return json.Marshal(map[string]any{"invocation_id": invocationID, "process_role": role})
+	case "attempt.exited":
+		if invocationID != "" || role == "" || (exitCode == "") == (signal == "") {
+			return nil, errors.New("schema_invalid")
+		}
+		if exitCode != "" {
+			n, err := strconv.ParseUint(exitCode, 10, 8)
+			if err != nil {
+				return nil, errors.New("schema_invalid")
+			}
+			return json.Marshal(map[string]any{"termination": "exited", "process_role": role, "exit_code": n})
+		}
+		n, err := strconv.ParseUint(signal, 10, 7)
+		if err != nil || n == 0 || n > 64 {
+			return nil, errors.New("schema_invalid")
+		}
+		return json.Marshal(map[string]any{"termination": "signaled", "process_role": role, "signal": n})
+	default:
+		return nil, errors.New("schema_invalid")
+	}
 }

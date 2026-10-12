@@ -1,0 +1,29 @@
+{
+  "approved_by_ref": "synthetic-only",
+  "cycles": [
+    {
+      "cycle": {
+        "cycle_kind": "forecast",
+        "cycle_time": "2026-10-09T16:00:00Z"
+      },
+      "reason": null,
+      "status": "expected"
+    }
+  ],
+  "deployment_id": "wsl-sandbox",
+  "kind": "expectation",
+  "plan_id": "exp_4db906f598e2a550f8e151849eea9a96900f61eb3c68ced43dd1e5af591d5154",
+  "purpose": "test",
+  "schema_version": "1.0.0",
+  "slots": [
+    {
+      "artifact_id": "grib.member01.lead0",
+      "deadline_at": "2026-10-10T03:12:14+08:00",
+      "recipient": "synthetic-recipient",
+      "rule_id": "file-exists",
+      "rule_version": "1",
+      "slot_id": "grib.member01.lead0"
+    }
+  ],
+  "system_id": "synthetic.model"
+}

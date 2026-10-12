@@ -1,0 +1,11 @@
+{
+  "declaration_id": "standalone-finish-1",
+  "rule_version": "1",
+  "covered_attempt_ids": [
+    "att_4cb0f65d9ecd2fc627c43de40c8b52fd69c2f898363248d6bd358905d700412f"
+  ],
+  "reason": "synthetic standalone completion",
+  "result": "finished",
+  "source_id": "standalone-node",
+  "session_id": "standalone-owner"
+}

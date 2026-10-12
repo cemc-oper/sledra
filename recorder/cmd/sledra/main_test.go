@@ -79,6 +79,18 @@ func TestCLIContextLifecycle(t *testing.T) {
 	if err := recordEvent(append(command, "--strict"), &diag); err == nil || diag.Len() != 0 {
 		t.Fatalf("strict: %v %s", err, diag.String())
 	}
+	if err := recordEvent([]string{"--context", attemptPath, "--type", "attempt.started", "--invocation-id", "invocation-typed", "--process-role", "forecast_program"}, &diag); err != nil {
+		t.Fatalf("typed start: %v", err)
+	}
+	if err := recordEvent([]string{"--context", attemptPath, "--type", "attempt.exited", "--process-role", "forecast_program", "--exit-code", "7"}, &diag); err != nil {
+		t.Fatalf("typed exit: %v", err)
+	}
+	if err := recordEvent([]string{"--context", attemptPath, "--type", "attempt.exited", "--process-role", "forecast_program", "--signal", "15"}, &diag); err != nil {
+		t.Fatalf("typed signal: %v", err)
+	}
+	if _, err := typedPayload("attempt.exited", "", "forecast_program", "7", "15"); err == nil {
+		t.Fatal("conflicting termination accepted")
+	}
 	var attempt map[string]any
 	ab, err := os.ReadFile(attemptPath)
 	if err != nil {

@@ -1,0 +1,7 @@
+{
+  "producer_name": "standalone-shell",
+  "producer_role": "process_owner",
+  "producer_version": "0.1.0",
+  "session_id": "standalone-process",
+  "source_id": "standalone-node"
+}

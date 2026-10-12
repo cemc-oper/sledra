@@ -1,0 +1,23 @@
+{
+  "cycle": {
+    "cycle_kind": "forecast",
+    "cycle_time": "2026-10-09T16:00:00Z"
+  },
+  "definition_file": "fixtures/definition.json",
+  "deployment_id": "wsl-sandbox",
+  "expectation_file": "fixtures/expectation.json",
+  "launch_token": "standalone-launch-1",
+  "platform_id": "wsl2",
+  "purpose": "test",
+  "registry_id": "registry-synthetic-1",
+  "scope": [
+    {
+      "parameters": {
+        "lead_seconds": 0,
+        "member": "01"
+      },
+      "task_key": "main.forecast"
+    }
+  ],
+  "system_id": "synthetic.model"
+}

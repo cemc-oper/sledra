@@ -1,0 +1,9 @@
+{
+  "execution_token": "standalone-exec-1",
+  "parameters": {
+    "lead_seconds": 0,
+    "member": "01"
+  },
+  "process_role": "forecast_program",
+  "task_key": "main.forecast"
+}
