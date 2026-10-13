@@ -31,6 +31,8 @@ make demo
 
 `make setup` 是显式联网步骤，支持空依赖缓存。日常命令使用已准备的缓存离线运行，不提交 HPC 作业。构建产物位于 `build/bin/`，每次检查、测试或演示的日志与摘要保存在独立的 `test-results/` 子目录。
 
+具体使用方式见[独立示例详解](docs/source/guides/standalone.md)：说明请求 JSON、owner/payload 分工、钩子顺序、失败路径以及生成文件的核对。随后按[脚本接入说明](docs/source/guides/recording.md)逐步调用 CLI，并确定自己业务脚本中的生命周期边界。
+
 ## 安装与试用
 
 ```bash
@@ -55,7 +57,7 @@ python3 -m http.server --directory build/docs/html 8000
 | 章节 | 阅读目标 |
 |---|---|
 | [开始使用](docs/source/getting-started/index.md) | 安装试用包或从源码运行第一个示例 |
-| [指南](docs/source/guides/index.md) | 配置记录环境，使用本地与 HPC 验证工具 |
+| [指南](docs/source/guides/index.md) | 理解独立示例、接入脚本、配置记录与验证工具 |
 | [开发](docs/source/development/index.md) | 开发、测试、维护文档及核对工程交接 |
 | [参考](docs/source/reference/index.md) | 查询架构、CLI、契约及兼容性资料 |
 

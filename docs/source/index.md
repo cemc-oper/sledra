@@ -4,6 +4,8 @@ Sledra 保存工作流的原始运行事实，提供独立 Go 记录器、Bash o
 
 首次使用从[开始使用](getting-started/index.md)选择试用包或源码方式；已有环境后，按[指南](guides/index.md)配置记录与运行验证工具。参与项目维护请阅读[开发](development/index.md)，查询架构、接口、契约和兼容性请阅读[参考](reference/index.md)。
 
+要了解具体怎样使用，先读[独立示例详解](guides/standalone.md)，从请求 JSON、owner 脚本走到 context、事件和 finish；再读[在脚本中接入记录](guides/recording.md)，逐步调用 CLI 并确定自己的钩子位置。
+
 ```{toctree}
 :titlesonly:
 :maxdepth: 2

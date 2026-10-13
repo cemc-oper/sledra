@@ -1,6 +1,6 @@
 # 源码快速开始
 
-在本地使用 Go 记录器和合成 Bash payload。先安装[开发工具链](../development/workflow.md#工具链)。源码准备需要联网，日常命令离线使用已准备的缓存。
+本页准备本地工具和第一个运行目录。先安装[开发工具链](../development/workflow.md#工具链)，再运行下面的合成 Bash 示例。示例的输入、每一步调用和输出核对见[独立示例详解](../guides/standalone.md)；手动 CLI 和已有脚本接入见[在脚本中接入记录](../guides/recording.md)。源码准备需要联网，日常命令离线使用已准备的缓存。
 
 ## 准备依赖
 
@@ -40,5 +40,7 @@ printf '示例文件：%s\n' "$demo_dir"
 ```
 
 示例按脚本位置查找资源。`product.txt`、`executions.log` 和 `callbacks.log` 保存业务结果及一次调用的证据。`observability/` 下的 `contexts/`、`registry/`、`spool/` 和 `finish/` 保存原始事实，不生成分析结论。每次手动运行使用新目录；直接调用记录器时使用默认内嵌契约和显式绝对输入/运行路径，见[配置](../guides/configuration.md)。
+
+接着按[结果核对步骤](../guides/standalone.md#核对运行结果)检查一次 payload 调用、context 父身份、四条过程事件和结束覆盖集合。脚本退出码为 0 只说明业务成功，不能单独证明观测完整。
 
 单项检查见[本地测试](../development/testing/local.md)，报告与依赖模式见[开发](../development/workflow.md)。脱离源码试用请按[安装指南](installation.md)执行 `make package` 和 `make test-package`。

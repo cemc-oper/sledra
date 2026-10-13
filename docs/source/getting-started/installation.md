@@ -62,6 +62,8 @@ printf '记录文件：%s\n' "$work_dir"
 
 脚本按自身位置查找资源，默认契约内嵌。新目录中设置 `STANDALONE_PAYLOAD_MODE=fail` 可得到退出码 7；`SLEDRA_ENABLED=0` 使用相同 owner/payload 但关闭观测。context、Registry、spool 和 finish 是事实，不是分析结果；直接调用配置见[配置](../guides/configuration.md)与 [CLI](../reference/cli.md)。
 
+安装资源中的 `run.sh` 管理生命周期，`payload.sh` 只执行业务，`fixtures/` 提供身份与 producer 输入。如何登记 Run/Attempt、保存退出码、声明 finish，以及逐项读取结果，见[独立示例详解](../guides/standalone.md)。包内也可直接阅读 `share/sledra/examples/standalone/README.md`。
+
 ## 验证安装结果
 
 完整验证只需 Python >=3.12 的标准库，不需 jsonschema、Ruff、uv 或 pip：
