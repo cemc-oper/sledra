@@ -9,7 +9,7 @@ M1 独立记录与 M1.1 工程化的既定本地范围已通过验收。离线�
 | 目录 | 用途 |
 |---|---|
 | [recorder](recorder/context/README.md) | Go 记录器：Registry、context、事件、spool 和隔离保留夹具 |
-| [shell](shell/README.md) | 由明确的生命周期 owner 调用的 Bash API |
+| [integrations/bash](integrations/bash/README.md) | 由明确的生命周期 owner 调用的 Bash API |
 | [spec](spec/README.md) | 1.0.0 契约草案、生成脚本和合成正反例 |
 | [examples](examples/standalone/README.md) | 独立示例与 HPC 站点模板 |
 | [tests](docs/source/development/testing/local.md) | 契约、Go、Shell、M1 和本地文件系统回归 |

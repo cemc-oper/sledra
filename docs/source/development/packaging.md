@@ -9,7 +9,7 @@ sledra-<software-label>-linux-<arch>/
 ├── manifest.json
 ├── SHA256SUMS
 └── share/sledra/
-    ├── shell/
+    ├── integrations/bash/
     ├── spec/{1.0.0,fixtures/1.0.0}/
     ├── examples/standalone/
     ├── docs/{runtime.md,testing-hpc.md}

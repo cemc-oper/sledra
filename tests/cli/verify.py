@@ -37,7 +37,7 @@ class PortableCLI(unittest.TestCase):
         shutil.copyfile(binary_for("sledra", cls.base), cls.binary)
         cls.binary.chmod(0o555)
         cls.share = cls.install / "share/sledra"
-        for directory in ("shell", "examples/standalone"):
+        for directory in ("integrations/bash", "examples/standalone"):
             shutil.copytree(ROOT / directory, cls.share / directory)
         for path in sorted(cls.install.rglob("*"), reverse=True):
             path.chmod(

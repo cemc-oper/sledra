@@ -53,7 +53,7 @@
 | registry attempt-create --context RUN --request-file FILE --context-out FILE | 父Run、task key/完整参数、execution token、可选retry_of | 空stdout、不可变Attempt，新token创建新尝试 |
 | context validate --file FILE | context及不可变父引用 | 缺失/非法非零，不生成可执行Shell |
 | event --context ATTEMPT --type TYPE --payload-file FILE [--event-id ID] [--strict] | context、类型化payload、部署role | 空stdout，business观测失败有界诊断并返回0，strict返回错误；同ID重传须完整信封 |
-| event --type attempt.started --invocation-id ID --process-role ROLE，或attempt.exited --process-role ROLE (--exit-code N或--signal N) | 配合--context，用Go构造进程事实 | 同事件策略，[Shell](../shell/README.md)先保存rc/signal，不拼JSON |
+| event --type attempt.started --invocation-id ID --process-role ROLE，或attempt.exited --process-role ROLE (--exit-code N或--signal N) | 配合--context，用Go构造进程事实 | 同事件策略，[Shell](../integrations/bash/README.md)先保存rc/signal，不拼JSON |
 | run finish --context RUN --scope-file FILE | 显式不可变covered IDs、scope/rule/reason | 空stdout、追加声明，不禁止后来Attempt |
 
 契约错误为duplicate_key、schema_invalid、semantic_invalid、missing_parameter、unknown_parameter、parent_mismatch、unauthorized_event、conflicting_event_id、unsupported_major。Registry另有conflict、corrupt_record、registry_unavailable、indeterminate；事件另有spool_unavailable、spool_full、writer_busy，见[spool](../recorder/spool/README.md)。stderr错误机器分类，不暴露秘密，不通过猜Run替代缺失context。indeterminate只可同token重查，不重跑业务。bundle有效退出0、无效1，协议与记录器独立。

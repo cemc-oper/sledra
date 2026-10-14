@@ -8,6 +8,8 @@ SLD-28 于 2026-10-12 迁移外层开发目录与内部 Git 仓库。产品、�
 | `observability/sladra-devel/repo/sladra/` | `observability/sledra-devel/repo/sledra/` |
 | `sladra-devel/docs/observability-plan/` | `sledra-devel/docs/observability-plan/` |
 | `sledra.local/recorder` | `github.com/cemc-oper/sledra/recorder` |
+| 源码 `shell/sledra.sh` | `integrations/bash/sledra.sh` |
+| 试用包 `share/sledra/shell/sledra.sh` | `share/sledra/integrations/bash/sledra.sh` |
 
 工作区前缀为 `/home/wangdp/project/mcv/mcv-workflow-project/mcv-workflow-devel/`。Windows 用户在相应 WSL 路径中将 sladra-devel 与 repo\sladra 改为 sledra-devel 与 repo\sledra，并更新编辑器根目录和书签；未安装兼容软链接。
 
@@ -18,6 +20,8 @@ SLD-28 于 2026-10-12 迁移外层开发目录与内部 Git 仓库。产品、�
 两层目录在同一文件系统改名。编辑前 152 份既有工作区文件的 SHA256、HEAD 与工作树状态均匹配；Git 历史和既有本地文件保留。Go module/import 改为 origin 对应路径；源码说明可独立阅读，外部计划导航指向新位置。
 
 历史证据中的旧命令、路径、module、二进制摘要保留，不改写成新执行结果。原始契约、夹具、身份、事件和冻结交接保持字节不变；前序报告的日期、工具链与平台范围仍按当时记录解释。
+
+SLD-37 后源码和新试用包只提供右列 Bash 库路径；旧安装路径不提供别名。已有 owner 的 `source` 改用对应安装根目录下的新绝对路径。`tests/shell/` 仍按测试领域命名，不是安装库路径；旧任务证据中的 `shell/` 是当时的历史位置。
 
 ## 中文文档布局
 

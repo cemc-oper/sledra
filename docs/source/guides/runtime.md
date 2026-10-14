@@ -2,7 +2,7 @@
 
 安装与运行数据分开。`SLEDRA_ROOT` 为已有可信真实绝对目录，保存 Registry、context、document、finish 和 spool；默认使用内嵌 1.0.0 草案契约。共享/HPC 须验证实际卷，本地成功不代表平台资格。
 
-在已知 Bash owner 中 source `share/sledra/shell/sledra.sh`，设置 `SLEDRA_ENABLED=1` 和绝对 bin/root/config。钩子不定义 trap 或执行 payload，owner 保持控制流，函数返回 0；每个 Shell 观测失败最多一条固定诊断，关闭时无副作用。
+在已知 Bash owner 中 source `share/sledra/integrations/bash/sledra.sh`，设置 `SLEDRA_ENABLED=1` 和绝对 bin/root/config。钩子不定义 trap 或执行 payload，owner 保持控制流，函数返回 0；每个 Shell 观测失败最多一条固定诊断，关闭时无副作用。
 
 配置固定 `producer_role`、`producer_name`、`producer_version`、`source_id`、`session_id` 及可选 spool 限制。并发 producer 采用不同 session；示例 process/stage 值是合成输入，不是生产预算。
 

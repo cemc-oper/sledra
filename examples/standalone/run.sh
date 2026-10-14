@@ -16,8 +16,8 @@ export STANDALONE_PRODUCT=${STANDALONE_PRODUCT:-$STANDALONE_WORK_DIR/product.txt
 
 # The library defines functions only. These handlers belong to the example
 # owner and are identical in enabled and disabled runs.
-# shellcheck source=../../shell/sledra.sh
-source "$repo_dir/shell/sledra.sh"
+# shellcheck source=../../integrations/bash/sledra.sh
+source "$repo_dir/integrations/bash/sledra.sh"
 run_context=$SLEDRA_ROOT/contexts/run.json
 attempt_context=$SLEDRA_ROOT/contexts/attempt.json
 SLEDRA_OWNER_SIGNAL=0

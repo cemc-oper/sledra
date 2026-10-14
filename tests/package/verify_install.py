@@ -121,6 +121,10 @@ class Acceptance:
                 raise ValueError(f"Shell observation changed {mode} business behavior")
 
     def run(self, manifest: dict) -> dict:
+        if not (self.share / "integrations/bash/sledra.sh").is_file():
+            raise ValueError("installed Bash integration is missing")
+        if (self.share / "shell").exists():
+            raise ValueError("legacy Bash integration path must not be packaged")
         result = self.call("version", [str(self.package / "bin/sledra"), "--version"], quiet=False)
         if json.loads(result.stdout) != manifest["version"]:
             raise ValueError("binary version differs from package manifest")

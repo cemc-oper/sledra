@@ -23,7 +23,7 @@ sys.path.insert(0, str(ROOT))
 from scripts.test_session import TestSession, add_arguments  # noqa: E402
 
 EXAMPLE = ROOT / "examples/standalone/run.sh"
-LIBRARY = ROOT / "shell/sledra.sh"
+LIBRARY = ROOT / "integrations/bash/sledra.sh"
 
 
 class ShellIntegration(unittest.TestCase):

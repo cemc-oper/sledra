@@ -101,7 +101,7 @@ def main() -> None:
         for tool in TOOLS[1:]:
             copy_file(output / "bin" / tool, share / "test-tools/bin" / tool)
         for directory in (
-            "shell",
+            "integrations/bash",
             "spec/1.0.0",
             "spec/fixtures/1.0.0",
             "examples/standalone",

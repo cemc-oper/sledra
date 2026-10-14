@@ -30,7 +30,7 @@ printf '工作目录：%s\n' "$work_dir"
 
 | 位置 | 调用或动作 | 保存的事实 |
 |---|---|---|
-| owner 初始化 | source `shell/sledra.sh`，设置自己的 options/trap | 库仅定义函数 |
+| owner 初始化 | source `integrations/bash/sledra.sh`，设置自己的 options/trap | 库仅定义函数 |
 | Run 发起 | `sledra_run_begin` | definition/expectation、Run Registry 和 Run context |
 | 任务尝试 | `sledra_attempt_begin` | 父 Run 下的 Attempt Registry 和 Attempt context |
 | payload 前 | `sledra_attempt_started`、stage_owner 的 stage.started | 启动与阶段开始事件 |

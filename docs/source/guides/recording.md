@@ -127,7 +127,7 @@ printf '记录目录：%s\n' "$case_dir"
 
 ## 在已有 owner 中放置 Shell 钩子
 
-源码使用 `shell/sledra.sh`，安装包使用 `share/sledra/shell/sledra.sh`。显式设置 `SLEDRA_ENABLED=1`、绝对二进制/记录根/producer 配置路径，再 source 库。
+源码使用 `integrations/bash/sledra.sh`，安装包使用 `share/sledra/integrations/bash/sledra.sh`。显式设置 `SLEDRA_ENABLED=1`、绝对二进制/记录根/producer 配置路径，再 source 库。
 
 下面是插入位置的示意，变量和已有 handler 由 owner 提供，**不是独立完整脚本**：
 

@@ -21,7 +21,7 @@
 | `fixtures/stage-start.json`、`stage-end.json` | `forecast` 阶段开始和结束的 payload，共用 interval ID |
 | `fixtures/finish-request.json` | 成功路径的结束声明，明确覆盖这次合成 Attempt |
 
-Shell 库在源码 `shell/sledra.sh`，安装后在 `share/sledra/shell/sledra.sh`。加载它只定义函数，不安装 trap、不改 Shell 选项、不执行 payload。
+Shell 库在源码 `integrations/bash/sledra.sh`，安装后在 `share/sledra/integrations/bash/sledra.sh`。加载它只定义函数，不安装 trap、不改 Shell 选项、不执行 payload。
 
 ## 先理解身份和输入
 
