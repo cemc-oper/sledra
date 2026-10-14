@@ -44,6 +44,7 @@ class DevelopmentChecks(unittest.TestCase):
             for directory in (
                 "spec",
                 "recorder/event/contract",
+                "analysis/src/sledra_analysis/resources/contract",
                 "recorder/internal/speccontract/contract",
             ):
                 shutil.copytree(ROOT / directory, root / directory)
@@ -85,6 +86,7 @@ class DevelopmentChecks(unittest.TestCase):
             for directory in (
                 "spec",
                 "recorder/event/contract",
+                "analysis/src/sledra_analysis/resources/contract",
                 "recorder/internal/speccontract/contract",
             ):
                 shutil.copytree(ROOT / directory, root / directory)

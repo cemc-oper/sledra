@@ -7,6 +7,7 @@ import hashlib
 import json
 import platform
 import sqlite3
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -37,14 +38,19 @@ def main() -> int:
     parser.add_argument(
         "--report-dir", type=Path, help="new private report directory; never overwrite"
     )
-    parser.add_argument("--task", choices=("SLD-10", "SLD-11", "all"), default="all")
+    parser.add_argument("--task", choices=("SLD-10", "SLD-11", "SLD-12", "all"), default="all")
     args = parser.parse_args()
     if args.report_dir is not None:
         args.report_dir.mkdir(parents=True, exist_ok=False, mode=0o700)
         work = args.report_dir / "work"
         work.mkdir(mode=0o700)
         tempfile.tempdir = str(work.resolve())
-    pattern = {"SLD-10": "test_source.py", "SLD-11": "test_store.py", "all": "test_*.py"}[args.task]
+    pattern = {
+        "SLD-10": "test_source.py",
+        "SLD-11": "test_store.py",
+        "SLD-12": "test_reader.py",
+        "all": "test_*.py",
+    }[args.task]
     suite = unittest.defaultTestLoader.discover(str(Path(__file__).parent), pattern=pattern)
     result = unittest.TextTestRunner(verbosity=2, resultclass=EvidenceResult).run(suite)
     fixture = ROOT / "tests/m1/results/handoff.json"
@@ -54,7 +60,12 @@ def main() -> int:
     sources.extend(ROOT / "analysis" / name for name in ("Makefile", "pyproject.toml", "uv.lock"))
     report = {
         "task": args.task,
-        "matrices": {"SLD-10": ["V11"], "SLD-11": ["V09"], "all": ["V11", "V09"]}[args.task],
+        "matrices": {
+            "SLD-10": ["V11"],
+            "SLD-11": ["V09"],
+            "SLD-12": ["V10", "V16"],
+            "all": ["V11", "V09", "V10", "V16"],
+        }[args.task],
         "analysis_version": "0.1.0.dev0",
         "protocol_version": "1.0.0",
         "python": platform.python_version(),
@@ -70,6 +81,11 @@ def main() -> int:
         "source_files": {
             str(path.relative_to(ROOT)): hashlib.sha256(path.read_bytes()).hexdigest()
             for path in sources
+        },
+        "memory_observations": getattr(sys.modules.get("test_reader"), "MEMORY_OBSERVATIONS", []),
+        "embedded_contracts": {
+            path.name: hashlib.sha256(path.read_bytes()).hexdigest()
+            for path in (ROOT / "analysis/src/sledra_analysis/resources/contract").glob("*.json")
         },
         "canonical_fixtures": {
             name: hashlib.sha256((ROOT / "spec/fixtures/1.0.0" / name).read_bytes()).hexdigest()

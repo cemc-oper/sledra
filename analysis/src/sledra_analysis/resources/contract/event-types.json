@@ -1,0 +1,1203 @@
+{
+  "artifact.file_observed": {
+    "association": "run",
+    "evidence_required": false,
+    "payload_schema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "artifact_version_ref": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "exists": {
+          "type": "boolean"
+        },
+        "extensions": {
+          "additionalProperties": {
+            "type": "object"
+          },
+          "propertyNames": {
+            "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$"
+          },
+          "type": "object"
+        },
+        "mtime_at": {
+          "format": "date-time",
+          "type": "string"
+        },
+        "observation_time": {
+          "format": "date-time",
+          "type": "string"
+        },
+        "size_bytes": {
+          "maximum": 9223372036854775807,
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "artifact_version_ref",
+        "exists",
+        "observation_time"
+      ],
+      "type": "object"
+    },
+    "roles": [
+      "artifact_checker"
+    ],
+    "source_kinds": [
+      "observed"
+    ]
+  },
+  "artifact.generated": {
+    "association": "attempt",
+    "evidence_required": false,
+    "payload_schema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "artifact_version_ref": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "extensions": {
+          "additionalProperties": {
+            "type": "object"
+          },
+          "propertyNames": {
+            "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$"
+          },
+          "type": "object"
+        },
+        "location_ref": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "version_evidence_ref": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_version_ref",
+        "location_ref",
+        "version_evidence_ref"
+      ],
+      "type": "object"
+    },
+    "roles": [
+      "artifact_producer"
+    ],
+    "source_kinds": [
+      "direct"
+    ]
+  },
+  "artifact.published": {
+    "association": "attempt",
+    "evidence_required": false,
+    "payload_schema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "action_result": {
+          "enum": [
+            "success",
+            "failure",
+            "unknown"
+          ]
+        },
+        "artifact_version_ref": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "destination": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "extensions": {
+          "additionalProperties": {
+            "type": "object"
+          },
+          "propertyNames": {
+            "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$"
+          },
+          "type": "object"
+        },
+        "publication_id": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "publication_id",
+        "artifact_version_ref",
+        "destination",
+        "action_result"
+      ],
+      "type": "object"
+    },
+    "roles": [
+      "publisher"
+    ],
+    "source_kinds": [
+      "direct"
+    ]
+  },
+  "artifact.stable_observed": {
+    "association": "run",
+    "evidence_required": false,
+    "payload_schema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "artifact_version_ref": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "extensions": {
+          "additionalProperties": {
+            "type": "object"
+          },
+          "propertyNames": {
+            "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$"
+          },
+          "type": "object"
+        },
+        "interval_ns": {
+          "maximum": 9223372036854775807,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "policy_version": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "sample_count": {
+          "minimum": 2,
+          "type": "integer"
+        },
+        "size_bytes": {
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "artifact_version_ref",
+        "size_bytes",
+        "sample_count",
+        "interval_ns",
+        "policy_version"
+      ],
+      "type": "object"
+    },
+    "roles": [
+      "artifact_checker"
+    ],
+    "source_kinds": [
+      "observed"
+    ]
+  },
+  "artifact.used": {
+    "association": "attempt",
+    "evidence_required": false,
+    "payload_schema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "artifact_version_ref": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "extensions": {
+          "additionalProperties": {
+            "type": "object"
+          },
+          "propertyNames": {
+            "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$"
+          },
+          "type": "object"
+        },
+        "input_role": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "upstream_run_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "artifact_version_ref",
+        "input_role",
+        "upstream_run_id"
+      ],
+      "type": "object"
+    },
+    "roles": [
+      "artifact_producer"
+    ],
+    "source_kinds": [
+      "direct"
+    ]
+  },
+  "artifact.validation_completed": {
+    "association": "run",
+    "evidence_required": true,
+    "payload_schema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "artifact_version_ref": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "check_id": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "extensions": {
+          "additionalProperties": {
+            "type": "object"
+          },
+          "propertyNames": {
+            "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$"
+          },
+          "type": "object"
+        },
+        "result": {
+          "enum": [
+            "pass",
+            "fail",
+            "unknown"
+          ]
+        },
+        "rule_id": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "rule_version": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_version_ref",
+        "rule_id",
+        "rule_version",
+        "check_id",
+        "result"
+      ],
+      "type": "object"
+    },
+    "roles": [
+      "artifact_checker"
+    ],
+    "source_kinds": [
+      "direct",
+      "observed"
+    ]
+  },
+  "attempt.exited": {
+    "association": "attempt",
+    "evidence_required": false,
+    "payload_schema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "exit_code": {
+          "maximum": 9223372036854775807,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "extensions": {
+          "additionalProperties": {
+            "type": "object"
+          },
+          "propertyNames": {
+            "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$"
+          },
+          "type": "object"
+        },
+        "process_role": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "signal": {
+          "maximum": 9223372036854775807,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "termination": {
+          "enum": [
+            "exited",
+            "signaled"
+          ]
+        }
+      },
+      "required": [
+        "termination",
+        "process_role"
+      ],
+      "type": "object"
+    },
+    "roles": [
+      "process_owner"
+    ],
+    "source_kinds": [
+      "direct"
+    ]
+  },
+  "attempt.registered": {
+    "association": "attempt",
+    "evidence_required": false,
+    "payload_schema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "attempt_context_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "execution_token_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "extensions": {
+          "additionalProperties": {
+            "type": "object"
+          },
+          "propertyNames": {
+            "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$"
+          },
+          "type": "object"
+        },
+        "retry_of": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "attempt_context_sha256",
+        "execution_token_sha256",
+        "retry_of"
+      ],
+      "type": "object"
+    },
+    "roles": [
+      "registry"
+    ],
+    "source_kinds": [
+      "direct"
+    ]
+  },
+  "attempt.selection_declared": {
+    "association": "instance",
+    "evidence_required": false,
+    "payload_schema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "candidate_attempt_ids": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "minItems": 1,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "extensions": {
+          "additionalProperties": {
+            "type": "object"
+          },
+          "propertyNames": {
+            "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$"
+          },
+          "type": "object"
+        },
+        "reason": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "selected_attempt_id": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "selection_id": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "supersedes_selection_id": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "selection_id",
+        "selected_attempt_id",
+        "candidate_attempt_ids",
+        "reason"
+      ],
+      "type": "object"
+    },
+    "roles": [
+      "lifecycle_owner"
+    ],
+    "source_kinds": [
+      "direct"
+    ]
+  },
+  "attempt.started": {
+    "association": "attempt",
+    "evidence_required": false,
+    "payload_schema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "extensions": {
+          "additionalProperties": {
+            "type": "object"
+          },
+          "propertyNames": {
+            "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$"
+          },
+          "type": "object"
+        },
+        "invocation_id": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "process_role": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "invocation_id",
+        "process_role"
+      ],
+      "type": "object"
+    },
+    "roles": [
+      "process_owner"
+    ],
+    "source_kinds": [
+      "direct"
+    ]
+  },
+  "data.wait_ended": {
+    "association": "attempt",
+    "evidence_required": false,
+    "payload_schema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "extensions": {
+          "additionalProperties": {
+            "type": "object"
+          },
+          "propertyNames": {
+            "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$"
+          },
+          "type": "object"
+        },
+        "result": {
+          "enum": [
+            "ready",
+            "timeout",
+            "error"
+          ]
+        },
+        "selector": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "wait_id": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "wait_id",
+        "selector",
+        "result"
+      ],
+      "type": "object"
+    },
+    "roles": [
+      "data_checker"
+    ],
+    "source_kinds": [
+      "direct"
+    ]
+  },
+  "data.wait_started": {
+    "association": "attempt",
+    "evidence_required": false,
+    "payload_schema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "extensions": {
+          "additionalProperties": {
+            "type": "object"
+          },
+          "propertyNames": {
+            "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$"
+          },
+          "type": "object"
+        },
+        "selector": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "wait_id": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "wait_id",
+        "selector"
+      ],
+      "type": "object"
+    },
+    "roles": [
+      "data_checker"
+    ],
+    "source_kinds": [
+      "direct"
+    ]
+  },
+  "delivery.confirmed": {
+    "association": "run",
+    "evidence_required": true,
+    "payload_schema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "artifact_version_ref": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "check_id": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "confirmed_at": {
+          "format": "date-time",
+          "type": "string"
+        },
+        "expectation_slot": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "extensions": {
+          "additionalProperties": {
+            "type": "object"
+          },
+          "propertyNames": {
+            "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$"
+          },
+          "type": "object"
+        },
+        "recipient": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "rule_version": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "expectation_slot",
+        "artifact_version_ref",
+        "rule_version",
+        "recipient",
+        "check_id",
+        "confirmed_at"
+      ],
+      "type": "object"
+    },
+    "roles": [
+      "delivery_verifier"
+    ],
+    "source_kinds": [
+      "direct",
+      "observed"
+    ]
+  },
+  "engine.control_observed": {
+    "association": "run",
+    "evidence_required": true,
+    "payload_schema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "audit_ref": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "extensions": {
+          "additionalProperties": {
+            "type": "object"
+          },
+          "propertyNames": {
+            "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$"
+          },
+          "type": "object"
+        },
+        "operation": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "operation",
+        "audit_ref"
+      ],
+      "type": "object"
+    },
+    "roles": [
+      "engine_observer"
+    ],
+    "source_kinds": [
+      "observed"
+    ]
+  },
+  "engine.state_observed": {
+    "association": "run",
+    "evidence_required": false,
+    "payload_schema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "engine_instance": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "extensions": {
+          "additionalProperties": {
+            "type": "object"
+          },
+          "propertyNames": {
+            "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$"
+          },
+          "type": "object"
+        },
+        "node_path": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "observation_time": {
+          "format": "date-time",
+          "type": "string"
+        },
+        "raw_state": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "source_position": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "engine_instance",
+        "node_path",
+        "raw_state",
+        "observation_time",
+        "source_position"
+      ],
+      "type": "object"
+    },
+    "roles": [
+      "engine_observer"
+    ],
+    "source_kinds": [
+      "observed"
+    ]
+  },
+  "expectation.revision_declared": {
+    "association": "run",
+    "evidence_required": false,
+    "payload_schema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "authorized_by_ref": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "extensions": {
+          "additionalProperties": {
+            "type": "object"
+          },
+          "propertyNames": {
+            "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$"
+          },
+          "type": "object"
+        },
+        "new_ref": {
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "sha256": {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            }
+          },
+          "required": [
+            "id",
+            "sha256"
+          ],
+          "type": "object"
+        },
+        "old_ref": {
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "sha256": {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            }
+          },
+          "required": [
+            "id",
+            "sha256"
+          ],
+          "type": "object"
+        },
+        "reason": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "revision_id": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "revision_id",
+        "old_ref",
+        "new_ref",
+        "reason",
+        "authorized_by_ref"
+      ],
+      "type": "object"
+    },
+    "roles": [
+      "rule_owner"
+    ],
+    "source_kinds": [
+      "direct"
+    ]
+  },
+  "job.state_observed": {
+    "association": "run",
+    "evidence_required": false,
+    "payload_schema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "extensions": {
+          "additionalProperties": {
+            "type": "object"
+          },
+          "propertyNames": {
+            "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$"
+          },
+          "type": "object"
+        },
+        "job_ref_id": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "normalized_state": {
+          "enum": [
+            "queued",
+            "running",
+            "finished",
+            "failed",
+            "unknown"
+          ]
+        },
+        "observation_time": {
+          "format": "date-time",
+          "type": "string"
+        },
+        "raw_state": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "job_ref_id",
+        "raw_state",
+        "normalized_state",
+        "observation_time"
+      ],
+      "type": "object"
+    },
+    "roles": [
+      "scheduler_observer"
+    ],
+    "source_kinds": [
+      "observed"
+    ]
+  },
+  "run.finish_declared": {
+    "association": "run",
+    "evidence_required": false,
+    "payload_schema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "covered_attempt_ids": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "type": "array",
+          "uniqueItems": true
+        },
+        "covered_attempts_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "declaration_id": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "extensions": {
+          "additionalProperties": {
+            "type": "object"
+          },
+          "propertyNames": {
+            "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$"
+          },
+          "type": "object"
+        },
+        "reason": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "result": {
+          "enum": [
+            "finished",
+            "abandoned",
+            "unknown"
+          ]
+        },
+        "rule_version": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "scope_ref": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "declaration_id",
+        "scope_ref",
+        "rule_version",
+        "covered_attempt_ids",
+        "covered_attempts_sha256",
+        "reason",
+        "result"
+      ],
+      "type": "object"
+    },
+    "roles": [
+      "lifecycle_owner"
+    ],
+    "source_kinds": [
+      "direct"
+    ]
+  },
+  "run.registered": {
+    "association": "run",
+    "evidence_required": false,
+    "payload_schema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "extensions": {
+          "additionalProperties": {
+            "type": "object"
+          },
+          "propertyNames": {
+            "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$"
+          },
+          "type": "object"
+        },
+        "request_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "run_context_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "run_context_sha256",
+        "request_sha256"
+      ],
+      "type": "object"
+    },
+    "roles": [
+      "registry"
+    ],
+    "source_kinds": [
+      "direct"
+    ]
+  },
+  "stage.ended": {
+    "association": "attempt",
+    "evidence_required": false,
+    "payload_schema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "duration_ns": {
+          "maximum": 9223372036854775807,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "extensions": {
+          "additionalProperties": {
+            "type": "object"
+          },
+          "propertyNames": {
+            "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$"
+          },
+          "type": "object"
+        },
+        "interval_id": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "result": {
+          "enum": [
+            "success",
+            "failure",
+            "unknown"
+          ]
+        },
+        "stage_key": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "stage_key",
+        "interval_id",
+        "result"
+      ],
+      "type": "object"
+    },
+    "roles": [
+      "stage_owner"
+    ],
+    "source_kinds": [
+      "direct"
+    ]
+  },
+  "stage.started": {
+    "association": "attempt",
+    "evidence_required": false,
+    "payload_schema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "extensions": {
+          "additionalProperties": {
+            "type": "object"
+          },
+          "propertyNames": {
+            "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$"
+          },
+          "type": "object"
+        },
+        "interval_id": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "stage_key": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "stage_key",
+        "interval_id"
+      ],
+      "type": "object"
+    },
+    "roles": [
+      "stage_owner"
+    ],
+    "source_kinds": [
+      "direct"
+    ]
+  },
+  "submission.accepted": {
+    "association": "attempt",
+    "evidence_required": false,
+    "payload_schema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "confirmation_basis": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "extensions": {
+          "additionalProperties": {
+            "type": "object"
+          },
+          "propertyNames": {
+            "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$"
+          },
+          "type": "object"
+        },
+        "job_ref_id": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "submission_instance": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "submission_instance",
+        "job_ref_id",
+        "confirmation_basis"
+      ],
+      "type": "object"
+    },
+    "roles": [
+      "submitter",
+      "scheduler_observer"
+    ],
+    "source_kinds": [
+      "direct",
+      "observed"
+    ]
+  },
+  "submission.failed": {
+    "association": "attempt",
+    "evidence_required": false,
+    "payload_schema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "error_class": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "extensions": {
+          "additionalProperties": {
+            "type": "object"
+          },
+          "propertyNames": {
+            "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$"
+          },
+          "type": "object"
+        },
+        "failure_stage": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "outcome": {
+          "enum": [
+            "not_accepted",
+            "unknown"
+          ]
+        },
+        "submission_instance": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "submission_instance",
+        "outcome",
+        "failure_stage",
+        "error_class"
+      ],
+      "type": "object"
+    },
+    "roles": [
+      "submitter",
+      "scheduler_observer"
+    ],
+    "source_kinds": [
+      "direct",
+      "observed"
+    ]
+  },
+  "submission.requested": {
+    "association": "attempt",
+    "evidence_required": false,
+    "payload_schema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "extensions": {
+          "additionalProperties": {
+            "type": "object"
+          },
+          "propertyNames": {
+            "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$"
+          },
+          "type": "object"
+        },
+        "platform_id": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "resource_ref": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "scheduler": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "submission_instance": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "submission_instance",
+        "platform_id",
+        "scheduler",
+        "resource_ref"
+      ],
+      "type": "object"
+    },
+    "roles": [
+      "submitter"
+    ],
+    "source_kinds": [
+      "direct"
+    ]
+  }
+}

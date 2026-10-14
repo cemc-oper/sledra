@@ -9,7 +9,7 @@ UV_PY := $(UV) run --project .. --locked --offline --no-python-downloads --pytho
 
 .PHONY: help setup build check test
 help:
-	@printf '%s\n' 'make setup  Prepare pinned analysis build backend' 'make build  Build analysis wheel and sdist in OUTPUT_DIR/analysis' 'make check  Check analysis lock, formatting and lint' 'make test   Run source identity and SQLite fact regressions'
+	@printf '%s\n' 'make setup  Prepare pinned analysis build backend' 'make build  Build analysis wheel and sdist in OUTPUT_DIR/analysis' 'make check  Check analysis lock, formatting and lint' 'make test   Run identity, fact, bounded reader and quarantine regressions'
 setup:
 	UV_OFFLINE=0 $(UV) sync --locked --no-python-downloads --python "$(ANALYSIS_PYTHON)"
 build:
@@ -20,4 +20,4 @@ check:
 	$(UV_PY) -m ruff format --check src tests
 	$(UV_PY) -m ruff check src tests
 test:
-	PYTHONPATH="$(CURDIR)/src" $(PYTHON) tests/verify.py
+	$(UV) run --locked --offline --no-python-downloads --python "$(ANALYSIS_PYTHON)" python tests/verify.py

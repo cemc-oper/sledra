@@ -4,6 +4,7 @@ set -euo pipefail
 
 snapshot() {
     find spec/1.0.0 spec/fixtures recorder/event/contract \
+        analysis/src/sledra_analysis/resources/contract \
         recorder/internal/speccontract/contract examples/standalone/fixtures \
         tests/m1/results tests/platform/results -type f -print0 \
         | sort -z | xargs -0 sha256sum

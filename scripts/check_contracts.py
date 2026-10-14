@@ -37,6 +37,10 @@ def check_generated(root: Path) -> None:
         for directory, expected in (
             ("recorder/event/contract", {"event-types.json", "event.schema.json"}),
             (
+                "analysis/src/sledra_analysis/resources/contract",
+                {"event-types.json", "event.schema.json"},
+            ),
+            (
                 "recorder/internal/speccontract/contract",
                 {p.name for p in (copy / "1.0.0").glob("*.json")},
             ),

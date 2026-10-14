@@ -165,6 +165,28 @@ def _matches(fd: int, state: Checkpoint, size: int) -> bool:
     )
 
 
+class SourceStream:
+    """Bounded pread stream with one pinned metadata stamp for the scan."""
+
+    def __init__(self, fd: int, offset: int, size: int, chunk_size: int):
+        self._fd, self._offset, self._size, self._chunk_size = fd, offset, size, chunk_size
+        self._stamp = _stamp(os.fstat(fd))
+
+    def verify(self) -> None:
+        if _stamp(os.fstat(self._fd)) != self._stamp:
+            raise SourceChanged("source changed during stream; discard position and rescan")
+
+    def chunks(self) -> Iterator[bytes]:
+        offset = self._offset
+        while offset < self._size:
+            self.verify()
+            block = _bytes(self._fd, offset, min(self._chunk_size, self._size - offset))
+            self.verify()
+            yield block
+            offset += len(block)
+        self.verify()
+
+
 class SourceLease:
     """Read through the inspected descriptor, including across an open→sealed rename."""
 
@@ -195,8 +217,21 @@ class SourceLease:
             raise SourceChanged("source changed during read; discard bytes and retry")
         return result
 
-    def checkpoint(self, offset: int) -> Checkpoint:
-        """Propose a complete-line position; caller must persist it with the raw facts."""
+    @contextmanager
+    def stream(self, offset: int, *, chunk_size: int = 65536) -> Iterator[SourceStream]:
+        if self.decision.resume_offset is None or offset < self.decision.resume_offset:
+            raise SourceError("invalid or conflicted stream position")
+        if type(chunk_size) is not int or not 0 < chunk_size <= 1024 * 1024:
+            raise SourceError("stream chunk size must be between 1 and 1048576")
+        self._verify()
+        stream = SourceStream(self._fd, offset, self.decision.checkpoint.last_size, chunk_size)
+        yield stream
+        stream.verify()
+        self._verify()
+        stream.verify()
+
+    def checkpoint(self, offset: int, *, sealed_tail: bool = False) -> Checkpoint:
+        """Propose a line boundary or explicitly persisted immutable sealed residual."""
         state = self.decision.checkpoint
         if (
             self.decision.resume_offset is None
@@ -205,7 +240,10 @@ class SourceLease:
             raise SourceError("invalid checkpoint offset")
         before = _stamp(os.fstat(self._fd))
         self._verify()
-        if offset and os.pread(self._fd, 1, offset - 1) != b"\n":
+        tail_allowed = sealed_tail and state.sealed_hash is not None and offset == state.sealed_size
+        if sealed_tail and not tail_allowed:
+            raise SourceError("sealed residual position must match the immutable sealed EOF")
+        if offset and os.pread(self._fd, 1, offset - 1) != b"\n" and not tail_allowed:
             raise SourceError("checkpoint must end at a complete line")
         updated = replace(state, committed_offset=offset, anchor_hash=_anchor(self._fd, offset))
         self._verify()

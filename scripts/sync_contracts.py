@@ -1,4 +1,4 @@
-"""Copy canonical generated resources into recorder embed directories."""
+"""Copy canonical generated resources into recorder and analysis resource directories."""
 
 from pathlib import Path
 import shutil
@@ -10,6 +10,10 @@ def sync(root: Path) -> None:
     source = root / "spec/1.0.0"
     for directory, names in (
         ("recorder/event/contract", {"event.schema.json", "event-types.json"}),
+        (
+            "analysis/src/sledra_analysis/resources/contract",
+            {"event.schema.json", "event-types.json"},
+        ),
         ("recorder/internal/speccontract/contract", {p.name for p in source.glob("*.json")}),
     ):
         target = root / directory

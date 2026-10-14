@@ -14,6 +14,7 @@ PROTECTED = (
     "spec/1.0.0",
     "spec/fixtures",
     "recorder/event/contract",
+    "analysis/src/sledra_analysis/resources/contract",
     "recorder/internal/speccontract/contract",
     "examples/standalone/fixtures",
     "tests/m1/results",

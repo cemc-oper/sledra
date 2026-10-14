@@ -8,10 +8,13 @@ version = "0.1.0.dev0"
 description = "Sledra offline source identity and ingestion primitives"
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = ["jsonschema==4.10.3"]
 
 [dependency-groups]
 dev = ["setuptools==80.9.0"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+sledra_analysis = ["resources/contract/*.json"]

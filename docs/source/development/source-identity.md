@@ -8,7 +8,7 @@ SLD-10 提供 `sledra_analysis.ingest.source`，作为后续采集器的文件�
 
 `SourceTracker` 为单 reader 内存目录，可由调用方保存的 `Checkpoint` 集合恢复。`open()` 返回上下文限定的 `SourceLease`，扫描、读取、位置核验均使用同一 descriptor。按根目录逐层 no-follow 打开，拒绝越根、符号链接和非普通文件；扫描或读取期间 stat/摘要发生变化时抛出 `SourceChanged`，调用方丢弃当前批次、保留旧位置并重扫。权限、短读与 IO 错误也不能被解释为已结束。
 
-段头限 65536 字节并要求 LF；仅识别当前 `1.0.0` 段协议，拒绝缺头、重复键和不支持版本，不能自动退化为 legacy。后续 SLD-12 负责事件坏行、版本隔离和有界读取，不以本模块的段头检查替代。
+段头限 65536 字节并要求 LF；仅识别当前 `1.0.0` 段协议，拒绝缺头、重复键和不支持版本，不能自动退化为 legacy。SLD-12 已负责[事件坏行、版本隔离和有界读取](bounded-ingest.md)，不以本模块的段头检查替代。
 
 | 情形 | 行为 |
 |---|---|
@@ -41,7 +41,7 @@ with tracker.open("spool/example.open.jsonl") as source:
         # tracker.remember(proposed)
 ```
 
-`checkpoint(offset)` 仅提出完整行边界的位置，不能后退、越过扫描尺寸或在冲突源上推进。`remember()` 只是安装调用方状态，不代表提交；扫描自身不会推进 committed_offset。SLD-11 已实现独立事实去重与批次事务；检查点与事实的同事务、隔离和 ack 均由后续任务实现。
+`checkpoint(offset)` 默认提出完整行边界的位置；SLD-12 可对已隔离的 immutable sealed 残尾显式提出 EOF 位置，不能后退、越过扫描尺寸或在冲突源上推进。`remember()` 只是安装调用方状态，不代表提交；扫描自身不会推进 committed_offset。SLD-11 已实现独立事实去重与批次事务，SLD-12 已提供持久隔离；检查点与事实／隔离的同事务和 ack 由 SLD-13 实现。
 
 ## Legacy 完整性限制
 

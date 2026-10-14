@@ -11,38 +11,42 @@ MAX_DEPTH = 64
 
 
 class RecordError(ValueError):
-    """Invalid or over-budget input; the caller retains bytes for future quarantine."""
+    """Invalid input; the stable code can be retained alongside original quarantine bytes."""
+
+    def __init__(self, message: str, code: str = "invalid_record"):
+        super().__init__(message)
+        self.code = code
 
 
 def _pairs(items: list[tuple[str, object]]) -> dict:
     result = {}
     for key, value in items:
         if key in result:
-            raise RecordError("duplicate JSON key")
+            raise RecordError("duplicate JSON key", "duplicate_key")
         result[key] = value
     return result
 
 
 def _reject_number(value: str) -> None:
-    raise RecordError("floating-point and non-finite JSON values are forbidden")
+    raise RecordError("floating-point and non-finite JSON values are forbidden", "schema_invalid")
 
 
 def _string(value: str) -> str:
     if any(0xD800 <= ord(char) <= 0xDFFF for char in value):
-        raise RecordError("unpaired Unicode surrogate")
+        raise RecordError("unpaired Unicode surrogate", "invalid_unicode")
     return unicodedata.normalize("NFC", value)
 
 
 def _normalize(value: object, depth: int = 0) -> object:
     if depth > MAX_DEPTH:
-        raise RecordError("JSON nesting exceeds limit")
+        raise RecordError("JSON nesting exceeds limit", "limit_exceeded")
     if isinstance(value, str):
         return _string(value)
     if value is None or isinstance(value, bool):
         return value
     if isinstance(value, int):
         if not -(1 << 63) <= value < (1 << 63):
-            raise RecordError("integer exceeds signed 64-bit range")
+            raise RecordError("integer exceeds signed 64-bit range", "semantic_invalid")
         return value
     if isinstance(value, list):
         return [_normalize(item, depth + 1) for item in value]
@@ -53,7 +57,7 @@ def _normalize(value: object, depth: int = 0) -> object:
                 raise RecordError("JSON keys must be strings")
             normalized_key = _string(key)
             if normalized_key in result:
-                raise RecordError("keys collide after NFC normalization")
+                raise RecordError("keys collide after NFC normalization", "duplicate_key")
             result[normalized_key] = _normalize(item, depth + 1)
         return result
     raise RecordError("unsupported JSON value")
@@ -69,10 +73,14 @@ def parse_json(raw: bytes) -> object:
             parse_constant=_reject_number,
         )
         return _normalize(value)
-    except (UnicodeError, json.JSONDecodeError, RecursionError, ValueError) as exc:
+    except UnicodeDecodeError as exc:
+        raise RecordError("invalid UTF-8 JSON", "invalid_utf8") from exc
+    except json.JSONDecodeError as exc:
+        raise RecordError("invalid JSON", "invalid_json") from exc
+    except (UnicodeError, RecursionError, ValueError) as exc:
         if isinstance(exc, RecordError):
             raise
-        raise RecordError("invalid UTF-8 JSON") from exc
+        raise RecordError("invalid JSON value", "schema_invalid") from exc
 
 
 def canonical_bytes(value: object) -> bytes:

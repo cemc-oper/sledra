@@ -1,6 +1,6 @@
 # 原始事实存储与冲突
 
-SLD-11 提供 `sledra_analysis.store.raw.RawStore`。管理端显式指定 SQLite 文件，保存完整原始 bytes、规范事件版本与来源位置。当前只有事实批次事务；检查点、坏行隔离、投影队列、归档、备份及真实采集确认由后续任务接续。事件数量是不同 `event_id` 的原始事实数，不代表成功作业数或状态投影。
+SLD-11 提供 `sledra_analysis.store.raw.RawStore`。管理端显式指定 SQLite 文件，保存完整原始 bytes、规范事件版本与来源位置。当前只有事实批次事务；SLD-12 已提供[坏行隔离](bounded-ingest.md)；持久检查点、投影队列、归档、备份及真实采集确认由后续任务接续。事件数量是不同 `event_id` 的原始事实数，不代表成功作业数或状态投影。
 
 ## 数据与查询
 
@@ -25,11 +25,11 @@ SLD-11 提供 `sledra_analysis.store.raw.RawStore`。管理端显式指定 SQLit
 
 规范 hash 覆盖完整事件，包括 `recorded_at` 和未知扩展；采集时间是 `RawRecord.collected_at`，位于事件之外，不参与事件 hash。扩展中的任何同名采集字段仍是事件内容，会参与 hash。Raw SHA256 和 canonical SHA256 的用途分开，不因原始编码变化制造业务冲突。
 
-数据库保存 canonical 编码版本 `sledra-canonical-1.0.0`、application ID 与 schema version 1，未知数据库或编码版本拒绝打开，不自动迁移。编码版本来自契约，不用阶段编号替代。已通过冻结 golden 的事件摘要、Unicode/类型/负零向量和既有同 ID 冲突反例。
+数据库保存 canonical 编码版本 `sledra-canonical-1.0.0`、application ID 与 schema version 2。未知数据库或编码版本拒绝打开；SLD-11 schema 1 只在显式 upgrade=True 时增加隔离表，旧事实与字节不变，见[升级边界](bounded-ingest.md#预算与旧库升级)。编码版本来自契约，不用阶段编号替代。已通过冻结 golden 的事件摘要、Unicode/类型/负零向量和既有同 ID 冲突反例。
 
 ## 使用接口
 
-运行需要 Linux、Python 3.12+ 及 Python 内置 SQLite 3.37+（STRICT 表）；没有第三方 Python 运行依赖。本地实测 SQLite 3.45.1。
+运行需要 Linux、Python 3.12+ 及 Python 内置 SQLite 3.37+（STRICT 表）；SLD-12 校验依赖单独锁定的 jsonschema 4.10.3，记录器不依赖它。本地实测 SQLite 3.45.1。
 
 ```python
 from pathlib import Path
@@ -48,7 +48,7 @@ with RawStore(Path("/configured/management/facts.sqlite")) as store:
 
 `ingest()` 在写入前验证输入及预算，然后把事件身份、规范版本、冲突标记、原始 BLOB、来源关系写入同一事务。验证失败或 SQLite 写入/提交失败时整批不写入；调用方保留输入并重试或交后续隔离。提交失败不能返回成功。源文件权限与业务执行不由本模块控制。
 
-存储边界检查 JSON、身份、1.x 信封基本结构和时间；不替代完整 payload、producer role、父引用或业务语义校验。未知有效 1.x 类型和扩展保持不透明，不推导成功。未知 major 与坏记录目前返回 `RecordError`，SLD-12 将提供持久隔离，调用方不能忽略错误并越过输入。
+存储边界检查 JSON、身份、1.x 信封基本结构和时间；不替代完整 payload、producer role、父引用或业务语义校验。未知有效 1.x 类型和扩展保持不透明，不推导成功。未知 major 与坏记录目前返回 `RecordError`，SLD-12 的 BoundedReader 可保存原 bytes／原因到持久隔离，调用方不能忽略错误并越过输入。
 
 ## 单写者、预算与部署边界
 
@@ -56,7 +56,7 @@ RawStore 在打开期间持有数据库 inode 的非阻塞 advisory flock；同�
 
 新库以 0600 创建，使用外键、STRICT 类型、唯一键和范围约束；冲突标记由版本插入触发器维护。显式使用 DELETE journal、FULL synchronous，不根据共享 spool 位置自动启用 WAL。只在管理侧单写者使用，任务节点不开库；共享/HPC 上的 SQLite 锁、journal 与备份恢复仍需独立验证。
 
-默认单条 raw/canonical 上限各 1 MiB、批次最多 1024 条、raw 总量 16 MiB，JSON 深度最多 64。构造 RawStore 可调整三个字节/条数预算；这些是本地保护值，不是 A6 批准性能预算。超过预算返回错误，不能丢弃后假装完整；流式长行和隔离区容量策略归 SLD-12。
+默认单条 raw/canonical 上限各 1 MiB、批次最多 1024 条、raw 总量 16 MiB，JSON 深度最多 64。构造 RawStore 可调整三个字节/条数预算；这些是本地保护值，不是 A6 批准性能预算。超过预算返回错误，不能丢弃后假装完整；流式长行和隔离区容量策略见 SLD-12 的 bounded reader。
 
 ## 验证
 
@@ -66,8 +66,8 @@ PYTHONPATH=analysis/src python3 analysis/tests/verify.py --task SLD-11 --report-
 PYTHONPATH=analysis/src python3 analysis/tests/replay_store.py --report-dir /tmp/sledra-raw-replay-new
 ```
 
-24 项 V09 覆盖真实 SQLite 的 19 条冻结事实、重复/排列、来源定位、重开、payload/recorded_at/扩展冲突、golden 编码、数据库约束、单写者、限额、写失败和读锁导致的提交失败。组件入口同时回归 20 项 SLD-10 V11。显式报告必须使用新私有目录；普通测试只打印结果，不改冻结输入。
+24 项 V09 覆盖真实 SQLite 的 19 条冻结事实、重复/排列、来源定位、重开、payload/recorded_at/扩展冲突、golden 编码、数据库约束、单写者、限额、写失败和读锁导致的提交失败。组件入口同时回归 20 项 SLD-10 V11 和 28 项 SLD-12 V10/V16。显式报告必须使用新私有目录；普通测试只打印结果，不改冻结输入。
 
-这些事务仅证明事实批次一致性。源检查点与事实同事务、quarantine、持久投影队列、确认与清理、备份水位及崩溃点恢复仍归 SLD-12/13/23，不以本页结果声明 M2 完成。
+这些事务仅证明事实批次一致性。源检查点与事实同事务、quarantine 已在 SLD-12 实现；其与检查点／持久投影队列的同事务、确认与清理、备份水位及崩溃点恢复仍归 SLD-13/23，不以本页结果声明 M2 完成。
 
 `replay_store.py` 仅回放冻结合成样本，显式报告目录保留 `facts.sqlite`、22 个原始输入与 `replay.json`；重复/乱序写入和重开后的事实数固定为 19。未指定目录时使用临时库，成功后清理，不作为生产采集服务。

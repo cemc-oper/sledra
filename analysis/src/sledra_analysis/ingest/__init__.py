@@ -1,1 +1,1 @@
-"""Source discovery primitives. Durable ingestion is implemented separately."""
+"""Source identity and bounded ingestion primitives; acknowledgements remain separate."""

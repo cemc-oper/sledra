@@ -1,7 +1,7 @@
 """Single-writer SQLite raw facts, stable deduplication and retained conflicts.
 
-Transactions here cover facts only. Quarantine, checkpoints, projection queues,
-archival and source acknowledgements belong to later ingestion work.
+Transactions cover facts and quarantine records. Durable checkpoints, projection
+queues, archival and source acknowledgements belong to later ingestion work.
 """
 
 from __future__ import annotations
@@ -26,8 +26,9 @@ from sledra_analysis.store.canonical import (
     canonical_bytes,
     parse_json,
 )
+from sledra_analysis.store.quarantine import QUARANTINE_SCHEMA, QuarantineMixin
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 APPLICATION_ID = int.from_bytes(b"SLDA", "big")
 DEFAULT_MAX_RECORD_BYTES = 1024 * 1024
 DEFAULT_MAX_BATCH_RECORDS = 1024
@@ -190,7 +191,13 @@ def _event(value: object, pointer: str) -> dict:
     if not isinstance(value.get("schema_version"), str) or not re.fullmatch(
         r"1\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)", value["schema_version"]
     ):
-        raise RecordError("unsupported event schema version")
+        code = (
+            "unsupported_major"
+            if isinstance(value.get("schema_version"), str)
+            and not value["schema_version"].startswith("1.")
+            else "schema_invalid"
+        )
+        raise RecordError("unsupported event schema version", code)
     identity = value.get("event_id")
     if not isinstance(identity, str):
         raise RecordError("missing event_id")
@@ -218,7 +225,7 @@ def _event(value: object, pointer: str) -> dict:
     return value
 
 
-class RawStore:
+class RawStore(QuarantineMixin):
     """Own one disk database and its advisory writer lock until close()."""
 
     def __init__(
@@ -228,18 +235,31 @@ class RawStore:
         max_record_bytes: int = DEFAULT_MAX_RECORD_BYTES,
         max_batch_records: int = DEFAULT_MAX_BATCH_RECORDS,
         max_batch_bytes: int = DEFAULT_MAX_BATCH_BYTES,
+        max_quarantine_blob_bytes: int = 64 * 1024 * 1024,
+        max_quarantine_total_bytes: int = 512 * 1024 * 1024,
+        upgrade: bool = False,
     ):
         if any(
             type(limit) is not int or limit <= 0
-            for limit in (max_record_bytes, max_batch_records, max_batch_bytes)
+            for limit in (
+                max_record_bytes,
+                max_batch_records,
+                max_batch_bytes,
+                max_quarantine_blob_bytes,
+                max_quarantine_total_bytes,
+            )
         ):
             raise ValueError("store budgets must be positive integers")
+        if type(upgrade) is not bool:
+            raise ValueError("upgrade flag must be boolean")
         if sqlite3.sqlite_version_info < (3, 37, 0):
             raise StoreError("SQLite 3.37+ is required for STRICT tables")
         self.path = Path(path).absolute()
         self.max_record_bytes = max_record_bytes
         self.max_batch_records = max_batch_records
         self.max_batch_bytes = max_batch_bytes
+        self.max_quarantine_blob_bytes = max_quarantine_blob_bytes
+        self.max_quarantine_total_bytes = max_quarantine_total_bytes
         self._lock_fd = None
         self._connection = None
         self._active = False
@@ -258,12 +278,12 @@ class RawStore:
                 raise WriterBusy("database already has a writer") from exc
             self._connection = sqlite3.connect(str(self.path), timeout=0, isolation_level=None)
             self._connection.execute("PRAGMA foreign_keys = ON")
-            self._initialize()
+            self._initialize(upgrade=upgrade)
         except BaseException:
             self.close()
             raise
 
-    def _initialize(self) -> None:
+    def _initialize(self, *, upgrade: bool) -> None:
         connection = self._db()
         identity = connection.execute("PRAGMA application_id").fetchone()[0]
         version = connection.execute("PRAGMA user_version").fetchone()[0]
@@ -271,13 +291,20 @@ class RawStore:
             "SELECT name FROM sqlite_master WHERE type = 'table'"
         ).fetchall()
         fresh = identity == 0 and version == 0 and not tables
-        if not fresh and (identity != APPLICATION_ID or version != SCHEMA_VERSION):
+        migration = identity == APPLICATION_ID and version == 1
+        if migration and not upgrade:
+            raise StoreError("schema 1 requires explicit upgrade=True")
+        if (
+            not fresh
+            and not migration
+            and (identity != APPLICATION_ID or version != SCHEMA_VERSION)
+        ):
             raise StoreError("unrecognized or unsupported database schema")
         if fresh:
             # executescript owns this explicit DDL transaction. A failed creation
             # leaves no partial schema to mistake for a usable store on restart.
             try:
-                connection.executescript("BEGIN IMMEDIATE;\n" + SCHEMA)
+                connection.executescript("BEGIN IMMEDIATE;\n" + SCHEMA + QUARANTINE_SCHEMA)
                 connection.execute("INSERT INTO store_metadata VALUES(?)", (CANONICAL_VERSION,))
                 connection.execute(f"PRAGMA application_id = {APPLICATION_ID}")
                 connection.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
@@ -290,6 +317,15 @@ class RawStore:
             (CANONICAL_VERSION,)
         ]:
             raise StoreError("unsupported canonical encoding version")
+        if migration:
+            try:
+                connection.executescript("BEGIN IMMEDIATE;\n" + QUARANTINE_SCHEMA)
+                connection.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
+                connection.execute("COMMIT")
+            except BaseException:
+                if connection.in_transaction:
+                    connection.execute("ROLLBACK")
+                raise
         # Explicit management-side DELETE journal: never infer WAL deployment
         # suitability from a shared spool location.
         connection.execute("PRAGMA journal_mode = DELETE")
@@ -340,11 +376,26 @@ class RawStore:
     def _prepare(self, record: RawRecord) -> tuple[dict, bytes, str, str]:
         raw, location = record.raw_bytes, record.location
         if not isinstance(raw, bytes) or not 0 < len(raw) <= self.max_record_bytes:
-            raise RecordError("raw record exceeds byte budget or is empty")
+            raise RecordError("raw record exceeds byte budget or is empty", "limit_exceeded")
+        self._validate_source(location, len(raw), record.collected_at)
+        if bool(record.event_pointer) != (location.source_kind == "registry"):
+            raise RecordError("Registry records require an outbox event pointer")
+        value = _event(parse_json(raw), record.event_pointer)
+        canonical = canonical_bytes(value)
+        if len(canonical) > self.max_record_bytes:
+            raise RecordError("canonical event exceeds byte budget", "limit_exceeded")
+        return (
+            value,
+            canonical,
+            hashlib.sha256(canonical).hexdigest(),
+            hashlib.sha256(raw).hexdigest(),
+        )
+
+    def _validate_source(self, location: SourceLocation, size: int, collected_at: str) -> None:
         for value in (location.generation, location.byte_start, location.byte_end):
             if type(value) is not int or not 0 <= value < (1 << 63):
                 raise RecordError("source position must be a nonnegative signed 64-bit integer")
-        if location.byte_end - location.byte_start != len(raw):
+        if location.byte_end - location.byte_start != size:
             raise RecordError("source range does not match raw byte length")
         if any(
             not isinstance(value, str) or not value
@@ -358,20 +409,8 @@ class RawStore:
             raise RecordError("source identity and locator must be explicit")
         if location.source_kind not in ("segment", "registry"):
             raise RecordError("unsupported source kind")
-        if bool(record.event_pointer) != (location.source_kind == "registry"):
-            raise RecordError("Registry records require an outbox event pointer")
-        if not _timestamp(record.collected_at):
+        if not _timestamp(collected_at):
             raise RecordError("collection time must include a valid timezone")
-        value = _event(parse_json(raw), record.event_pointer)
-        canonical = canonical_bytes(value)
-        if len(canonical) > self.max_record_bytes:
-            raise RecordError("canonical event exceeds byte budget")
-        return (
-            value,
-            canonical,
-            hashlib.sha256(canonical).hexdigest(),
-            hashlib.sha256(raw).hexdigest(),
-        )
 
     def ingest(self, records: Iterable[RawRecord]) -> BatchResult:
         """Atomically store a bounded batch. Validation failure writes nothing."""
@@ -432,18 +471,7 @@ class RawStore:
             != record.raw_bytes
         ):
             raise StoreError("raw hash collision; retain input and stop batch")
-        connection.execute(
-            "INSERT INTO source_locations(source_root_id, source_id, segment_uuid, generation, "
-            "byte_start, byte_end, locator, source_kind) VALUES(?, ?, ?, ?, ?, ?, ?, ?) "
-            "ON CONFLICT DO NOTHING",
-            record.location.fields(),
-        )
-        location_id = connection.execute(
-            "SELECT location_id FROM source_locations WHERE source_root_id = ? AND source_id = ? "
-            "AND segment_uuid = ? AND generation = ? AND byte_start = ? AND byte_end = ? "
-            "AND locator = ? AND source_kind = ?",
-            record.location.fields(),
-        ).fetchone()[0]
+        location_id = self._location_id(record.location)
         added_source = connection.execute(
             "INSERT INTO raw_records(location_id, raw_hash, event_id, canonical_hash, "
             "event_pointer, collected_at) VALUES(?, ?, ?, ?, ?, ?) "
@@ -451,6 +479,22 @@ class RawStore:
             (location_id, raw_hash, identity, digest, record.event_pointer, record.collected_at),
         ).rowcount
         return added_event, added_version, added_source
+
+    def _location_id(self, location: SourceLocation) -> int:
+        connection = self._db()
+        connection.execute(
+            "INSERT INTO source_locations(source_root_id, source_id, segment_uuid, generation, "
+            "byte_start, byte_end, locator, source_kind) VALUES(?, ?, ?, ?, ?, ?, ?, ?) "
+            "ON CONFLICT DO NOTHING",
+            location.fields(),
+        )
+        location_id = connection.execute(
+            "SELECT location_id FROM source_locations WHERE source_root_id = ? AND source_id = ? "
+            "AND segment_uuid = ? AND generation = ? AND byte_start = ? AND byte_end = ? "
+            "AND locator = ? AND source_kind = ?",
+            location.fields(),
+        ).fetchone()[0]
+        return location_id
 
     def _conflicted(self, identity: str) -> bool:
         return (
