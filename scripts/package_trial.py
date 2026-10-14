@@ -11,11 +11,15 @@ import tarfile
 import tempfile
 from pathlib import Path
 
-from dev import ROOT, build, write_json
 from package_tools import elf_info, sha, verify_install
-from test_tools import offline_env
+from test_tools import ROOT, offline_env
 
 TOOLS = ("sledra", "sledra-spec-check", "sledra-event")
+
+
+def write_json(path: Path, value: object) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n")
 
 
 def copy_file(source: Path, target: Path) -> None:
@@ -31,12 +35,25 @@ def main() -> None:
     goos, arch = target
     if goos != "linux" or arch not in {"amd64", "arm64"}:
         raise ValueError("trial packaging supports GOOS=linux, GOARCH=amd64 or arm64")
-    output = ROOT / f"build/package/linux-{arch}"
-    build_manifest = build(directory=output, tools=TOOLS)
+    build_root = Path(os.environ.get("SLEDRA_BUILD_DIR", ROOT / "build")).resolve()
+    output = build_root / f"package/linux-{arch}"
+    subprocess.run(
+        [
+            "make",
+            "-C",
+            str(ROOT / "recorder"),
+            f"OUTPUT_DIR={output}",
+            f"TOOLS={','.join(TOOLS)}",
+            "build",
+        ],
+        env=offline_env(),
+        check=True,
+    )
+    build_manifest = json.loads((output / "manifest.json").read_text())
     provenance = build_manifest["recipe"]["provenance"]
     name = f"sledra-{provenance['software_version']}-linux-{arch}"
-    dist = ROOT / "dist"
-    dist.mkdir(exist_ok=True)
+    dist = Path(os.environ.get("SLEDRA_DIST_DIR", ROOT / "dist")).resolve()
+    dist.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix=".sledra-package-", dir=dist) as tmp:
         stage = Path(tmp) / name
         share = stage / "share/sledra"

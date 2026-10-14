@@ -109,8 +109,9 @@ def main() -> int:
     try:
         archive = args.archive
         if archive is None:
-            pointer = json.loads((ROOT / "dist/latest-package.json").read_text())
-            archive = ROOT / "dist" / pointer["archive"]
+            dist = Path(os.environ.get("SLEDRA_DIST_DIR", ROOT / "dist")).resolve()
+            pointer = json.loads((dist / "latest-package.json").read_text())
+            archive = dist / pointer["archive"]
         archive = archive.resolve()
         summary.update(archive=str(archive), archive_sha256=sha(archive))
         digest, filename = Path(str(archive) + ".sha256").read_text().strip().split("  ", 1)

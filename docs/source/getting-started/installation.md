@@ -77,6 +77,6 @@ python3 "$install_dir/share/sledra/test-tools/verify.py" \
 
 校验器检查完整性、版本、原生架构，对比正常/失败 Shell 的 stdout/stderr、callback、product 和一次 payload 执行，复用 M1 正常/失败/重试、冻结/新快照回放，以包内 Go 工具验证规范 bundle 和 19 条过程/outbox 事件。报告、命令与新 handoff 位于安装之外；失败时非零退出并说明原因。工作目录唯一且保留，只清理本次创建的目录。
 
-直接运行校验器不隔离主机。源码侧 `make test-package` 还要求 bubblewrap、ldd、系统 `/usr/bin/python3` >=3.12，以及可用的非特权 user/network namespace。它只挂载只读解包目录、新可写数据及选定系统工具/库；原源码、Go 和缓存不可见，PATH 受限且网络无路由。先在不挂载 Python 的环境记录，再以标准库 Python 验证结果；隔离不支持时明确失败，没有主机运行回退。报告保留于独立 `test-results/test-package-.../`。
+直接运行校验器不隔离主机。源码侧 `make test-package` 还要求 bubblewrap、ldd、系统 `/usr/bin/python3` >=3.12，以及可用的非特权 user/network namespace。它只挂载只读解包目录、新可写数据及选定系统工具/库；原源码、Go 和缓存不可见，PATH 受限且网络无路由。先在不挂载 Python 的环境记录，再以标准库 Python 验证结果；隔离不支持时明确失败，没有主机运行回退。根命令使用临时验收目录，成功后清理，失败时保留现场；直接调用校验器可用 `--report-dir` 保存报告。
 
 试用包也包含公共 M1/Shell/平台/性能工具和站点模板，详见 [HPC 测试](../guides/hpc.md)。隔离回归额外使用 grep/findmnt，属于测试依赖。SLD-26 的完整离线发行、升级/回滚与真实 HPC 资格继续单独验收。

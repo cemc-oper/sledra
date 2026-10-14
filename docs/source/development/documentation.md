@@ -12,7 +12,7 @@ make docs
 python3 -m http.server --directory build/docs/html 8000
 ```
 
-打开 `http://localhost:8000`。`make docs` 先检查仓库 Markdown 导航，再调用 Sphinx HTML 构建，启用 `-n -W --keep-going -E -a`：交叉引用严格检查，警告导致非零退出，每次完整读取并写出页面。HTML 位于 `build/docs/html/`，日志与摘要保存在新建 `test-results/docs-.../`。CI 调用相同入口。
+打开 `http://localhost:8000`。`make docs` 委托 `docs/Makefile`：先检查仓库 Markdown 导航，再调用 Sphinx HTML 构建，启用 `-n -W --keep-going -E -a`：交叉引用严格检查，警告导致非零退出，每次完整读取并写出页面。HTML 位于 `build/docs/html/`；也可从组件目录运行 `make -C docs docs`，或用 `OUTPUT_DIR` 指定共享构建目录。CI 调用相同根入口。
 
 仅安装文档依赖并构建站点时可使用：
 
