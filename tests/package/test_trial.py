@@ -107,6 +107,28 @@ class TrialChecks(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "cross-build is unverified"):
                     verify_install(root)
 
+    def test_installed_document_links_are_local_and_resolve(self) -> None:
+        for link in ("missing.md", "../outside.md", "https://example.invalid/guide"):
+            with self.subTest(link=link), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                fixture(root)
+                document = root / "README.md"
+                document.write_text(f"[guide]({link})\n")
+                manifest = json.loads((root / "manifest.json").read_text())
+                manifest["files"]["README.md"] = {
+                    "sha256": sha(document),
+                    "size": document.stat().st_size,
+                    "mode": "0644",
+                }
+                (root / "manifest.json").write_text(json.dumps(manifest))
+                (root / "SHA256SUMS").write_text(
+                    f"{sha(document)}  README.md\n"
+                    f"{sha(root / 'bin/sledra')}  bin/sledra\n"
+                    f"{sha(root / 'manifest.json')}  manifest.json\n"
+                )
+                with self.assertRaisesRegex(ValueError, "package documentation"):
+                    verify_install(root, native=False)
+
     def test_actual_elf_linkage_not_cgo_label_is_checked(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             binary = Path(tmp) / "sledra"

@@ -5,12 +5,15 @@ from __future__ import annotations
 import hashlib
 import json
 import platform
+import re
 import shutil
 import struct
 import tarfile
 from pathlib import Path, PurePosixPath
+from urllib.parse import unquote, urlsplit
 
 MACHINES = {62: "amd64", 183: "arm64"}
+MARKDOWN_LINK = re.compile(r"\]\(([^\s)]+)(?:\s+\"[^\"]*\")?\)")
 
 
 def sha(path: Path) -> str:
@@ -93,6 +96,14 @@ def verify_install(root: Path, *, native: bool = True) -> dict:
     for name, digest in checksums.items():
         if sha(root / name) != digest:
             raise ValueError(f"package SHA256SUMS mismatch: {name}")
+    for document in root.rglob("*.md"):
+        for match in MARKDOWN_LINK.finditer(document.read_text()):
+            link = urlsplit(match[1].strip("<>"))
+            if link.scheme or link.netloc:
+                raise ValueError(f"package documentation depends on an external link: {document}")
+            target = (document.parent / unquote(link.path)).resolve() if link.path else document
+            if not target.is_relative_to(root.resolve()) or not target.exists():
+                raise ValueError(f"broken package documentation link: {document}: {match[1]}")
     target = manifest["target"]
     if target["os"] != "linux" or target["arch"] not in MACHINES.values():
         raise ValueError("unsupported package target")

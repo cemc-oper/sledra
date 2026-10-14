@@ -5,6 +5,7 @@ from __future__ import annotations
 import gzip
 import json
 import os
+import re
 import shutil
 import subprocess
 import tarfile
@@ -15,6 +16,12 @@ from package_tools import elf_info, sha, verify_install
 from test_tools import ROOT, offline_env
 
 TOOLS = ("sledra", "sledra-spec-check", "sledra-event")
+TRIAL_LINKS = {
+    "../guides/runtime.md": "share/sledra/docs/runtime.md",
+    "../reference/cli.md": "share/sledra/docs/runtime.md",
+    "../guides/standalone.md": "share/sledra/examples/standalone/README.md",
+    "../guides/hpc.md": "share/sledra/docs/testing-hpc.md",
+}
 
 
 def write_json(path: Path, value: object) -> None:
@@ -26,6 +33,39 @@ def copy_file(source: Path, target: Path) -> None:
     target.parent.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(source, target)
     target.chmod(0o755 if os.access(source, os.X_OK) and source.suffix != ".py" else 0o644)
+
+
+def copy_package_markdown(source: Path, target: Path) -> None:
+    """Keep installed READMEs local; upstream web references are not package dependencies."""
+    target.parent.mkdir(parents=True, exist_ok=True)
+    content = source.read_text()
+    if source == ROOT / "examples/standalone/README.md":
+        content = content.split("逐步命令、JSON 阅读脚本", 1)[0].rstrip()
+        content += (
+            "\n\n安装、运行和校验步骤见[包根说明](../../../../README.md)；"
+            "配置与错误说明见[运行配置](../../docs/runtime.md)。\n"
+        )
+    content = re.sub(r"\[([^\]]+)\]\(https?://[^)]+\)", r"\1", content)
+    target.write_text(content)
+    target.chmod(0o644)
+
+
+def write_trial_readme(target: Path, package_name: str) -> None:
+    source = (ROOT / "docs/source/getting-started/installation.md").read_text()
+    start, end = "<!-- trial-package:start -->", "<!-- trial-package:end -->"
+    if source.count(start) != 1 or source.count(end) != 1:
+        raise ValueError("installation guide must contain one trial-package section")
+    content = source.split(start, 1)[1].split(end, 1)[0].strip()
+    for old, new in TRIAL_LINKS.items():
+        content = content.replace(f"]({old})", f"]({new})")
+    if re.search(r"\]\((?:\.\./|https?://)", content):
+        raise ValueError("trial README still links outside the package")
+    content = content.replace(
+        "](share/sledra/docs/runtime.md)与 [CLI]", "](share/sledra/docs/runtime.md)与 [命令与错误]"
+    )
+    content = content.replace("[独立示例详解]", "[示例说明]")
+    content = content.replace("sledra-dev-linux-amd64", package_name)
+    target.write_text(f"# Sledra 本地试用包\n\n{content}\n")
 
 
 def main() -> None:
@@ -69,7 +109,11 @@ def main() -> None:
         ):
             for path in sorted((ROOT / directory).rglob("*")):
                 if path.is_file() and path.suffix != ".pyc":
-                    copy_file(path, share / path.relative_to(ROOT))
+                    target = share / path.relative_to(ROOT)
+                    if path.suffix == ".md":
+                        copy_package_markdown(path, target)
+                    else:
+                        copy_file(path, target)
         for name_in, name_out in (
             ("scripts/test_tools.py", "scripts/test_tools.py"),
             ("scripts/test_session.py", "scripts/test_session.py"),
@@ -85,10 +129,10 @@ def main() -> None:
             ("tests/m1/verify.py", "tests/m1/verify.py"),
             ("tests/m1/replay.py", "tests/m1/replay.py"),
             ("tests/m1/results/handoff.json", "tests/m1/results/handoff.json"),
-            ("packaging/runtime.md", "docs/runtime.md"),
+            ("docs/source/guides/runtime.md", "docs/runtime.md"),
         ):
             copy_file(ROOT / name_in, share / name_out)
-        copy_file(ROOT / "packaging/README.trial.md", stage / "README.md")
+        write_trial_readme(stage / "README.md", name)
         # Preserve actual third-party license files from the pinned local cache.
         linked = set()
         for tool in TOOLS:
