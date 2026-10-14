@@ -25,9 +25,9 @@ export SLEDRA_TEST_BIN_DIR := $(BUILD_ROOT)/bin
 help:
 	@printf '%s\n' \
 	  'make setup         Prepare locked Python, Go and CI tools online' \
-	  'make build         Build five recorder tools in OUTPUT_DIR/bin' \
+	  'make build         Build recorder tools and the analysis Python package' \
 	  'make check         Check lock, formatting, lint, contracts, docs and CI' \
-	  'make test          Build, then run Go and source regressions' \
+	  'make test          Build, then run Go, analysis and source regressions' \
 	  'make docs          Check links and build strict HTML in OUTPUT_DIR/docs/html' \
 	  'make demo          Run M1 normal/failure/retry and replay in a temporary directory' \
 	  'make benchmark     Run M1 timing probe; set SLEDRA_BENCHMARK_OUT to save samples' \
@@ -37,11 +37,13 @@ help:
 
 setup:
 	UV_OFFLINE=0 $(UV) sync --locked --no-python-downloads --python "$(UV_PYTHON)"
+	$(MAKE) -C analysis setup
 	$(MAKE) -C recorder setup
 	$(PYTHON) scripts/check_ci.py --setup
 
 build:
 	@$(GUARD) $(MAKE) -C recorder OUTPUT_DIR="$(BUILD_ROOT)" build
+	@$(GUARD) $(MAKE) -C analysis OUTPUT_DIR="$(BUILD_ROOT)" build
 
 check:
 	@$(GUARD) $(MAKE) _check
@@ -50,6 +52,7 @@ _check:
 	$(UV) lock --check --offline --no-python-downloads
 	$(UV_PY) -m ruff format --check scripts
 	$(UV_PY) -m ruff check .
+	$(MAKE) -C analysis check
 	$(MAKE) -C recorder check
 	@find . -name '*.sh' -not -path './build/*' -not -path './dist/*' -not -path './test-results/*' -not -path './.venv/*' -exec bash -n '{}' +
 	$(UV_PY) scripts/check_contracts.py
@@ -64,6 +67,7 @@ test: build
 
 _test:
 	$(MAKE) -C recorder test
+	$(MAKE) -C analysis test
 	$(UV_PY) -m unittest discover -s tests/engineering -v
 	$(UV_PY) -m unittest discover -s tests/package -v
 	$(UV_PY) -m unittest discover -s tests/platform -v

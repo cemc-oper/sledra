@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools==80.9.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sledra-analysis"
+version = "0.1.0.dev0"
+description = "Sledra offline source identity and ingestion primitives"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = []
+
+[dependency-groups]
+dev = ["setuptools==80.9.0"]
+
+[tool.setuptools.packages.find]
+where = ["src"]

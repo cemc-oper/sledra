@@ -2,12 +2,13 @@
 
 Sledra 为工作流保存可追溯的运行事实。当前提供独立 Go 记录器、Bash 生命周期钩子、版本化 JSON 契约、合成示例和 Linux 本地试用包。
 
-M1 独立记录、M1.1 工程化与 M1.2 构建及目录整理的既定本地范围已通过验收，当前工程入口见[工程交接](docs/source/development/engineering-handoff.md)。离线分析、查询、真实采集确认及透明 `sledra exec` supervisor 尚未实现；M2 为后续分析方向，阶段范围和顺序随新增工程需求及使用反馈调整。
+M1 独立记录、M1.1 工程化与 M1.2 构建及目录整理的既定本地范围已通过验收，当前工程入口见[工程交接](docs/source/development/engineering-handoff.md)。M2 已交付 SLD-10 文件身份与世代模型，见[分析组件](analysis/README.md)。事实存储、查询、真实采集确认及透明 `sledra exec` supervisor 尚未实现。
 
 ## 项目结构
 
 | 目录 | 用途 |
 |---|---|
+| [analysis](analysis/README.md) | Python 文件身份、世代和 offset 模型（SLD-10） |
 | [recorder](recorder/context/README.md) | Go 记录器：Registry、context、事件、spool 和隔离保留夹具 |
 | [integrations/bash](integrations/bash/README.md) | 由明确的生命周期 owner 调用的 Bash API |
 | [spec](spec/README.md) | 1.0.0 契约草案、生成脚本和合成正反例 |
@@ -16,7 +17,7 @@ M1 独立记录、M1.1 工程化与 M1.2 构建及目录整理的既定本地范
 | [docs](docs/README.md) | Sphinx + PyData Sphinx Theme + MyST-NB 中文文档 |
 | [scripts](docs/source/development/workflow.md) | 专用构建、打包、契约和验证工具 |
 
-`build/bin/`、`build/docs/html/` 和 `build/package/linux-<arch>/` 分别保存工具、文档和分架构打包中间产物，最终试用归档及清单位于 `dist/`；这些目录不纳入 Git。安装与运行说明统一维护在 `docs/source/`，打包时导出包内本地文档。
+`build/bin/`、`build/analysis/`、`build/docs/html/` 和 `build/package/linux-<arch>/` 分别保存记录器工具、分析 wheel/sdist、文档和分架构打包中间产物，最终试用归档及清单位于 `dist/`；这些目录不纳入 Git。安装与运行说明统一维护在 `docs/source/`，打包时导出包内本地文档。
 
 安装资源与运行数据分开放置。Registry、context、document、finish 和 spool 共用显式的 `SLEDRA_ROOT`。当前证据覆盖 WSL/ext4 和明确登记的 tmpfs 测试；共享/HPC 部署仍需验证目标文件系统。
 

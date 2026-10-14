@@ -1,6 +1,6 @@
 # 开发流程
 
-在仓库根目录运行公共 Make 目标。根入口协调任务；`recorder/Makefile` 负责 Go 构建、检查和测试，`docs/Makefile` 负责文档检查和严格构建。根 Python 项目仅管理开发、文档和验证工具：`package = false` 不安装 Sledra 库，元数据 `0.0.0` 不是记录器发行版。Go/Bash 记录不依赖 Python；分析包留待 M2。
+在仓库根目录运行公共 Make 目标。根入口协调任务；`recorder/Makefile` 负责 Go 构建、检查和测试，`analysis/Makefile` 负责 Python 分析组件构建、检查与测试，`docs/Makefile` 负责文档检查和严格构建。根 Python 项目仅管理开发、文档和验证工具：`package = false` 不安装 Sledra 库，元数据 `0.0.0` 不是记录器发行版。Go/Bash 记录不依赖 Python；独立 `analysis/` 包现提供 SLD-10 文件身份层，见[文件身份与世代](source-identity.md)。
 
 ## 工具链
 
@@ -24,7 +24,7 @@ make help
 make setup
 ```
 
-setup 依据 `pyproject.toml` 同步提交的 `uv.lock`，准备 dev/docs 依赖组，下载 go.mod/go.sum 固定的 Go 模块，以及摘要固定的 actionlint 1.7.11。校验器位于 `build/ci-tools/`，配方为 `.github/ci-tools.json`。使用已安装 Python/Go，不自动下载工具链；空缓存与站点代理均支持。
+setup 依据根与 analysis 的 `pyproject.toml` 同步各自提交的 `uv.lock`，准备 dev/docs 依赖组，准备固定 setuptools 80.9.0 的分析构建 backend，下载 go.mod/go.sum 固定的 Go 模块，以及摘要固定的 actionlint 1.7.11。校验器位于 `build/ci-tools/`，配方为 `.github/ci-tools.json`。使用已安装 Python/Go，不自动下载工具链；空缓存与站点代理均支持。
 
 开发组继续固定 jsonschema 4.10.3、Ruff 0.16.9，文档组使用 Sphinx、PyData Sphinx Theme、MyST-NB，全部传递依赖由 uv.lock 锁定。`spec/requirements-test.txt` 保留直接契约脚本的窄依赖输入。更新依赖时显式修改元数据与锁文件；日常命令不改锁文件。
 
@@ -43,11 +43,13 @@ make benchmark
 
 build 在 `build/bin/` 生成 sledra、sledra-spec-check、sledra-event、sledra-spool、sledra-retention。`build/manifest.json` 记录输入、工具链、目标、参数和二进制 SHA256。采用 CGO_ENABLED=0、-trimpath、-buildvcs=false，支持无 Git 元数据的源码；输入或二进制字节变化时重建，其余情况复用。版本来源见 [CLI](../reference/cli.md#帮助与版本)。
 
-可从组件目录直接执行 `make -C recorder build`、`make -C recorder check`、`make -C recorder test` 和 `make -C docs docs`。默认产物仍位于仓库根 `build/`；通过 `make OUTPUT_DIR='/path/with spaces/build' build docs` 可统一改到指定目录。单独构建记录器只启动 Go，不需要 Python 或 uv。构建配方位于 `scripts/build_recorder.go`，试用包调用同一组件入口，按目标架构隔离在 `build/package/linux-<arch>/`；最终归档与校验和位于 `dist/`，可用 `DIST_DIR` 覆盖。
+build 同时在 `build/analysis/` 生成独立分析 wheel 与 sdist。分析运行依赖为空，不进入记录器试用包；其后续发行归 SLD-26。
+
+可从组件目录直接执行 `make -C recorder build`、`make -C recorder check`、`make -C recorder test` 和 `make -C analysis build/check/test`（分别调用）及 `make -C docs docs`。默认产物仍位于仓库根 `build/`；通过 `make OUTPUT_DIR='/path/with spaces/build' build docs` 可统一改到指定目录。单独构建记录器只启动 Go，不需要 Python 或 uv。构建配方位于 `scripts/build_recorder.go`，试用包调用同一组件入口，按目标架构隔离在 `build/package/linux-<arch>/`；最终归档与校验和位于 `dist/`，可用 `DIST_DIR` 覆盖。
 
 check 检查锁文件、Python 格式/静态规则、Go 格式/vet、Bash 语法、canonical/fixture/embed 生成字节、文档链接及真实 actionlint。生成在私有副本中完成，不覆写源树。docs 执行中文文档严格构建，见[文档维护](documentation.md)。
 
-test 先复用共享构建，再执行不使用测试缓存的 Go 回归、工程/打包/平台测试、CLI、契约/事件/context/Shell、M1 和冻结回放。辅助脚本通过 `SLEDRA_TEST_BIN_DIR` 复用工具；显式缺失二进制时报错，不偷偷重建。单独调用脚本仍支持私有目录离线构建。
+test 先复用共享构建，再执行不使用测试缓存的 Go 回归、analysis V11 测试、工程/打包/平台测试、CLI、契约/事件/context/Shell、M1 和冻结回放。辅助脚本通过 `SLEDRA_TEST_BIN_DIR` 复用工具；显式缺失二进制时报错，不偷偷重建。单独调用脚本仍支持私有目录离线构建。
 
 demo 创建正常/失败/重试场景，导出 context、Registry、finish 与 JSONL，再回放新快照。benchmark 默认打印分位值并清理临时样本；设置 `SLEDRA_BENCHMARK_OUT=/path/to/samples.json` 才保存原始纳秒样本。默认 20 对，`SLEDRA_BENCHMARK_SAMPLES=10` 可缩短测试（允许 10～100），不等于性能资格通过。
 

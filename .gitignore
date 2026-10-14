@@ -6,3 +6,4 @@ build/
 dist/
 test-results/
 .ruff_cache/
+*.egg-info/
