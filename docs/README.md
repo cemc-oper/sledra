@@ -10,6 +10,8 @@ python3 -m http.server --directory build/docs/html 8000
 
 访问 `http://localhost:8000`，或直接打开 `build/docs/html/index.html`。构建产物不纳入版本控制。
 
+仓库根目录的 `.readthedocs.yaml` 支持 Read the Docs 托管，使用锁定的文档依赖并将构建警告视为错误。导入仓库与首次构建步骤见[文档维护](source/development/documentation.md#read-the-docs-托管)。
+
 | 顶层章节 | 内容 |
 |---|---|
 | [开始使用](source/getting-started/index.md) | 试用包安装、源码快速开始 |

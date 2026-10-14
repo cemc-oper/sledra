@@ -52,6 +52,8 @@ python3 -m http.server --directory build/docs/html 8000
 
 在浏览器打开 `http://localhost:8000`。文档源码位于 `docs/source/`，HTML 生成到 `build/docs/html/`；构建将警告视为错误，不自动执行 Notebook。文档依赖只用于开发，不成为 Go/Bash 记录器的运行依赖。仅构建文档的依赖安装方法见[文档维护](docs/source/development/documentation.md)。
 
+仓库提供 `.readthedocs.yaml`，支持在 Read the Docs 构建和托管中文文档；导入仓库与首次构建步骤见 [Read the Docs 托管](docs/source/development/documentation.md#read-the-docs-托管)。
+
 [文档首页](docs/source/index.md)按四个顶层章节组织：
 
 | 章节 | 阅读目标 |

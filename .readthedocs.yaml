@@ -1,0 +1,20 @@
+# Read the Docs 构建配置
+# https://docs.readthedocs.com/platform/stable/config-file/v2.html
+version: 2
+
+build:
+  os: ubuntu-24.04
+  tools:
+    python: "3.12"
+  jobs:
+    install:
+      - python -m pip install uv==0.11.2
+      # 将锁定的 docs 组安装到 Read the Docs 的构建环境。
+      - UV_PROJECT_ENVIRONMENT="$READTHEDOCS_VIRTUALENV_PATH" uv sync --only-group docs --locked --no-python-downloads --python "$READTHEDOCS_VIRTUALENV_PATH/bin/python"
+    pre_build:
+      - python scripts/check_docs.py
+
+sphinx:
+  configuration: docs/source/conf.py
+  builder: html
+  fail_on_warning: true
