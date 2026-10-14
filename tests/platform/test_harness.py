@@ -187,6 +187,22 @@ class HarnessTests(unittest.TestCase):
         self.assertTrue(session.work.is_dir())
         self.assertEqual(self.read(session.report / "summary.json")["status"], "fail")
 
+    def test_local_session_without_report_cleans_owned_work(self) -> None:
+        args = argparse.Namespace(
+            bin=self.binary,
+            spec_dir=None,
+            work_root=self.root,
+            report_dir=None,
+            keep_work=False,
+            mode="local",
+        )
+        with TestSession(args, "no-report") as session:
+            self.assertIsNone(session.report)
+            work = session.work
+            self.assertTrue(work.is_dir())
+        self.assertFalse(work.exists())
+        self.assertEqual(list(self.root.iterdir()), [])
+
     def test_collection_failure_has_report(self) -> None:
         (self.root / "coord").mkdir()
         (self.root / "coord/result-a.json").write_text("{invalid-json")

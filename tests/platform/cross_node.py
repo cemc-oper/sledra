@@ -291,7 +291,7 @@ def worker(run: Path, role: str) -> int:
     return int(data["status"] != "pass")
 
 
-def collect(run: Path, report: Path, timeout: float) -> int:
+def collect(run: Path, report: Path, timeout: float, *, announce: bool = True) -> int:
     report.mkdir(parents=True, exist_ok=False)
     data = {
         "format_version": 1,
@@ -384,7 +384,8 @@ def collect(run: Path, report: Path, timeout: float) -> int:
                 except (OSError, ValueError) as exc:
                     data["roles"][role] = {"status": "fail", "reason": f"unreadable receipt: {exc}"}
         save(report / "summary.json", data)
-        print(f"Report: {report / 'summary.json'}")
+        if announce:
+            print(f"Report: {report / 'summary.json'}")
     return int(data["status"] != "pass")
 
 
@@ -423,10 +424,16 @@ def main() -> int:
         print(json.dumps({"run_directory": str(run), "roles": list(ROLES)}))
         if args.action == "simulate":
             processes = []
+            intermediate = session.report or session.work
+            worker_output = {}
             try:
                 for role in ROLES:
                     if role != args.omit_role:
-                        log = (session.report / f"worker-{role}.log").open("w")
+                        log = (
+                            (session.report / f"worker-{role}.log").open("w")
+                            if session.report is not None
+                            else None
+                        )
                         child = subprocess.Popen(
                             [
                                 sys.executable,
@@ -438,29 +445,47 @@ def main() -> int:
                                 role,
                             ],
                             env=clean_env(),
-                            stdout=log,
+                            stdout=log if log is not None else subprocess.PIPE,
                             stderr=subprocess.STDOUT,
                         )
-                        processes.append((child, log))
-                codes = [child.wait(timeout=args.timeout + 5) for child, _ in processes]
-                code = collect(run, session.report / "collection", 0.2)
+                        processes.append((role, child, log))
+                codes = []
+                for role, child, log in processes:
+                    if log is None:
+                        output, _ = child.communicate(timeout=args.timeout + 5)
+                        worker_output[role] = output.decode(errors="replace")
+                        codes.append(child.returncode)
+                    else:
+                        codes.append(child.wait(timeout=args.timeout + 5))
+                code = collect(
+                    run, intermediate / "collection", 0.2, announce=session.report is not None
+                )
                 session.data["execution"] = {
                     "status": "fail" if code or any(codes) else "pass",
                     "reason": "same-host harness only",
                 }
                 session.data["collection"] = json.loads(
-                    (session.report / "collection/summary.json").read_text()
+                    (intermediate / "collection/summary.json").read_text()
                 )
                 if code or any(codes):
+                    print(session.data["collection"]["reason"], file=sys.stderr)
+                    for role, _, log in processes:
+                        if log is not None:
+                            log.flush()
+                        content = Path(log.name).read_text() if log else worker_output.get(role, "")
+                        if content:
+                            print(content, file=sys.stderr)
                     raise AssertionError(
                         "cross-node simulation failed; see collection and worker logs"
                     )
+                print(json.dumps({"ok": True, "collection": "pass"}, sort_keys=True))
             finally:
-                for child, log in processes:
+                for _, child, log in processes:
                     if child.poll() is None:
                         child.kill()
                         child.wait(timeout=5)
-                    log.close()
+                    if log is not None:
+                        log.close()
     return 0
 
 

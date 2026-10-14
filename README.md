@@ -29,7 +29,7 @@ make test
 make demo
 ```
 
-`make setup` 是显式联网步骤，支持空依赖缓存。日常命令使用已准备的缓存离线运行，不提交 HPC 作业。构建产物位于 `build/bin/`；命令过程直接显示在控制台。`make -C recorder build` 和 `make -C docs docs` 可单独使用，`OUTPUT_DIR` 可指定共用构建目录；部分验证工具仍保存各自的资格报告。
+`make setup` 是显式联网步骤，支持空依赖缓存。日常命令使用已准备的缓存离线运行，不提交 HPC 作业。构建产物位于 `build/bin/`；命令过程直接显示在控制台，默认不创建测试报告目录。`make -C recorder build` 和 `make -C docs docs` 可单独使用，`OUTPUT_DIR` 可指定共用构建目录；需要资格数据时显式指定验证工具的 `--report-dir`。
 
 具体使用方式见[独立示例详解](docs/source/guides/standalone.md)：说明请求 JSON、owner/payload 分工、钩子顺序、失败路径以及生成文件的核对。随后按[脚本接入说明](docs/source/guides/recording.md)逐步调用 CLI，并确定自己业务脚本中的生命周期边界。
 

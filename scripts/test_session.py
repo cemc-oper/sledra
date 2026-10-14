@@ -1,4 +1,4 @@
-"""Shared source/installed test paths, preflight, reports and owned cleanup."""
+"""Shared source/installed test paths, preflight, optional reports and owned cleanup."""
 
 from __future__ import annotations
 
@@ -116,16 +116,15 @@ def source_identity() -> dict:
 
 
 class TestSession:
-    """Reports survive errors; cleanup is restricted to this session's new child."""
+    """Explicit reports survive errors; cleanup is restricted to the owned work child."""
 
     def __init__(self, args: argparse.Namespace, name: str) -> None:
         self.args, self.name = args, name
         self.token = uuid.uuid4().hex
         self.work: Path | None = None
-        self.report = (
-            args.report_dir or Path.cwd() / "test-results" / f"{name}-{self.token}"
-        ).absolute()
-        self.report.mkdir(parents=True, exist_ok=False)
+        self.report = args.report_dir.absolute() if args.report_dir else None
+        if self.report is not None:
+            self.report.mkdir(parents=True, exist_ok=False)
         self.commands: list[dict] = []
         self.data = {
             "format_version": 1,
@@ -264,9 +263,12 @@ class TestSession:
             work_retained=bool(error or self.args.keep_work),
             commands=len(self.commands),
         )
-        save(self.report / "commands.json", self.commands)
-        save(self.report / "summary.json", self.data)
-        print(f"Report: {self.report / 'summary.json'}", file=sys.stderr)
+        if self.report is not None:
+            save(self.report / "commands.json", self.commands)
+            save(self.report / "summary.json", self.data)
+            print(f"Report: {self.report / 'summary.json'}", file=sys.stderr)
+        elif error and self.work is not None:
+            print(f"Work retained: {self.work}", file=sys.stderr)
         if cleanup_error:
             raise cleanup_error
 

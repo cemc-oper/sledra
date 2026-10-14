@@ -77,20 +77,16 @@ jobs:
         run: make package
       - name: Verify the trial without source, Go or runtime networking
         run: make test-package
-      - name: Preserve validation evidence on success or failure
+      - name: Preserve build and package metadata on success or failure
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: sledra-linux-amd64-reports
+          name: sledra-linux-amd64-metadata
           retention-days: 14
           if-no-files-found: warn
           path: |
-            test-results/**/summary.json
-            test-results/**/*.log
-            test-results/**/commands.json
-            test-results/**/samples.json
-            test-results/**/handoff.json
             build/manifest.json
             build/ci-tools/**/manifest.json
             dist/*.manifest.json
             dist/*.tar.gz.sha256
+            dist/latest-package.json

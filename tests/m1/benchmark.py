@@ -187,7 +187,8 @@ def main() -> None:
             }
         )
         session.data.update(sample_count=args.samples, measurement=data)
-        save(session.report / "samples.json", data)
+        if session.report is not None:
+            save(session.report / "samples.json", data)
         if args.out:
             save(args.out, data)
         print(

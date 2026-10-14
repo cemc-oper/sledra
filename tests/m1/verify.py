@@ -245,7 +245,7 @@ def inspect(root: Path, normal: dict, retry_run: dict, attempts: dict[str, dict]
         "process_event_types": {name: types for name, types in expected.items()},
         "registry_outbox_types": sorted(e["event_type"] for e in outbox),
         "finish_covered_attempt_ids": covered,
-        "source_status": "synthetic; filesystem and node scope recorded in session report",
+        "source_status": "synthetic; filesystem and node scope available with --report-dir",
         "late_attempt_status": "registered_only; needs_finalization is an M2 projection",
     }
 
@@ -358,7 +358,8 @@ def main() -> None:
         )
         summary["payload_return_codes"] = [normal_result[0], failed_result[0], retry_result[0]]
         bundle = snapshot(root, summary)
-        save(session.report / "handoff.json", bundle)
+        if session.report is not None:
+            save(session.report / "handoff.json", bundle)
         session.data.update(
             sample_count=3,
             handoff_files=len(bundle["files"]),

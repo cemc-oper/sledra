@@ -244,10 +244,12 @@ if __name__ == "__main__":
         if shutil.which("grep") is None:
             raise ValueError("missing Shell test dependency: grep")
         ShellIntegration.session = session
-        with (session.report / "assertions.log").open("w") as log:
-            result = unittest.TextTestRunner(stream=log, verbosity=2).run(
-                unittest.defaultTestLoader.loadTestsFromTestCase(ShellIntegration)
-            )
+        suite = unittest.defaultTestLoader.loadTestsFromTestCase(ShellIntegration)
+        if session.report is not None:
+            with (session.report / "assertions.log").open("w") as log:
+                result = unittest.TextTestRunner(stream=log, verbosity=2).run(suite)
+        else:
+            result = unittest.TextTestRunner(stream=sys.stderr, verbosity=2).run(suite)
         session.data.update(
             sample_count=result.testsRun,
             failures=len(result.failures),
@@ -255,6 +257,4 @@ if __name__ == "__main__":
             cases=[str(p) for p in session.work.glob("case-*")],
         )
         if not result.wasSuccessful():
-            raise AssertionError(
-                f"Shell assertions failed; see {session.report / 'assertions.log'}"
-            )
+            raise AssertionError("Shell assertions failed")
