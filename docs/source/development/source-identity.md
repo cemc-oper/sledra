@@ -1,6 +1,6 @@
 # 文件身份与世代
 
-SLD-10 提供 `sledra_analysis.ingest.source`，作为后续采集器的文件身份层。本组件读取 source、建立位置模型并诊断缺口；当前位置还没有 SQLite 事务或真实采集确认。它不修改、封口或删除源。
+SLD-10 提供 `sledra_analysis.ingest.source`，作为后续采集器的文件身份层。本组件读取 source、建立位置模型并诊断缺口；位置模型本身还没有持久检查点或真实采集确认；SLD-11 已提供独立的[SQLite 事实批次事务](raw-facts.md)。它不修改、封口或删除源。
 
 ## 身份与位置
 
@@ -41,7 +41,7 @@ with tracker.open("spool/example.open.jsonl") as source:
         # tracker.remember(proposed)
 ```
 
-`checkpoint(offset)` 仅提出完整行边界的位置，不能后退、越过扫描尺寸或在冲突源上推进。`remember()` 只是安装调用方状态，不代表提交；扫描自身不会推进 committed_offset。事务、事实去重、隔离和 ack 均由后续任务实现。
+`checkpoint(offset)` 仅提出完整行边界的位置，不能后退、越过扫描尺寸或在冲突源上推进。`remember()` 只是安装调用方状态，不代表提交；扫描自身不会推进 committed_offset。SLD-11 已实现独立事实去重与批次事务；检查点与事实的同事务、隔离和 ack 均由后续任务实现。
 
 ## Legacy 完整性限制
 
@@ -51,4 +51,4 @@ with tracker.open("spool/example.open.jsonl") as source:
 
 ## 验证边界
 
-`make -C analysis test` 回放全部 22 个冻结输入摘要，验证 6 个 open 段的 UUID、11 条过程事件字节及重复 offset；新临时现场覆盖轮转、副本、截断再长、inode 提示复用、冲突恢复、半行、路径拒绝和扫描竞态。inode 重用通过提示模拟，真实共享/HPC、远程 FS 属性缓存、SQLite 事务和清理确认尚未验证。
+`make -C analysis test` 回放全部 22 个冻结输入摘要，验证 6 个 open 段的 UUID、11 条过程事件字节及重复 offset；新临时现场覆盖轮转、副本、截断再长、inode 提示复用、冲突恢复、半行、路径拒绝和扫描竞态。inode 重用通过提示模拟，真实共享/HPC、远程 FS 属性缓存、检查点事务和清理确认尚未验证；SQLite 原始事实验证见 SLD-11。

@@ -1,6 +1,6 @@
 # 开发流程
 
-在仓库根目录运行公共 Make 目标。根入口协调任务；`recorder/Makefile` 负责 Go 构建、检查和测试，`analysis/Makefile` 负责 Python 分析组件构建、检查与测试，`docs/Makefile` 负责文档检查和严格构建。根 Python 项目仅管理开发、文档和验证工具：`package = false` 不安装 Sledra 库，元数据 `0.0.0` 不是记录器发行版。Go/Bash 记录不依赖 Python；独立 `analysis/` 包现提供 SLD-10 文件身份层，见[文件身份与世代](source-identity.md)。
+在仓库根目录运行公共 Make 目标。根入口协调任务；`recorder/Makefile` 负责 Go 构建、检查和测试，`analysis/Makefile` 负责 Python 分析组件构建、检查与测试，`docs/Makefile` 负责文档检查和严格构建。根 Python 项目仅管理开发、文档和验证工具：`package = false` 不安装 Sledra 库，元数据 `0.0.0` 不是记录器发行版。Go/Bash 记录不依赖 Python；独立 `analysis/` 包现提供 SLD-10 文件身份层与 SLD-11 SQLite 原始事实存储，见[文件身份与世代](source-identity.md)。
 
 ## 工具链
 
@@ -9,6 +9,7 @@
 | 工具 | 最低版本 | 本地实测 |
 |---|---|---|
 | Python | 3.12 | 3.12.3 |
+| SQLite（Python 内置，analysis store） | 3.37 | 3.45.1；Linux flock 单写者 |
 | uv | 0.11.2 | 0.11.2 |
 | Go | go.mod 声明的 1.25.0 | 1.27.0；M1.2 整体验收为 1.27.2 linux/amd64 |
 | Bash | 5.2 | 5.2.21 |
@@ -49,7 +50,7 @@ build 同时在 `build/analysis/` 生成独立分析 wheel 与 sdist。分析运
 
 check 检查锁文件、Python 格式/静态规则、Go 格式/vet、Bash 语法、canonical/fixture/embed 生成字节、文档链接及真实 actionlint。生成在私有副本中完成，不覆写源树。docs 执行中文文档严格构建，见[文档维护](documentation.md)。
 
-test 先复用共享构建，再执行不使用测试缓存的 Go 回归、analysis V11 测试、工程/打包/平台测试、CLI、契约/事件/context/Shell、M1 和冻结回放。辅助脚本通过 `SLEDRA_TEST_BIN_DIR` 复用工具；显式缺失二进制时报错，不偷偷重建。单独调用脚本仍支持私有目录离线构建。
+test 先复用共享构建，再执行不使用测试缓存的 Go 回归、analysis V11/V09 测试、工程/打包/平台测试、CLI、契约/事件/context/Shell、M1 和冻结回放。辅助脚本通过 `SLEDRA_TEST_BIN_DIR` 复用工具；显式缺失二进制时报错，不偷偷重建。单独调用脚本仍支持私有目录离线构建。
 
 demo 创建正常/失败/重试场景，导出 context、Registry、finish 与 JSONL，再回放新快照。benchmark 默认打印分位值并清理临时样本；设置 `SLEDRA_BENCHMARK_OUT=/path/to/samples.json` 才保存原始纳秒样本。默认 20 对，`SLEDRA_BENCHMARK_SAMPLES=10` 可缩短测试（允许 10～100），不等于性能资格通过。
 

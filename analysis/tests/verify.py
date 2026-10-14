@@ -1,4 +1,4 @@
-"""Run V11 regressions; save evidence only to an explicitly requested new directory."""
+"""Run analysis regressions; save evidence only to an explicitly requested new directory."""
 
 from __future__ import annotations
 
@@ -6,6 +6,7 @@ import argparse
 import hashlib
 import json
 import platform
+import sqlite3
 import tempfile
 import unittest
 from pathlib import Path
@@ -36,13 +37,15 @@ def main() -> int:
     parser.add_argument(
         "--report-dir", type=Path, help="new private report directory; never overwrite"
     )
+    parser.add_argument("--task", choices=("SLD-10", "SLD-11", "all"), default="all")
     args = parser.parse_args()
     if args.report_dir is not None:
         args.report_dir.mkdir(parents=True, exist_ok=False, mode=0o700)
         work = args.report_dir / "work"
         work.mkdir(mode=0o700)
         tempfile.tempdir = str(work.resolve())
-    suite = unittest.defaultTestLoader.discover(str(Path(__file__).parent), pattern="test_*.py")
+    pattern = {"SLD-10": "test_source.py", "SLD-11": "test_store.py", "all": "test_*.py"}[args.task]
+    suite = unittest.defaultTestLoader.discover(str(Path(__file__).parent), pattern=pattern)
     result = unittest.TextTestRunner(verbosity=2, resultclass=EvidenceResult).run(suite)
     fixture = ROOT / "tests/m1/results/handoff.json"
     handoff = json.loads(fixture.read_bytes())
@@ -50,11 +53,12 @@ def main() -> int:
     sources = [path for path in sources if ".venv" not in path.parts and "build" not in path.parts]
     sources.extend(ROOT / "analysis" / name for name in ("Makefile", "pyproject.toml", "uv.lock"))
     report = {
-        "task": "SLD-10",
-        "matrix": "V11",
+        "task": args.task,
+        "matrices": {"SLD-10": ["V11"], "SLD-11": ["V09"], "all": ["V11", "V09"]}[args.task],
         "analysis_version": "0.1.0.dev0",
         "protocol_version": "1.0.0",
         "python": platform.python_version(),
+        "sqlite": sqlite3.sqlite_version,
         "platform": platform.platform(),
         "ok": result.wasSuccessful(),
         "tests_run": result.testsRun,
@@ -66,6 +70,14 @@ def main() -> int:
         "source_files": {
             str(path.relative_to(ROOT)): hashlib.sha256(path.read_bytes()).hexdigest()
             for path in sources
+        },
+        "canonical_fixtures": {
+            name: hashlib.sha256((ROOT / "spec/fixtures/1.0.0" / name).read_bytes()).hexdigest()
+            for name in (
+                "valid-bundle.json",
+                "golden-vectors.json",
+                "invalid-conflicting-event-id.json",
+            )
         },
         "unverified": [
             "real shared/HPC filesystem",
