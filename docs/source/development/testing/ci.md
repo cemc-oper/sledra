@@ -8,11 +8,14 @@ GitHub Actions 在 main push、pull request 和手动 dispatch 时运行。配�
 
 ```bash
 make setup
+make build
 make check
 make docs
 make test
 make test-platform
 make demo
+mkdir -p build/benchmark
+SLEDRA_BENCHMARK_SAMPLES=10 SLEDRA_BENCHMARK_OUT=build/benchmark/m1.json make benchmark
 make package
 make test-package
 ```
@@ -25,7 +28,7 @@ check 调用 `scripts/check_ci.py` 和固定的 actionlint 1.7.11，配方为 `.
 
 ## 权限与证据
 
-workflow 仅 contents:read，关闭持久化 checkout 凭据，不使用仓库 secret，不发布发行版或执行 HPC 作业。阶段失败停止后续检查；always 上传步骤保留 14 天的构建与包元数据，不上传普通日志、自动报告、压缩包或二进制。显式保存的性能或平台资格数据须在对应作业中指定输出并配置上传。远端缓存、上传、namespace bootstrap 和 Actions 编排仍未验证；取消或 bootstrap 失败可能使证据不完整。
+workflow 仅 contents:read，关闭持久化 checkout 凭据，不使用仓库 secret，不发布发行版或执行 HPC 作业。阶段失败停止后续检查；always 上传步骤保留 14 天的构建与包元数据，以及显式请求的 `build/benchmark/m1.json` 合成原始样本，不上传普通日志、自动报告、压缩包或二进制。该性能样本只用于本地合成开销比较，不代表 A6 资格。平台工具默认仅在临时目录工作；未来需要上传平台资格数据时，应在对应作业显式指定输出。远端缓存、上传、namespace bootstrap 和 Actions 编排仍未验证；取消或 bootstrap 失败可能使证据不完整。
 
 实际远端验证需要运行链接和环境记录。静态检查、本地命令或 Ubuntu runner 均不代表真实 HPC 资格。本次没有 dispatch、push 或修改 branch protection。
 

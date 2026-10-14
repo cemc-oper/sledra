@@ -23,6 +23,20 @@ SLD-28 于 2026-10-12 迁移外层开发目录与内部 Git 仓库。产品、�
 
 SLD-37 后源码和新试用包只提供右列 Bash 库路径；旧安装路径不提供别名。已有 owner 的 `source` 改用对应安装根目录下的新绝对路径。`tests/shell/` 仍按测试领域命名，不是安装库路径；旧任务证据中的 `shell/` 是当时的历史位置。
 
+## M1.2 工程入口
+
+根公共目标继续保留，调用方式见[开发流程](../../development/workflow.md)。调整已有自动化时核对以下映射：
+
+| M1.1 工程约定 | M1.2 当前约定 |
+|---|---|
+| 根 Makefile 统一转给 `scripts/dev.py` | 根协调，recorder/docs 组件入口和专用脚本；旧分发器已移除 |
+| 文档输出 `build/docs/` | 严格 HTML 输出 `build/docs/html/` |
+| 自动 `test-results/` 阶段日志及通用 summary | 控制台直接输出；失败非零退出，临时现场按工具清理规则处理 |
+| 依赖默认报告目录获取性能/平台数据 | 显式 `SLEDRA_BENCHMARK_OUT` 或验证工具 `--report-dir`，CI 按用途上传 |
+| 顶层 `packaging/` 的三份说明 | `docs/source/development/packaging.md`、安装指南和运行指南；包内文档从这些来源导出 |
+
+构建产物共用根 `build/`，`OUTPUT_DIR` 可覆盖；最终归档保留在 `dist/`，`DIST_DIR` 可覆盖。更新 CI 时使用相同根入口，撤销对默认测试日志或 summary 的消费。历史验证文件中的旧路径仍指当时的产物，不移动或重写历史证据。
+
 ## 中文文档布局
 
 中文文档使用 Sphinx、PyData Sphinx Theme 和 MyST-NB。原 `docs/*.md` 指南迁入 `docs/source/`，现按 `getting-started/`、`guides/`、`development/`、`reference/` 分层组织；测试与验证、兼容性与迁移各有子目录。各章节 `index.md` 组织子页面，`docs/README.md` 保留仓库入口。

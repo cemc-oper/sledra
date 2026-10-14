@@ -2,7 +2,7 @@
 
 Sledra 为工作流保存可追溯的运行事实。当前提供独立 Go 记录器、Bash 生命周期钩子、版本化 JSON 契约、合成示例和 Linux 本地试用包。
 
-M1 独立记录与 M1.1 工程化的既定本地范围已通过验收。离线分析、查询、真实采集确认及透明 `sledra exec` supervisor 尚未实现；M2 为后续分析方向，阶段范围和顺序随新增工程需求及使用反馈调整。
+M1 独立记录、M1.1 工程化与 M1.2 构建及目录整理的既定本地范围已通过验收，当前工程入口见[工程交接](docs/source/development/engineering-handoff.md)。离线分析、查询、真实采集确认及透明 `sledra exec` supervisor 尚未实现；M2 为后续分析方向，阶段范围和顺序随新增工程需求及使用反馈调整。
 
 ## 项目结构
 
@@ -14,6 +14,9 @@ M1 独立记录与 M1.1 工程化的既定本地范围已通过验收。离线�
 | [examples](examples/standalone/README.md) | 独立示例与 HPC 站点模板 |
 | [tests](docs/source/development/testing/local.md) | 契约、Go、Shell、M1 和本地文件系统回归 |
 | [docs](docs/README.md) | Sphinx + PyData Sphinx Theme + MyST-NB 中文文档 |
+| [scripts](docs/source/development/workflow.md) | 专用构建、打包、契约和验证工具 |
+
+`build/bin/`、`build/docs/html/` 和 `build/package/linux-<arch>/` 分别保存工具、文档和分架构打包中间产物，最终试用归档及清单位于 `dist/`；这些目录不纳入 Git。安装与运行说明统一维护在 `docs/source/`，打包时导出包内本地文档。
 
 安装资源与运行数据分开放置。Registry、context、document、finish 和 spool 共用显式的 `SLEDRA_ROOT`。当前证据覆盖 WSL/ext4 和明确登记的 tmpfs 测试；共享/HPC 部署仍需验证目标文件系统。
 

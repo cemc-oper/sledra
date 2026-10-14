@@ -63,6 +63,8 @@ jobs:
           fi
       - name: Online setup (also required on cache hits)
         run: make setup
+      - name: Build recorder tools through the shared entry point
+        run: make build
       - name: Static and generated-resource checks
         run: make check
       - name: Build Chinese documentation with warnings treated as errors
@@ -73,11 +75,18 @@ jobs:
         run: make test-platform
       - name: Synthetic demonstration
         run: make demo
+      - name: Preserve explicit synthetic timing samples
+        env:
+          SLEDRA_BENCHMARK_SAMPLES: '10'
+          SLEDRA_BENCHMARK_OUT: build/benchmark/m1.json
+        run: |
+          mkdir -p build/benchmark
+          make benchmark
       - name: Build the local trial
         run: make package
       - name: Verify the trial without source, Go or runtime networking
         run: make test-package
-      - name: Preserve build and package metadata on success or failure
+      - name: Preserve build metadata and explicit timing samples
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
@@ -87,6 +96,7 @@ jobs:
           path: |
             build/manifest.json
             build/ci-tools/**/manifest.json
+            build/benchmark/m1.json
             dist/*.manifest.json
             dist/*.tar.gz.sha256
             dist/latest-package.json
