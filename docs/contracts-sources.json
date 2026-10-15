@@ -1,17 +1,17 @@
 {
-  "reviewed_on": "2026-10-13",
+  "reviewed_on": "2026-10-15",
   "contract_version": "1.0.0-draft",
   "authority": "workspace docs/observability-plan; repository guides describe the implementation",
   "sources": {
-    "03-information-contracts.md": "181ebf23d9fa11acc26a300c323003bb4b442ee4d00690d7ab498d4db5e972a2",
-    "adr/01-run-lifecycle.md": "c731ca59ba5541c5d8a1891964b566b17453e1a274293a1d094eecc7eb074786",
-    "adr/02-task-attempt.md": "b5dbcf6d939ce4c259e9cb17b932c559bae7ed51b323e8923f3fb3c385fd66e9",
+    "03-information-contracts.md": "56a4b63215fbfc46d8f015ea2d442ca51005fdb5f93d609f07c75a6f6b0edcb1",
+    "adr/01-run-lifecycle.md": "90e18d5ac2155e5e4484a8f89cd201cb958a584d1ff7e5c14a700a071ba09ecf",
+    "adr/02-task-attempt.md": "6f1fed1eb054466abf39f328aa6241997315cc004aa7ff64f580e72984280263",
     "adr/03-registry.md": "c63f2087479e41fa168078d2d626c17b94df324b42f4b03499027607be103247",
-    "adr/04-context.md": "f518bf8dfeb3998feb332e58bce0cda2c1ab13fc78f1f34bc52a16734dab80ec",
-    "adr/05-event-authority.md": "758929b996576b304eadcb9a9a69ac167e7b738901cb7c99e56fd1ff4ab0c22d",
+    "adr/04-context.md": "ff90699cfd919916b5e69f56b8131353cf703963c4d96845b822159fa5ae6080",
+    "adr/05-event-authority.md": "99de4f13042d879ccd662360644c4cf40c40444df99980300d32a64214d11842",
     "adr/06-shell-degradation.md": "04821329337fe147712db457ea6ff412318dd5df490c4767a2ed84c9f0348ea0",
-    "adr/07-spool.md": "54bc5622255b75d8fba4b74bcaadcc135164547fc426be278c8cb06fd0eda1fe",
-    "adr/10-versioning-reuse.md": "50d007ab22a1c534cb6b62e4712f46aedc5faf4c8c29ed4acee957c876c66b9d",
+    "adr/07-spool.md": "ffb832645299d49635a2efb0f238d85573366a080824151ca297b57b4fc08916",
+    "adr/10-versioning-reuse.md": "1fa6939b65d7e5f97f1b5d367a945e7859247711d39264f6879bcd1f4656e16c",
     "adr/11-integration-boundary.md": "dfb242348b1b7d5b1b58b391ed1fdbc35d14e38934f0f55bbba71a3161b21781"
   }
 }

@@ -14,7 +14,7 @@ python3 scripts/check_docs.py --plan-dir /absolute/path/to/docs/observability-pl
 
 摘要不匹配时审查上游变化，必要时一起更新受影响指南、schema、生成脚本和 golden，再记录已复核的摘要。检查只能发现版本漂移，不能证明语义等价。语义修改后运行[完整回归](../development/testing/local.md)，不能只重生成 manifest 来绕过审查。
 
-2026-10-13 的来源复核仅涉及任务按阶段分目录后的证据链接调整；契约与 ADR 正文语义未变，来源 manifest 已同步记录新摘要。原始机器契约和冻结输入未重新生成。
+2026-10-15 的来源复核包含 SLD-39/40 已更新的 ADR 状态，以及 SLD-42 的未知事件父引用、时间偏移和逻辑节点路径说明；来源 manifest 已同步记录当前摘要。既有 schema 能表达这些约束，原始机器契约和冻结输入未重新生成。
 
 ## 机器契约与兼容性
 

@@ -26,7 +26,7 @@ sealed 残尾没有完整行，只有经过隔离保存的 EOF 才可使用 `che
 
 `EventValidator` 检查严格 UTF-8 JSON、重复键、NFC 键碰撞、数字和深度预算，验证 1.x 信封、已知 payload、role/source kind、关联层次必需字段、事件时间、exit 条件、finish 覆盖摘要和必要 evidence。未知 1.x 类型返回 `supported=False`；其完整事件仍参与 canonical hash。
 
-验证器标识为 `sledra-event-validation-1.0.0`。`event_validations` 按原始来源记录和验证器版本保存 known/opaque 状态；没有标记的旧 raw 事实仍只具有 SLD-11 的基本存储边界验证。known 仅表示该验证器支持事件格式与相关规则，不代表 Attempt 成功、父文档真实存在或业务完成。真实父引用关联、状态投影和站点隐私资格仍分别处理。
+验证器标识为 `sledra-event-validation-1.1.0`。`event_validations` 按原始来源记录和验证器版本保存 known/opaque 状态；没有标记的旧 raw 事实仍只具有 SLD-11 的基本存储边界验证。known 仅表示该验证器支持事件格式与相关规则，不代表 Attempt 成功、父文档真实存在或业务完成。真实父引用关联、状态投影和站点隐私资格仍分别处理。
 
 ## 隔离保存与查询
 

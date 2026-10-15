@@ -12,7 +12,7 @@ from jsonschema import Draft202012Validator, FormatChecker
 from sledra_analysis.store.canonical import RecordError, canonical_hash, parse_json
 from sledra_analysis.store.raw import _event, _timestamp
 
-VALIDATOR_VERSION = "sledra-event-validation-1.0.0"
+VALIDATOR_VERSION = "sledra-event-validation-1.1.0"
 
 
 @dataclass(frozen=True)

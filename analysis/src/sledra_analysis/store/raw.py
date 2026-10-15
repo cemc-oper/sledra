@@ -174,6 +174,8 @@ class BatchResult:
 def _timestamp(value: object) -> bool:
     if not isinstance(value, str) or not TIME.fullmatch(value):
         return False
+    if value[-1] != "Z" and (int(value[-5:-3]) > 23 or int(value[-2:]) > 59):
+        return False
     try:
         return datetime.fromisoformat(value.replace("Z", "+00:00")).tzinfo is not None
     except ValueError:

@@ -17,7 +17,7 @@ from jsonschema import Draft202012Validator, FormatChecker
 
 SPEC = Path(__file__).parent / "1.0.0"
 KINDS = ("definition_manifest", "run_context", "attempt_context", "job_ref", "artifact", "expectation", "event")
-TIME_KEYS = {"cycle_time", "occurred_at", "recorded_at", "deadline_at", "observation_time", "confirmed_at", "mtime_at"}
+TIME_KEYS = {"cycle_time", "occurred_at", "recorded_at", "deadline_at", "observation_time", "confirmed_at", "mtime_at", "retention_until"}
 TIME_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?(?:Z|[+-]\d{2}:\d{2})$")
 
 
@@ -148,6 +148,8 @@ def check_timestamps(value: object) -> None:
             if key in TIME_KEYS and child is not None:
                 if not isinstance(child, str) or not TIME_PATTERN.fullmatch(child):
                     fail("schema_invalid", f"timestamp needs RFC3339 offset: {key}")
+                if child[-1] != "Z" and (int(child[-5:-3]) > 23 or int(child[-2:]) > 59):
+                    fail("schema_invalid", f"invalid timestamp offset: {key}")
                 try:
                     parsed = datetime.datetime.fromisoformat(child.replace("Z", "+00:00"))
                 except ValueError:

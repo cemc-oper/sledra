@@ -170,13 +170,15 @@ func (c *Codec) Validate(data []byte) (Result, error) {
 	if err := c.schema.Validate(v); err != nil {
 		return Result{}, bad("schema_invalid")
 	}
-	if err := validateTime(m); err != nil {
+	name := m["event_type"].(string)
+	entry, known := c.catalog[name]
+	if err := validateTime(m, known); err != nil {
 		return Result{}, err
 	}
 	if err := validateID(m); err != nil {
 		return Result{}, err
 	}
-	if !safeFields(v) {
+	if !safeFields(v, "", name) {
 		return Result{}, bad("sensitive_field")
 	}
 	payload := m["payload"]
@@ -187,7 +189,6 @@ func (c *Codec) Validate(data []byte) (Result, error) {
 	if len(payloadBytes) > MaxPayloadBytes {
 		return Result{}, bad("limit_exceeded")
 	}
-	name := m["event_type"].(string)
 	if name == "task.success" {
 		return Result{}, bad("semantic_invalid")
 	}
@@ -195,22 +196,21 @@ func (c *Codec) Validate(data []byte) (Result, error) {
 	if producer["role"] != c.role {
 		return Result{}, bad("unauthorized_event")
 	}
-	entry, known := c.catalog[name]
+	assoc := m["association"].(map[string]any)
+	if assoc["attempt_id"] != nil && assoc["task_instance_id"] == nil {
+		return Result{}, bad("parent_mismatch")
+	}
 	if known {
 		source := m["source"].(map[string]any)
 		role := producer["role"].(string)
 		if role != c.role || !has(entry["roles"], role) || !has(entry["source_kinds"], source["kind"].(string)) {
 			return Result{}, bad("unauthorized_event")
 		}
-		assoc := m["association"].(map[string]any)
 		level := entry["association"].(string)
 		if (level == "instance" || level == "attempt") && assoc["task_instance_id"] == nil {
 			return Result{}, bad("parent_mismatch")
 		}
 		if level == "attempt" && assoc["attempt_id"] == nil {
-			return Result{}, bad("parent_mismatch")
-		}
-		if assoc["attempt_id"] != nil && assoc["task_instance_id"] == nil {
 			return Result{}, bad("parent_mismatch")
 		}
 		if entry["evidence_required"] == true && len(array(m["evidence_refs"])) == 0 {
@@ -260,7 +260,7 @@ func validateID(m map[string]any) error {
 	}
 	return nil
 }
-func validateTime(m map[string]any) error {
+func validateTime(m map[string]any, known bool) error {
 	q := m["time_quality"].(map[string]any)
 	if (m["occurred_at"] == nil || q["basis"] == "unknown") && q["reason"] == nil {
 		return bad("semantic_invalid")
@@ -270,7 +270,7 @@ func validateTime(m map[string]any) error {
 			return bad("schema_invalid")
 		}
 	}
-	if p, ok := m["payload"].(map[string]any); ok {
+	if p, ok := m["payload"].(map[string]any); ok && known {
 		for _, field := range []string{"observation_time", "confirmed_at", "mtime_at", "deadline_at"} {
 			if s, ok := p[field].(string); ok && !timestamp(s) {
 				return bad("schema_invalid")
@@ -294,7 +294,7 @@ func timestamp(s string) bool {
 // Values in allowed fields must already be redacted by the producer.
 var forbidden = regexp.MustCompile(`(?i)(password|passwd|secret|token|credential|private_key|authorization|environment|command_line|ftp_command)`)
 
-func safeFields(v any) bool {
+func safeFields(v any, path, eventType string) bool {
 	switch x := v.(type) {
 	case map[string]any:
 		for k, child := range x {
@@ -302,18 +302,23 @@ func safeFields(v any) bool {
 			if forbidden.MatchString(k) && !strings.HasSuffix(k, "_sha256") {
 				return false
 			}
-			if !safeFields(child) {
+			childPath := k
+			if path != "" {
+				childPath = path + "." + k
+			}
+			if !safeFields(child, childPath, eventType) {
 				return false
 			}
 		}
 	case []any:
 		for _, child := range x {
-			if !safeFields(child) {
+			if !safeFields(child, path, eventType) {
 				return false
 			}
 		}
 	case string:
-		if strings.HasPrefix(x, "/") || strings.HasPrefix(x, "~/") || strings.HasPrefix(x, "../") || strings.Contains(x, "/../") || strings.HasSuffix(x, "/..") || strings.HasPrefix(x, "file://") || strings.HasPrefix(x, "\\\\") || strings.Contains(x, "\\..\\") {
+		logicalNodePath := path == "payload.node_path" && eventType == "engine.state_observed"
+		if (!logicalNodePath && strings.HasPrefix(x, "/")) || strings.HasPrefix(x, "~/") || strings.HasPrefix(x, "../") || strings.Contains(x, "/../") || strings.HasSuffix(x, "/..") || strings.HasPrefix(x, "file://") || strings.HasPrefix(x, "\\\\") || strings.Contains(x, "\\..\\") {
 			return false
 		}
 		for _, r := range x {

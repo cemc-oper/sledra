@@ -288,6 +288,7 @@ class RawStoreTests(unittest.TestCase):
             {"schema_version": "2.0.0"},
             {"event_id": "invalid"},
             {"recorded_at": "no-timezone"},
+            {"recorded_at": "2026-10-14T00:00:00+01:99"},
             {"payload": []},
         ):
             invalid = event()
@@ -295,6 +296,15 @@ class RawStoreTests(unittest.TestCase):
             with self.subTest(updates=updates), self.assertRaises(RecordError):
                 self.store.ingest([record(), record(invalid)])
         self.assertEqual(self.store.counts(), StoreCounts(0, 0, 0, 0))
+
+    def test_unknown_local_offset_is_retained(self):
+        value = event()
+        value["recorded_at"] = "2026-10-14T00:00:00-00:00"
+        self.store.ingest([record(value)])
+        self.assertEqual(
+            self.store.get_event(value["event_id"]).versions[0].canonical_bytes,
+            canonical_bytes(value),
+        )
 
     def test_position_metadata_and_pointer_validation(self):
         valid = record()

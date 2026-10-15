@@ -179,6 +179,34 @@ func TestUnknownExtensionAndNoNetwork(t *testing.T) {
 	}
 }
 
+func TestLogicalNodePathKeepsFileAndSecretGuards(t *testing.T) {
+	c, err := New("engine_observer")
+	if err != nil {
+		t.Fatal(err)
+	}
+	m := sample(t)
+	m["event_type"] = "engine.state_observed"
+	m["producer"].(map[string]any)["role"] = "engine_observer"
+	m["source"].(map[string]any)["kind"] = "observed"
+	m["association"] = map[string]any{"run_id": m["association"].(map[string]any)["run_id"]}
+	m["payload"] = map[string]any{
+		"engine_instance": "engine-a", "node_path": "/suite/family/task",
+		"raw_state": "complete", "observation_time": m["recorded_at"],
+		"source_position": "opaque:synthetic-source",
+	}
+	if _, err := c.Validate(wire(t, m)); err != nil {
+		t.Fatal(err)
+	}
+	payload := m["payload"].(map[string]any)
+	payload["source_position"] = "/home/user/secret"
+	_, err = c.Validate(wire(t, m))
+	code(t, err, "sensitive_field")
+	payload["source_position"] = "opaque:synthetic-source"
+	payload["node_path"] = "/suite/../secret"
+	_, err = c.Validate(wire(t, m))
+	code(t, err, "sensitive_field")
+}
+
 func FuzzValidate(f *testing.F) {
 	b, _ := os.ReadFile(filepath.Join("..", "..", "spec", "fixtures", "1.0.0", "valid-bundle.json"))
 	f.Add(b)

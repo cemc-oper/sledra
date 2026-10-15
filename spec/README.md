@@ -14,11 +14,11 @@
 | ExpectedCycle/ProductExpectation | expectation.schema.json | 内容推导plan ID，cycle/slot唯一，取消原因，Run的system/purpose/deployment/cycle一致 |
 | Event | event.schema.json及event-types.json | role/source权威、关联、exit条件、时间基准、必要证据、finish集合摘要、注册context绑定；同ID异内容冲突 |
 
-辅助工具验证含各文档及事件列表的bundle，使测试有足够父上下文核对身份和权威。这不是producer/ingest服务。未来独立校验可按不可变引用加载SLEDRA_ROOT父文档；父级缺失必须失败，不能查“最新Run”。
+辅助工具验证含各文档及事件列表的bundle，使测试有足够父上下文核对身份和权威。这不是producer/ingest服务。未来独立校验可按不可变引用加载SLEDRA_ROOT父文档；父级缺失必须失败，不能查“最新Run”。`engine.state_observed.payload.node_path` 是逻辑节点标识，可为 `/suite/family/task`，不作为文件 locator。
 
 除明确开放字段外，对象additionalProperties=false，已知enum闭合。未知数据置于extensions的vendor.feature命名空间键，每值为对象。有效1.x信封的未知event_type保留为不透明记录，关联和扩展不丢失，不推导成功。task.success保留且拒绝，因为单一producer无法同时证明进程、引擎、产品和交付成功。
 
-时间须RFC3339并含Z或数值offset。occurred_at=null要求time_quality.reason，recorded_at不能代替发生时间；直接process/stage边界必须有已知发生时间。duration_ns/lead_seconds为单位明确的有符号64位安全整数，适用位置非负。seq只在session内有效；普通event_id为UUIDv4，稳定source/注册为evt_加完整SHA256；重传保持原ID和完整信封。
+时间须RFC3339并含Z或数值offset，偏移小时为00～23、分钟为00～59；`-00:00` 保留本地偏移未知含义。occurred_at=null要求time_quality.reason，recorded_at不能代替发生时间；直接process/stage边界必须有已知发生时间。duration_ns/lead_seconds为单位明确的有符号64位安全整数，适用位置非负。seq只在session内有效；普通event_id为UUIDv4，稳定source/注册为evt_加完整SHA256；重传保持原ID和完整信封。未知事件若带attempt_id，也必须带task_instance_id。
 
 证据引用含ID、受控locator、source及present/expired/unknown，可选摘要、字节范围、generation和保留时间。locator不证明文件仍在，byte_end不得早于byte_start。提交绑定JobRef与submission generation，artifact绑定精确版本；交付绑定expectation slot、artifact version/ID、recipient、rule version和父文档。复用scheduler job号必须使用不同submission_instance。
 
