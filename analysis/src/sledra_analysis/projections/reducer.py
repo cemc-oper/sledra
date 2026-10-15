@@ -8,8 +8,8 @@ from sledra_analysis.process_pairing import process_pairing
 from sledra_analysis.projections.documents import KINDS, check_parameters, instance_id
 from sledra_analysis.store.canonical import RecordError, canonical_bytes, canonical_hash
 
-REDUCER_VERSION = "sledra-state-reducer-1.1.0"
-RULE_VERSION = "sledra-state-rules-1.1.0"
+REDUCER_VERSION = "sledra-state-reducer-1.2.0"
+RULE_VERSION = "sledra-state-rules-1.2.0"
 
 
 def event_ref(fact):

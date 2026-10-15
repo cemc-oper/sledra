@@ -10,7 +10,7 @@ from sledra_analysis.process_pairing import process_pairing
 from sledra_analysis.projections.reducer import event_ref
 from sledra_analysis.store.canonical import canonical_bytes, canonical_hash
 
-METRICS_VERSION = "sledra-timing-1.1.0"
+METRICS_VERSION = "sledra-timing-1.2.0"
 
 
 def _unique(events):

@@ -17,6 +17,7 @@ from store_fixture import COLLECTED, HANDOFF_SHA256, ROOT, frozen_records
 from sledra_analysis.ingest.source import SourceKey
 from sledra_analysis.metrics.engine import MetricsEngine
 from sledra_analysis.projections.documents import DocumentRecord
+from sledra_analysis.projections.engine import ProjectionEngine
 from sledra_analysis.store.canonical import canonical_bytes, parse_json
 from sledra_analysis.store.raw import RawRecord, RawStore, SourceLocation
 from sledra_analysis.store.recovery import RecoveryStore
@@ -98,7 +99,7 @@ def main():
         frozen, sources = frozen_records(root / "shared")
         with RawStore(root / "frozen.sqlite") as store:
             metrics = MetricsEngine(store)
-            metrics.projections.import_documents(
+            ProjectionEngine(store).import_documents(
                 [
                     DocumentRecord(raw, name, COLLECTED)
                     for name, raw in sources.items()
@@ -117,7 +118,7 @@ def main():
         records, documents, events = synthetic_inputs()
         with RawStore(root / "facts.sqlite") as store:
             metrics = MetricsEngine(store)
-            metrics.projections.import_documents(documents)
+            ProjectionEngine(store).import_documents(documents)
             store.ingest(records[:-1])
             first = metrics.publish(report_as_of=AS_OF, published_at=PUBLISHED)
             stat = next(s for s in first.data["statistics"] if s["stratum"]["metric"] == "stage")
@@ -156,7 +157,7 @@ def main():
             }
         with RawStore(root / "shuffled.sqlite") as store:
             metrics = MetricsEngine(store)
-            metrics.projections.import_documents(documents)
+            ProjectionEngine(store).import_documents(documents)
             shuffled = records + records
             random.Random(15).shuffle(shuffled)
             store.ingest(shuffled)

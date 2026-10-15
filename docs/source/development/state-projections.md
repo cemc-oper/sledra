@@ -47,7 +47,7 @@ with RawStore(Path("/management/facts.sqlite")) as store:
 
 ## 修订、解释和队列水位
 
-`reducer_version=sledra-state-reducer-1.0.0`，`rule_version=sledra-state-rules-1.0.0`。未实现的 rule_version 拒绝运行。输入摘要包含全部事件版本／当前语义分类、规范父文档、source 健康、验证器与嵌入契约摘要；不包含到达顺序、采集时间、SQL rowid、inode 或当前系统时间。
+`reducer_version=sledra-state-reducer-1.2.0`，`rule_version=sledra-state-rules-1.2.0`。未实现的 rule_version 拒绝运行。输入摘要包含全部事件版本／当前语义分类、规范父文档、source 健康、验证器与嵌入契约摘要；不包含到达顺序、采集时间、扫描预算诊断、SQL rowid、inode 或当前系统时间。
 
 每个结论包含 `because`，引用 `event_id@canonical_hash`、文档 kind/ID/hash 或 source 健康 ID。`facts`、`input_documents`、`source_health` 是对应索引；原事件还可由 RawStore.sources 查回准确 bytes／位置，父文档来源可查询持久 document source 表。冲突版本全部列出并从确定语义推导中排除。
 
@@ -55,13 +55,13 @@ with RawStore(Path("/management/facts.sqlite")) as store:
 
 `status` 分别返回 source_watermark、projection_watermark 和 current/pending；尚未重建的队列不能显示为已完成。`get(kind, id, revision_id=...)` 支持 runs/instances/attempts/jobs；不传 revision 时返回当前 head 的投影，调用方应同时查看 status。published_at 由调用方显式给定，数据范围以输入集合及持久水位解释，不以不可靠的事件墙钟过滤事实。
 
-source gap、legacy 完整性未证明、段冲突、未消费 bytes 和隔离记录在可定位的 Run 中展示，无法关联的来源保留在全局 source_health。历史诊断另列；已经补齐的半行不继续当作当前 pending bytes。observed_scope 仅表示当前已观察范围，不承诺整个业务完整。
+source gap、legacy 完整性未证明、段冲突、未消费 bytes 和隔离记录在可定位的 Run 中展示，无法关联的来源保留在全局 source_health。Registry 的隔离、同 locator 多版本冲突也在 source_health 中按来源列出；无法确认 Run 的坏记录保持空 run_ids，不猜测归属。扫描预算等执行历史仍在原 checkpoint diagnostics 中，可从管理库查询，但不进入派生结果或内容地址；已经补齐的半行不继续当作当前 pending bytes。observed_scope 仅表示当前已观察范围，不承诺整个业务完整。
 
 ## 存储、预算和恢复
 
-RawStore 的 schema 仍为 3；首次显式构造 ProjectionEngine 时事务创建独立的 projection schema 1。它增加父文档输入、来源、revision 和 head 表，使用同一个管理单写者连接；未知 projection schema 拒绝，初始化失败回滚。旧 raw/quarantine/checkpoint 不修改，未迁移运营库。
+RawStore 的 schema 仍为 3；首次构造 ProjectionEngine 或 MetricsEngine 时事务创建独立的 projection schema 1。它增加父文档输入、来源、revision 和 head 表，使用同一个管理单写者连接；未知 projection schema 拒绝，初始化失败回滚。旧 raw/quarantine/checkpoint 不修改，未迁移运营库。
 
-默认最多 50000 个事件版本、10000 个显式文档与 Registry wrapper、64 MiB 规范事实／父文档／wrapper bytes，原始来源和隔离数量各不超过事件预算的十倍，source checkpoint 数不超过事件预算；输出最多 64 MiB。导入文档 raw／canonical 各不超过 RawStore 单条预算。超限或摘要不匹配时停止重建，保持旧 revision 与待处理水位。这些限制控制本地完整重建规模，不代表总 RSS 或 A6 预算。
+默认最多 50000 个事件版本、10000 个显式文档与 Registry wrapper、64 MiB 规范事实／父文档／wrapper bytes，原始来源和隔离数量各不超过事件预算的十倍，段与 Registry checkpoint 总数不超过事件预算；输出最多 64 MiB。导入文档 raw／canonical 各不超过 RawStore 单条预算。超限或摘要不匹配时停止重建，保持旧 revision 与待处理水位。这些限制控制本地完整重建规模，不代表总 RSS 或 A6 预算。
 
 当前使用全量确定性重建，队列为追加日志，尚无后台 worker／删除或性能增量优化；通过显式 rebuild 消费当前快照。SQLite 一致备份自动包含父文档、历史 revision、head 与队列；恢复后可继续重建。私有测试模拟删除派生投影后，由 raw＋父文档重建相同当前 revision；没有产品 API 自动删除已发布 revision 或业务报告。
 

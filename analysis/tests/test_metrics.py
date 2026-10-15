@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import copy
 import itertools
+import json
 import random
 import signal
 import sqlite3
@@ -22,6 +23,7 @@ from sledra_analysis.metrics.engine import MetricsEngine
 from sledra_analysis.metrics.reducer import reconstruct_timing
 from sledra_analysis.projections.reducer import event_ref, reconstruct
 from sledra_analysis.projections.engine import ProjectionError
+from sledra_analysis.snapshot import read_inputs
 from sledra_analysis.store.canonical import canonical_bytes, canonical_hash
 from sledra_analysis.store.raw import RawStore
 from sledra_analysis.store.recovery import RecoveryStore
@@ -563,7 +565,7 @@ class TimingTests(unittest.TestCase):
     def test_output_budget_preserves_previous_head(self):
         old = self.publish()
         self.ingest(self.stages())
-        self.metrics.projections.max_output_bytes = 10
+        self.metrics.max_output_bytes = 10
         with self.assertRaises(ProjectionError):
             self.publish()
         self.assertEqual(self.metrics.report(), old)
@@ -785,11 +787,11 @@ class TimingTests(unittest.TestCase):
     def test_accounting_input_and_output_budgets_rollback(self):
         record = self.accounting()
         old = self.publish()
-        self.metrics.projections.max_documents = 1
+        self.metrics.max_documents = 1
         with self.assertRaises(ProjectionError):
             self.publish(accounting=[record, record])
-        self.metrics.projections.max_documents = 10000
-        self.metrics.projections.max_input_bytes = 10
+        self.metrics.max_documents = 10000
+        self.metrics.max_input_bytes = 10
         with self.assertRaises(ProjectionError):
             self.publish(accounting=[record])
         self.assertEqual(self.metrics.report(), old)
@@ -880,6 +882,127 @@ with RawStore(Path(sys.argv[1])) as store:
             "pending_source_bytes",
             {flag for source in second.data["source_health"] for flag in source["diagnostics"]},
         )
+
+    def test_registry_quarantine_changes_both_health_snapshots(self):
+        self.ingest(self.process())
+        old_projection = self.engine.rebuild(published_at=LATER)
+        old_report = self.publish()
+        shared = self.root / "shared"
+        shared.mkdir()
+        (shared / "bad.json").write_bytes(b"{broken")
+        isolated = AtomicIngestor(self.store, shared, "root").registry(
+            "bad.json", source_id="registry", collected_at=LATER
+        )
+        self.assertIsNotNone(isolated.quarantine_id)
+        self.assertEqual(self.engine.status()["state"], "pending")
+        self.assertEqual(self.metrics.status()["state"], "pending")
+        new_projection = self.engine.rebuild(published_at=LATER)
+        new_report = self.publish()
+        self.assertNotEqual(old_projection.revision_id, new_projection.revision_id)
+        self.assertNotEqual(old_report.report_id, new_report.report_id)
+        for health in (new_projection.data["source_health"], new_report.data["source_health"]):
+            self.assertEqual(len(health), 1)
+            self.assertEqual(health[0]["run_ids"], [])
+            self.assertEqual(health[0]["quarantine_count"], 1)
+            self.assertIn("quarantined_records", health[0]["diagnostics"])
+        self.assertEqual(self.engine.revision(old_projection.revision_id), old_projection)
+        self.assertEqual(self.metrics.report(old_report.report_id), old_report)
+
+        (shared / "bad.sealed.jsonl").write_bytes(segment(b"{broken\n"))
+        AtomicIngestor(self.store, shared, "root").scan("bad.sealed.jsonl", collected_at=LATER)
+        with_segment = self.publish()
+        by_kind = {item["id"].split(":", 1)[0]: item for item in with_segment.data["source_health"]}
+        self.assertEqual(set(by_kind), {"registry", "source"})
+        self.assertEqual(by_kind["registry"]["run_ids"], [])
+        self.assertEqual(by_kind["source"]["quarantine_count"], 1)
+
+    def test_completed_scan_batch_size_does_not_change_final_ids(self):
+        shared = self.root / "shared"
+        shared.mkdir()
+        raw = segment(b"".join(canonical_bytes(e) + b"\n" for e in self.process()))
+        (shared / "a.sealed.jsonl").write_bytes(raw)
+        results = []
+        for size in (1, 1024):
+            with RawStore(self.root / f"batch-{size}.sqlite") as store:
+                engine = projections.ProjectionEngine(store)
+                engine.import_documents(
+                    [
+                        projections.docrecord(self.bundle[k])
+                        for k in ("definition_manifest", "run_context", "attempt_context")
+                    ]
+                )
+                ingestor = AtomicIngestor(store, shared, "root", max_records=size)
+                for _ in range(5):
+                    scanned = ingestor.scan("a.sealed.jsonl", collected_at=LATER)
+                    if scanned.checkpoint.committed_offset == len(raw):
+                        break
+                self.assertEqual(scanned.checkpoint.committed_offset, len(raw))
+                history = json.loads(
+                    store._db().execute("SELECT diagnostics FROM checkpoints").fetchone()[0]
+                )
+                self.assertEqual("scan_record_budget_reached" in history, size == 1)
+                projection = engine.rebuild(published_at=LATER)
+                report = MetricsEngine(store).publish(report_as_of=AS_OF, published_at=LATER)
+                results.append(
+                    (projection.revision_id, projection.data, report.report_id, report.data)
+                )
+        self.assertEqual(results[0], results[1])
+
+    def test_scan_history_does_not_change_semantic_snapshot_hash(self):
+        shared = self.root / "shared"
+        shared.mkdir()
+        (shared / "a.sealed.jsonl").write_bytes(segment(b""))
+        AtomicIngestor(self.store, shared, "root").scan("a.sealed.jsonl", collected_at=LATER)
+
+        def semantic_hash():
+            with self.store.transaction():
+                return canonical_hash(
+                    list(
+                        read_inputs(
+                            self.store._db(),
+                            self.engine.validator,
+                            self.engine.document_validator,
+                            max_facts=self.engine.max_facts,
+                            max_documents=self.engine.max_documents,
+                            max_input_bytes=self.engine.max_input_bytes,
+                        )
+                    )
+                )
+
+        before = semantic_hash()
+        with self.store.transaction():
+            self.store._db().execute(
+                "UPDATE checkpoints SET diagnostics=?",
+                (json.dumps(["scan_record_budget_reached"]),),
+            )
+        self.assertEqual(before, semantic_hash())
+        self.assertEqual(
+            json.loads(
+                self.store._db().execute("SELECT diagnostics FROM checkpoints").fetchone()[0]
+            ),
+            ["scan_record_budget_reached"],
+        )
+
+    def test_registry_locator_conflict_and_replay_preserve_health_identity(self):
+        shared = self.root / "shared"
+        shared.mkdir()
+        path = shared / "bad.json"
+        ingestor = AtomicIngestor(self.store, shared, "root")
+        path.write_bytes(b"{broken")
+        ingestor.registry(path.name, source_id="registry", collected_at=LATER)
+        first = self.publish()
+        path.write_bytes(b"{different")
+        ingestor.registry(path.name, source_id="registry", collected_at=LATER)
+        second = self.publish()
+        health = second.data["source_health"]
+        self.assertEqual(len(health), 1)
+        self.assertEqual(health[0]["quarantine_count"], 2)
+        self.assertEqual(
+            set(health[0]["diagnostics"]),
+            {"quarantined_records", "registry_immutable_conflict"},
+        )
+        self.assertNotEqual(first.report_id, second.report_id)
+        self.assertEqual(self.publish(), second)
 
 
 if __name__ == "__main__":

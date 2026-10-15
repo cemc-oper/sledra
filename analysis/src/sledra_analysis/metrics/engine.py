@@ -7,14 +7,22 @@ import json
 from dataclasses import dataclass
 from typing import Iterable
 
+from sledra_analysis.ingest.validation import EventValidator
 from sledra_analysis.metrics.clock import LIMIT, utc_ns
 from sledra_analysis.metrics.reducer import METRICS_VERSION, reconstruct_timing
-from sledra_analysis.projections.engine import ProjectionEngine, ProjectionError
+from sledra_analysis.projections.documents import DocumentValidator
 from sledra_analysis.projections.reducer import (
     REDUCER_VERSION,
     RULE_VERSION,
     event_ref,
     reconstruct,
+)
+from sledra_analysis.snapshot import (
+    ProjectionError,
+    contract_hashes,
+    ensure_projection_schema,
+    read_inputs,
+    read_watermark,
 )
 from sledra_analysis.store.canonical import canonical_bytes, canonical_hash, parse_json
 from sledra_analysis.store.raw import RawStore, _timestamp
@@ -86,9 +94,26 @@ def validate_accounting(record):
 class MetricsEngine:
     """Explicit bounded publication; no business execution, clocks, or background jobs."""
 
-    def __init__(self, store: RawStore, **budgets):
-        self.projections = ProjectionEngine(store, **budgets)
+    def __init__(
+        self,
+        store: RawStore,
+        *,
+        max_facts: int = 50000,
+        max_documents: int = 10000,
+        max_input_bytes: int = 64 * 1024 * 1024,
+        max_output_bytes: int = 64 * 1024 * 1024,
+    ):
+        if any(
+            type(value) is not int or value <= 0
+            for value in (max_facts, max_documents, max_input_bytes, max_output_bytes)
+        ):
+            raise ValueError("projection budgets must be positive integers")
         self.store = store
+        self.max_facts, self.max_documents = max_facts, max_documents
+        self.max_input_bytes, self.max_output_bytes = max_input_bytes, max_output_bytes
+        self.validator, self.document_validator = EventValidator(), DocumentValidator()
+        self.contract_hashes = contract_hashes()
+        ensure_projection_schema(store)
         db = store._db()
         with store.transaction():
             db.execute(
@@ -143,14 +168,11 @@ class MetricsEngine:
             engine_mapping = parse_json(canonical_bytes(engine_mapping))
         records, total = {}, 0
         for index, record in enumerate(accounting):
-            if index >= self.projections.max_documents:
+            if index >= self.max_documents:
                 raise ProjectionError("accounting input count exceeds budget")
             encoded = canonical_bytes(validate_accounting(record))
             total += len(encoded)
-            if (
-                len(encoded) > self.store.max_record_bytes
-                or total > self.projections.max_input_bytes
-            ):
+            if len(encoded) > self.store.max_record_bytes or total > self.max_input_bytes:
                 raise ProjectionError("accounting input bytes exceed budget")
             # An adapter must revise a conflicting interval explicitly; never pick
             # the first or last record with the same identity.
@@ -160,8 +182,16 @@ class MetricsEngine:
             records[key] = encoded
         records = [parse_json(records[k]) for k in sorted(records)]
         with self.store.transaction():
-            watermark = self.projections._watermark()
-            facts, documents, health, rejections = self.projections._inputs()
+            db = self.store._db()
+            watermark = read_watermark(db)
+            facts, documents, health, rejections = read_inputs(
+                db,
+                self.validator,
+                self.document_validator,
+                max_facts=self.max_facts,
+                max_documents=self.max_documents,
+                max_input_bytes=self.max_input_bytes,
+            )
             by_ref = {event_ref(f): f for f in facts}
             for record in records:
                 for ref in record["because"]:
@@ -182,8 +212,8 @@ class MetricsEngine:
                 "document_rejections": rejections,
                 "accounting": records,
                 "engine_mapping": engine_mapping,
-                "contracts": self.projections.contract_hashes,
-                "validator": self.projections.validator.version,
+                "contracts": self.contract_hashes,
+                "validator": self.validator.version,
                 "state_reducer": REDUCER_VERSION,
                 "state_rules": RULE_VERSION,
                 "metrics": METRICS_VERSION,
@@ -191,7 +221,7 @@ class MetricsEngine:
                 "cycle_window": list(cycle_window) if cycle_window else None,
             }
             input_bytes = canonical_bytes(material)
-            if len(input_bytes) > self.projections.max_input_bytes:
+            if len(input_bytes) > self.max_input_bytes:
                 raise ProjectionError("timing input snapshot exceeds byte budget")
             input_hash = hashlib.sha256(input_bytes).hexdigest()
             report_id = "tim_" + canonical_hash([METRICS_VERSION, input_hash])
@@ -213,9 +243,8 @@ class MetricsEngine:
                 "state_rules": RULE_VERSION,
             }
             encoded = canonical_bytes(data)
-            if len(encoded) > self.projections.max_output_bytes:
+            if len(encoded) > self.max_output_bytes:
                 raise ProjectionError("timing output exceeds byte budget")
-            db = self.store._db()
             db.execute(
                 "INSERT INTO timing_reports VALUES(?,?,?,?,?,?,?,?) ON CONFLICT DO NOTHING",
                 (
@@ -274,7 +303,7 @@ class MetricsEngine:
     def status(self) -> dict:
         if self.store._active:
             raise ProjectionError("timing status requires committed state")
-        current = self.projections._watermark()
+        current = read_watermark(self.store._db())
         head = (
             self.store._db()
             .execute(

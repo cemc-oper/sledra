@@ -25,7 +25,7 @@ with RawStore(Path("/private/management/facts.sqlite")) as store:
 
 `report_as_of` 是显式 UTC 截止点，用于缺 end 样本的观测删失和端点筛选。快照保留发布时已知事实，包括截止点之后的端点；这些端点标 `after_report_as_of`，不进入完成耗时统计。它不是按历史接入时间倒查的数据库。`published_at` 单独记录发布时间。
 
-`TimingReport` 包含 report_id、input_hash、report_as_of、published_at、watermark 和 data。data 包含 intervals、statistics、diagnostics、source_health、版本及范围说明。每个区间保留 because，指向原事件版本或父文档；外部 accounting 原始归一化输入保存在快照内。
+`TimingReport` 包含 report_id、input_hash、report_as_of、published_at、watermark 和 data。当前规则版本为 `sledra-timing-1.2.0`。data 包含 intervals、statistics、diagnostics、source_health、版本及范围说明。每个区间保留 because，指向原事件版本或父文档；外部 accounting 原始归一化输入保存在快照内。Registry 与段来源的当前健康进入内容地址；扫描预算等执行历史仍可在原 checkpoint diagnostics 中查询，不改变相同语义输入的报告 ID。
 
 ## 区间及身份
 
