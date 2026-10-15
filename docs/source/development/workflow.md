@@ -61,3 +61,5 @@ demo 创建正常/失败/重试场景，导出 context、Registry、finish 与 J
 日常运行不覆盖冻结 M1 或历史平台/性能结果，显式刷新见[工程交接](engineering-handoff.md)。规范来源核对是可选作者工作区检查，独立源码无需相邻规划目录。
 
 源码模式依赖开发工具和缓存；[试用包](../getting-started/installation.md)记录仅依赖目标二进制、Bash 及示例使用的 dirname/cat/sleep，标准库 Python 结果验证独立提供。test-platform 运行单节点原语和本地双角色模拟；源码/安装工具共用[测试参数](../guides/hpc.md)，HPC 模式必须显式指定共享工作父目录。CI 使用相同入口，见 [CI](testing/ci.md)和[支持矩阵](../reference/compatibility/support.md)。
+
+`make test-conformance` 单独执行 M2 核心矩阵，根 `make test` 也执行同一门槛。可用 `CONFORMANCE_REPORT_DIR` 指定不存在的新报告目录；默认临时运行。范围和报告解释见[核心故障回归](testing/conformance.md)。

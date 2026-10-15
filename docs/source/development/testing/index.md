@@ -9,5 +9,6 @@
 :maxdepth: 1
 
 local
+conformance
 ci
 ```

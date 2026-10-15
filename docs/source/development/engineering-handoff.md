@@ -34,4 +34,4 @@ M2 已实施 SLD-10～15，创建独立 `analysis/` Python package、组件入�
 
 远端 Actions 需要真实运行链接与环境证据。真实跨节点/HPC 需要站点参数及计算节点窗口。A6 需要批准预算和目标测量；A7 仍属后续许可/发行决定。SLD-26 扩展到分析产物、离线升级/回滚与备份恢复。真实业务材料、集成和 M4 尚未完成。联系入口为 [Issues](https://github.com/cemc-oper/sledra/issues)。
 
-SLD-14 已提供[身份关联与状态投影](state-projections.md)：父文档与 Registry context、retry/selection 因果图、不可变结束覆盖、Run/Instance/Attempt/Job 投影和版本／证据／消费水位；38 项新增、143 项组件回归，40 轮性质验证与 4 个发布 SIGKILL 切点通过。SLD-15 已提供[时间分解与条件统计](timing-metrics.md)，包含47项本地 V07/V22 回归及4个报告发布 SIGKILL 切点。21/22产品规则／报告、23核心集保持待做。
+SLD-14 已提供[身份关联与状态投影](state-projections.md)：父文档与 Registry context、retry/selection 因果图、不可变结束覆盖、Run/Instance/Attempt/Job 投影和版本／证据／消费水位；38 项新增、143 项组件回归，40 轮性质验证与 4 个发布 SIGKILL 切点通过。SLD-15 已提供[时间分解与条件统计](timing-metrics.md)，包含47项本地 V07/V22 回归及4个报告发布 SIGKILL 切点。SLD-23 已提供[核心故障门槛](testing/conformance.md)，保留接入／平台扩展的未验证原因；21/22产品规则／报告及真实接入继续待做。

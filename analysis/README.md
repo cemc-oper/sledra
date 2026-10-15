@@ -35,3 +35,5 @@ uv run --project analysis --locked --offline --no-python-downloads --python /usr
 SLD-14 的父引用解析、因果重试／选择、结束声明修订和投影水位见[状态重建](../docs/source/development/state-projections.md)。rebuild 不依赖到达顺序，不从引擎或进程状态推断产品交付。
 
 SLD-15 的区间接口、单调/UTC 时钟、accounting 与采样区分、条件统计和不可变报告见[时间分解与不完整样本](../docs/source/development/timing-metrics.md)。显式保存回放可运行 `uv run --project analysis --locked --offline python analysis/tests/replay_metrics.py --report-dir /tmp/sledra-timing-new`。
+
+SLD-23 的[核心故障回归](../docs/source/development/testing/conformance.md)通过根 `make test-conformance` 联合运行本组件全部回归、端到端故障、Go和Shell对照；普通 `make -C analysis test` 保持组件独立入口。

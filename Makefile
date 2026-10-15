@@ -4,6 +4,7 @@ UV ?= uv
 UV_PYTHON ?= $(PYTHON)
 OUTPUT_DIR ?= build
 DIST_DIR ?= dist
+CONFORMANCE_REPORT_DIR ?=
 BUILD_ROOT := $(shell realpath -m -- "$(OUTPUT_DIR)")
 DIST_ROOT := $(shell realpath -m -- "$(DIST_DIR)")
 UV_PY := $(UV) run --locked --offline --no-python-downloads --python "$(UV_PYTHON)" python
@@ -20,7 +21,7 @@ export CGO_ENABLED := 0
 export SLEDRA_TEST_BIN_DIR := $(BUILD_ROOT)/bin
 
 .PHONY: help setup build check test docs demo benchmark package test-package test-platform
-.PHONY: _check _test _demo _benchmark _test-platform _test-package
+.PHONY: _check _test _demo _benchmark _test-platform _test-package test-conformance _test-conformance
 
 help:
 	@printf '%s\n' \
@@ -28,6 +29,7 @@ help:
 	  'make build         Build recorder tools and the analysis Python package' \
 	  'make check         Check lock, formatting, lint, contracts, docs and CI' \
 	  'make test          Build, then run Go, analysis and source regressions' \
+	  'make test-conformance Run the local M2 core gate and V01-V22 scope matrix' \
 	  'make docs          Check links and build strict HTML in OUTPUT_DIR/docs/html' \
 	  'make demo          Run M1 normal/failure/retry and replay in a temporary directory' \
 	  'make benchmark     Run M1 timing probe; set SLEDRA_BENCHMARK_OUT to save samples' \
@@ -53,6 +55,7 @@ _check:
 	$(UV_PY) -m ruff format --check scripts
 	$(UV_PY) -m ruff check .
 	$(MAKE) -C analysis check
+	$(UV_PY) -m ruff format --check tests/conformance
 	$(MAKE) -C recorder check
 	@find . -name '*.sh' -not -path './build/*' -not -path './dist/*' -not -path './test-results/*' -not -path './.venv/*' -exec bash -n '{}' +
 	$(UV_PY) scripts/check_contracts.py
@@ -66,8 +69,7 @@ test: build
 	@$(GUARD) $(MAKE) _test
 
 _test:
-	$(MAKE) -C recorder test
-	$(MAKE) -C analysis test
+	$(MAKE) _test-conformance
 	$(UV_PY) -m unittest discover -s tests/engineering -v
 	$(UV_PY) -m unittest discover -s tests/package -v
 	$(UV_PY) -m unittest discover -s tests/platform -v
@@ -75,9 +77,14 @@ _test:
 	$(UV_PY) spec/verify_event.py
 	$(UV_PY) spec/verify_context.py
 	$(UV_PY) tests/cli/verify.py
-	$(UV_PY) tests/shell/verify.py
 	$(UV_PY) tests/m1/verify.py
 	$(UV_PY) tests/m1/replay.py tests/m1/results/handoff.json
+
+test-conformance: build
+	@$(GUARD) $(MAKE) _test-conformance
+
+_test-conformance:
+	$(UV) run --project analysis --locked --offline --no-python-downloads --python "$(UV_PYTHON)" python tests/conformance/verify.py $(if $(CONFORMANCE_REPORT_DIR),--report-dir "$(CONFORMANCE_REPORT_DIR)",)
 
 demo: build
 	@$(GUARD) $(MAKE) _demo

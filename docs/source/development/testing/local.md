@@ -9,7 +9,7 @@ make docs
 make test
 ```
 
-工具链、缓存、构建复用和报告位置见[开发](../workflow.md)。check 在临时副本验证生成字节、锁文件、格式/静态检查、文档链接及 actionlint；docs 用严格模式构建中文站点；test 复用 Go 工具并覆盖工程、包完整性、平台、契约/事件/context、可搬运 CLI、Shell、M1 和冻结回放。
+工具链、缓存、构建复用和报告位置见[开发](../workflow.md)。check 在临时副本验证生成字节、锁文件、格式/静态检查、文档链接及 actionlint；docs 用严格模式构建中文站点；test 先执行 M2 [核心故障门槛](conformance.md)，联合Go、分析、端到端和Shell，再覆盖工程、包完整性、平台、契约/事件/context、可搬运 CLI、Shell、M1 和冻结回放。
 
 根命令直接显示过程并在失败时非零退出；不会默认建立 `test-results/` 或通用报告树。独立验证工具可用 `--report-dir` 显式保存资格数据。公共命令自动对比冻结契约与夹具的前后摘要，普通命令不覆写 `tests/m1/results/` 或 `tests/platform/results/`。
 
