@@ -200,6 +200,35 @@ class PortableCLI(unittest.TestCase):
                 self.assertEqual((strict.returncode, strict.stdout), (1, b""))
                 self.assertEqual(json.loads(strict.stderr), {"ok": False, "code": code})
 
+    def test_fifo_config_returns_without_watchdog(self) -> None:
+        with tempfile.TemporaryDirectory(dir=self.base) as tmp:
+            root = Path(tmp)
+            config = root / "producer.json"
+            os.mkfifo(config)
+            env = dict(self.env, SLEDRA_ROOT=str(root), SLEDRA_CONFIG=str(config))
+            event = [
+                "event",
+                "--context",
+                str(root / "missing-context.json"),
+                "--type",
+                "attempt.started",
+                "--invocation-id",
+                "cli-test",
+                "--process-role",
+                "forecast_program",
+            ]
+            for strict, expected in (
+                (False, {"ok": False, "code": "config_invalid", "dropped": 1}),
+                (True, {"ok": False, "code": "config_invalid"}),
+            ):
+                args = [*event, "--strict"] if strict else event
+                # subprocess.run kills and reaps the child if the watchdog expires.
+                result = subprocess.run(
+                    [str(self.binary), *args], env=env, capture_output=True, timeout=1.5
+                )
+                self.assertEqual((result.returncode, result.stdout), (int(strict), b""))
+                self.assertEqual(json.loads(result.stderr), expected)
+
     def test_detached_shell_example_preserves_payload_behavior(self) -> None:
         for mode in ("success", "fail"):
             outcomes = []

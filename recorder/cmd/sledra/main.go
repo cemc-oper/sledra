@@ -10,6 +10,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"syscall"
 
 	"github.com/cemc-oper/sledra/recorder/context"
 	"github.com/cemc-oper/sledra/recorder/internal/speccontract"
@@ -153,9 +154,9 @@ func distinct(a, b string) bool {
 }
 
 func readJSON(path string, out any) error {
-	f, err := os.Open(path)
+	f, err := openRegular(path)
 	if err != nil {
-		return errors.New("input_unavailable")
+		return err
 	}
 	defer f.Close()
 	b, err := io.ReadAll(io.LimitReader(f, maxRequestBytes+1))
@@ -182,6 +183,21 @@ func readJSON(path string, out any) error {
 		return errors.New("schema_invalid")
 	}
 	return nil
+}
+
+// Open first with nonblocking semantics, then check the opened object so a
+// path replacement cannot change the file type between a check and open.
+func openRegular(path string) (*os.File, error) {
+	f, err := os.OpenFile(path, os.O_RDONLY|syscall.O_NONBLOCK, 0)
+	if err != nil {
+		return nil, errors.New("input_unavailable")
+	}
+	info, err := f.Stat()
+	if err != nil || !info.Mode().IsRegular() {
+		_ = f.Close()
+		return nil, errors.New("input_unavailable")
+	}
+	return f, nil
 }
 
 func readMap(path string) (map[string]any, error) {

@@ -87,7 +87,7 @@ func recordEvent(args []string, diagnostics io.Writer) error {
 	}
 	var payload []byte
 	if *payloadPath != "" {
-		payloadFile, err := os.Open(*payloadPath)
+		payloadFile, err := openRegular(*payloadPath)
 		if err != nil {
 			return failure(errors.New("input_unavailable"))
 		}

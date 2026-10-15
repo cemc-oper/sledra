@@ -63,6 +63,10 @@ class ShellIntegration(unittest.TestCase):
             fake.chmod(0o700)
             env["SLEDRA_BIN"] = str(fake)
             env["REAL_SLEDRA"] = str(self.binary)
+        elif fault == "fifo_config":
+            config = base / "producer.fifo"
+            os.mkfifo(config)
+            env["SLEDRA_CONFIG"] = str(config)
         return base, env
 
     def run_case(self, *, enabled: bool, mode: str = "success", fault: str = "") -> dict:
@@ -126,6 +130,30 @@ class ShellIntegration(unittest.TestCase):
                     after = self.run_case(enabled=True, mode=mode, fault=fault)
                     self.assert_business_equal(before, after, diagnostic=True)
                     self.assertNotIn(b"synthetic product", after["stderr"])
+
+    def test_fifo_config_keeps_business_payload_and_callback(self) -> None:
+        def invoke(enabled: bool, mode: str) -> dict:
+            base, env = self.setup_case(enabled=enabled, mode=mode, fault="fifo_config")
+            process = subprocess.Popen(
+                [str(EXAMPLE)],
+                env=env,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                start_new_session=True,
+            )
+            try:
+                stdout, stderr = process.communicate(timeout=5)
+                return self.result(base, process.returncode, stdout, stderr)
+            finally:
+                if process.poll() is None:
+                    os.killpg(process.pid, signal.SIGKILL)
+                    process.communicate()
+
+        for mode in ("success", "fail"):
+            with self.subTest(mode=mode):
+                before = invoke(False, mode)
+                after = invoke(True, mode)
+                self.assert_business_equal(before, after, diagnostic=True)
 
     def signal_case(self, *, enabled: bool, number: int, probe_int: bool = False) -> dict:
         base, env = self.setup_case(enabled=enabled, mode="hang")

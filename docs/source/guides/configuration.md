@@ -12,8 +12,8 @@
 | `SLEDRA_SPEC_DIR` | 可选的绝对兼容契约目录；未设置或为空时使用内嵌资源 |
 | `SLEDRA_CONFIG` | 事件 producer 的绝对 JSON 配置路径 |
 
-producer 配置固定 `producer_role`、`producer_name`、`producer_version`、`source_id` 和 `session_id`。并发 producer 使用不同 session。可选分段、session 与全树容量限制见源码 [spool 说明](https://github.com/cemc-oper/sledra/blob/main/recorder/spool/README.md)。独立示例的 process/stage 配置是合成输入，不是生产预算。
+producer 配置固定 `producer_role`、`producer_name`、`producer_version`、`source_id` 和 `session_id`。并发 producer 使用不同 session。可选分段、session 与全树容量限制见源码 [spool 说明](https://github.com/cemc-oper/sledra/blob/main/recorder/spool/README.md)。独立示例的 process/stage 配置是合成输入，不是生产预算。配置、请求、定义、期望、finish scope 和事件 payload JSON 输入必须是普通文件；指向普通文件的符号链接仍可读取，FIFO、目录等非普通输入被拒绝。记录器以非阻塞方式打开后检查已打开对象的类型，不能据此保证故障共享文件系统上的硬延迟上限。
 
-安装资源与运行数据分开。Run/Attempt context 在同一运行根目录内采用固定的不可变绝对位置。请求字段与错误分类见 [CLI](../reference/cli.md)及源码 [context 说明](https://github.com/cemc-oper/sledra/blob/main/recorder/context/README.md)。成功的生命周期调用不输出 stdout；business 模式事件错误尽力记录诊断，strict 模式返回错误。
+安装资源与运行数据分开。Run/Attempt context 在同一运行根目录内采用固定的不可变绝对位置。请求字段与错误分类见 [CLI](../reference/cli.md)及源码 [context 说明](https://github.com/cemc-oper/sledra/blob/main/recorder/context/README.md)。成功的生命周期调用不输出 stdout；默认事件模式在配置无效时返回 0、stdout 为空，stderr 只含有界的 `config_invalid` 与 `dropped: 1` 分类诊断；`--strict` 返回 1 和不含输入内容的分类错误。Shell 钩子压制 CLI 输出并在失败时最多写一条固定诊断，不重跑 payload。
 
 独立示例按脚本位置查找 Shell 库、配置和夹具，写入显式的 `STANDALONE_WORK_DIR`。输入资源默认相对该示例目录；直接调用者须自己管理输入路径。HPC 测试还须提供共享卷上的独立、可写 `SLEDRA_ROOT`，不能写入安装目录。

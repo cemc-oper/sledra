@@ -20,6 +20,38 @@ func writeJSON(t *testing.T, path string, v any) {
 	}
 }
 
+func TestReadJSONRequiresRegularInput(t *testing.T) {
+	root := t.TempDir()
+	regular := filepath.Join(root, "input.json")
+	writeJSON(t, regular, map[string]any{"key": "value"})
+	linked := filepath.Join(root, "linked.json")
+	if err := os.Symlink(regular, linked); err != nil {
+		t.Fatal(err)
+	}
+	for _, path := range []string{regular, linked} {
+		var input map[string]any
+		if err := readJSON(path, &input); err != nil || input["key"] != "value" {
+			t.Fatalf("regular input %q: %v, %#v", path, err, input)
+		}
+	}
+	directory := filepath.Join(root, "directory")
+	if err := os.Mkdir(directory, 0700); err != nil {
+		t.Fatal(err)
+	}
+	for _, path := range []string{directory, filepath.Join(root, "missing.json")} {
+		if err := readJSON(path, new(map[string]any)); err == nil || err.Error() != "input_unavailable" {
+			t.Fatalf("non-regular input %q: %v", path, err)
+		}
+	}
+	oversize := filepath.Join(root, "oversize.json")
+	if err := os.WriteFile(oversize, bytes.Repeat([]byte("x"), maxRequestBytes+1), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := readJSON(oversize, new(map[string]any)); err == nil || err.Error() != "limit_exceeded" {
+		t.Fatalf("oversize input: %v", err)
+	}
+}
+
 func TestCLIContextLifecycle(t *testing.T) {
 	root := t.TempDir()
 	t.Setenv("SLEDRA_ROOT", root)
