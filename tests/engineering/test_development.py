@@ -56,7 +56,7 @@ class DevelopmentChecks(unittest.TestCase):
                 check_generated(root)
             self.assertEqual(schema.read_bytes(), before)
 
-    def test_component_build_reuses_only_intact_binary(self) -> None:
+    def test_component_build_tracks_go_settings_and_repairs_binary(self) -> None:
         with tempfile.TemporaryDirectory(prefix="sledra build with spaces ") as tmp:
             command = [
                 "make",
@@ -66,19 +66,44 @@ class DevelopmentChecks(unittest.TestCase):
                 "TOOLS=sledra",
                 "build",
             ]
-            first = subprocess.run(command, capture_output=True, text=True, check=True)
-            self.assertIn("Build ", first.stdout)
+            env = dict(os.environ, SOURCE_DATE_EPOCH="1700000000", GOAMD64="v1", GOFLAGS="")
+
+            def build() -> dict:
+                subprocess.run(command, env=env, capture_output=True, text=True, check=True)
+                return json.loads((Path(tmp) / "manifest.json").read_text())
+
+            first = build()
             binary = Path(tmp) / "bin/sledra"
             self.assertTrue(binary.is_file())
-            second = subprocess.run(command, capture_output=True, text=True, check=True)
-            self.assertIn("Reuse ", second.stdout)
+            self.assertIn(
+                "GOAMD64=v1", subprocess.check_output(["go", "version", "-m", binary], text=True)
+            )
+            first_bytes = binary.read_bytes()
+            self.assertEqual(build()["binaries"]["sledra"], first["binaries"]["sledra"])
+            self.assertEqual(binary.read_bytes(), first_bytes)
+
+            env["GOAMD64"] = "v2"
+            second = build()
+            self.assertIn(
+                "GOAMD64=v2", subprocess.check_output(["go", "version", "-m", binary], text=True)
+            )
+            self.assertEqual(second["recipe"]["go_env"]["GOAMD64"], "v2")
+            self.assertNotEqual(second["binaries"]["sledra"], first["binaries"]["sledra"])
+
+            env["GOFLAGS"] = "-tags=sld44_marker"
+            tagged = build()
+            self.assertIn(
+                "-tags=sld44_marker",
+                subprocess.check_output(["go", "version", "-m", binary], text=True),
+            )
+            self.assertEqual(tagged["recipe"]["go_env"]["GOFLAGS"], "-tags=sld44_marker")
+            self.assertNotEqual(tagged["binaries"]["sledra"], second["binaries"]["sledra"])
+
             binary.write_bytes(b"damaged executable")
             binary.chmod(0o755)
-            repaired = subprocess.run(command, capture_output=True, text=True, check=True)
-            self.assertIn("Build ", repaired.stdout)
-            self.assertNotEqual(binary.read_bytes(), b"damaged executable")
-            manifest = json.loads((Path(tmp) / "manifest.json").read_text())
-            self.assertEqual(manifest["recipe"]["tools"], ["sledra"])
+            repaired = build()
+            self.assertEqual(repaired["binaries"]["sledra"], tagged["binaries"]["sledra"])
+            self.assertEqual(repaired["recipe"]["tools"], ["sledra"])
 
     def test_embed_drift_is_detected_and_canonical_sync_restores_it(self) -> None:
         with tempfile.TemporaryDirectory(prefix="sledra-embed-drift-") as tmp:

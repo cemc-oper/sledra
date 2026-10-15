@@ -18,7 +18,7 @@ setup:
 	GOPROXY=$${GOPROXY_SETUP:-https://proxy.golang.org,direct} GOSUMDB=$${GOSUMDB_SETUP:-sum.golang.org} go mod download
 
 build:
-	SLEDRA_TARGET_GOOS="$$(go env GOOS)" SLEDRA_TARGET_GOARCH="$$(go env GOARCH)" GOOS="$$(go env GOHOSTOS)" GOARCH="$$(go env GOHOSTARCH)" go run ../scripts/build_recorder.go --output "$(BUILD_ROOT)" --tools "$(TOOLS)"
+	SLEDRA_TARGET_GOOS="$$(go env GOOS)" SLEDRA_TARGET_GOARCH="$$(go env GOARCH)" SLEDRA_TARGET_GOAMD64="$$(go env GOAMD64)" SLEDRA_TARGET_GOARM64="$$(go env GOARM64)" GOOS="$$(go env GOHOSTOS)" GOARCH="$$(go env GOHOSTARCH)" GOAMD64=v1 GOARM64=v8.0 go run ../scripts/build_recorder.go --output "$(BUILD_ROOT)" --tools "$(TOOLS)"
 
 check:
 	@test -z "$$(gofmt -l ../scripts/build_recorder.go $$(find . -name '*.go' -type f))" || { gofmt -l ../scripts/build_recorder.go $$(find . -name '*.go' -type f); exit 1; }

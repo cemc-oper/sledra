@@ -25,6 +25,6 @@ sledra-<software-label>-linux-<arch>/
 
 默认软件标识 `dev`；支持 amd64/arm64，逐个 ELF 核对架构及无 PT_INTERP/DT_NEEDED，另核对实际静态构建结果。manifest 的运行状态先标未验证，验收报告记录 native 执行；交叉构建不算运行资格。
 
-manifest 记录文件大小、权限与 SHA256；`SHA256SUMS` 包含 manifest，独立 `.tar.gz.sha256` 覆盖整个归档。归档的 owner 与时间规范化；输入和缓存来源不变时字节可重复。`SOURCE_DATE_EPOCH` 固定内嵌构建时间。同标识的新内容会替换本地忽略产物，这不是签名发行。
+manifest 记录文件大小、权限与 SHA256；`SHA256SUMS` 包含 manifest，独立 `.tar.gz.sha256` 覆盖整个归档。归档的 owner 与时间规范化；输入、构建设置和 `SOURCE_DATE_EPOCH` 固定时字节可重复。每次打包仍调用 Go 原生增量构建，`SOURCE_DATE_EPOCH` 固定内嵌构建时间。同标识的新内容会替换本地忽略产物，这不是签名发行。
 
 第三方许可文本来自实际链接模块和 Go 工具链；manifest 如实记录项目许可未决。不复制旧 reference 实现。完整发行、升级回滚与真实 HPC 验收属于后续工作。

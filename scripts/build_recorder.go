@@ -25,6 +25,7 @@ type Recipe struct {
 	Target          []string          `json:"target"`
 	CGOEnabled      string            `json:"cgo_enabled"`
 	Flags           []string          `json:"flags"`
+	GoEnv           map[string]string `json:"go_env"`
 	Inputs          map[string]string `json:"inputs"`
 	Provenance      map[string]string `json:"provenance"`
 	SourceDateEpoch string            `json:"source_date_epoch"`
@@ -135,17 +136,30 @@ func build(output string, tools []string) error {
 		return err
 	}
 	recorder := filepath.Join(root, "recorder")
+	targetAMD64 := os.Getenv("SLEDRA_TARGET_GOAMD64")
+	if targetAMD64 == "" {
+		targetAMD64 = os.Getenv("GOAMD64")
+	}
+	targetARM64 := os.Getenv("SLEDRA_TARGET_GOARM64")
+	if targetARM64 == "" {
+		targetARM64 = os.Getenv("GOARM64")
+	}
 	env := append(
 		os.Environ(),
 		"GOPROXY=off", "GOSUMDB=off", "GONOPROXY=none", "GOTOOLCHAIN=local", "CGO_ENABLED=0",
 		"GOOS="+os.Getenv("SLEDRA_TARGET_GOOS"), "GOARCH="+os.Getenv("SLEDRA_TARGET_GOARCH"),
+		"GOAMD64="+targetAMD64, "GOARM64="+targetARM64,
 	)
-	goTarget, err := command(recorder, env, "go", "env", "GOVERSION", "GOOS", "GOARCH")
+	goTarget, err := command(recorder, env, "go", "env", "-json", "GOVERSION", "GOOS", "GOARCH", "GOAMD64", "GOARM64", "GOARM", "GOFLAGS", "GOEXPERIMENT", "CGO_ENABLED")
 	if err != nil {
 		return err
 	}
-	target := strings.Fields(string(goTarget))
-	if len(target) != 3 {
+	goEnv := make(map[string]string)
+	if err := json.Unmarshal(goTarget, &goEnv); err != nil {
+		return err
+	}
+	target := []string{goEnv["GOVERSION"], goEnv["GOOS"], goEnv["GOARCH"]}
+	if target[0] == "" || target[1] == "" || target[2] == "" {
 		return errors.New("go env returned an incomplete target")
 	}
 	inputs, err := sourceInputs(root)
@@ -169,7 +183,7 @@ func build(output string, tools []string) error {
 		"commit":           gitCommit(root),
 		"source_sha256":    hex.EncodeToString(source[:]),
 	}
-	recipe := Recipe{target, "0", []string{"-trimpath", "-buildvcs=false"}, inputs, provenance, os.Getenv("SOURCE_DATE_EPOCH"), tools}
+	recipe := Recipe{target, goEnv["CGO_ENABLED"], []string{"-trimpath", "-buildvcs=false"}, goEnv, inputs, provenance, os.Getenv("SOURCE_DATE_EPOCH"), tools}
 	stamp, err := buildTime()
 	if err != nil {
 		return err
@@ -179,16 +193,6 @@ func build(output string, tools []string) error {
 		return err
 	}
 	manifestPath := filepath.Join(output, "manifest.json")
-	var previous Manifest
-	if data, err := os.ReadFile(manifestPath); err == nil {
-		_ = json.Unmarshal(data, &previous)
-	}
-	before, _ := json.Marshal(previous.Recipe)
-	after, _ := json.Marshal(recipe)
-	sameRecipe := string(before) == string(after)
-	if sameRecipe && previous.BuildTime != "" {
-		stamp = previous.BuildTime
-	}
 	ldflags := fmt.Sprintf("-X github.com/cemc-oper/sledra/recorder/internal/buildinfo.Version=%s -X github.com/cemc-oper/sledra/recorder/internal/buildinfo.Commit=%s -X github.com/cemc-oper/sledra/recorder/internal/buildinfo.BuildTime=%s -X github.com/cemc-oper/sledra/recorder/internal/buildinfo.SourceSHA256=%s", version, provenance["commit"], stamp, provenance["source_sha256"])
 	binDir := filepath.Join(output, "bin")
 	if err := os.MkdirAll(binDir, 0o755); err != nil {
@@ -197,25 +201,19 @@ func build(output string, tools []string) error {
 	binaries := make(map[string]string)
 	for _, name := range tools {
 		binary := filepath.Join(binDir, name)
-		current, hashErr := digest(binary)
-		info, statErr := os.Stat(binary)
-		if sameRecipe && hashErr == nil && statErr == nil && info.Mode()&0o111 != 0 && previous.Binaries[name] == current {
-			fmt.Println("Reuse", binary)
-		} else {
-			fmt.Println("Build", binary)
-			temporary, err := os.CreateTemp(binDir, "."+name+"-*.tmp")
-			if err != nil {
-				return err
-			}
-			path := temporary.Name()
-			_ = temporary.Close()
-			defer os.Remove(path)
-			if err := run(recorder, env, "go", "build", "-trimpath", "-buildvcs=false", "-ldflags", ldflags, "-o", path, "./cmd/"+name); err != nil {
-				return err
-			}
-			if err := os.Rename(path, binary); err != nil {
-				return err
-			}
+		fmt.Println("Build", binary)
+		temporary, err := os.CreateTemp(binDir, "."+name+"-*.tmp")
+		if err != nil {
+			return err
+		}
+		path := temporary.Name()
+		_ = temporary.Close()
+		defer os.Remove(path)
+		if err := run(recorder, env, "go", "build", "-trimpath", "-buildvcs=false", "-ldflags", ldflags, "-o", path, "./cmd/"+name); err != nil {
+			return err
+		}
+		if err := os.Rename(path, binary); err != nil {
+			return err
 		}
 		binaries[name], err = digest(binary)
 		if err != nil {

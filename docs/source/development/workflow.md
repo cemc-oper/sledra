@@ -42,7 +42,7 @@ make benchmark
 
 命令禁止 uv 联网、Go proxy/sum database 查询、私有模块代理绕过及工具链下载。源码离线构建需要 setup 已准备的缓存，不支持空缓存离线初始化。项目环境不存在时，uv 可从已有缓存同步。
 
-build 在 `build/bin/` 生成 sledra、sledra-spec-check、sledra-event、sledra-spool、sledra-retention。`build/manifest.json` 记录输入、工具链、目标、参数和二进制 SHA256。采用 CGO_ENABLED=0、-trimpath、-buildvcs=false，支持无 Git 元数据的源码；输入或二进制字节变化时重建，其余情况复用。版本来源见 [CLI](../reference/cli.md#帮助与版本)。
+build 在 `build/bin/` 生成 sledra、sledra-spec-check、sledra-event、sledra-spool、sledra-retention。每次调用均执行 Go 原生增量 `go build`，将完成的二进制原子替换到输出目录；不依据自制 manifest 跳过构建。`build/manifest.json` 记录输入、工具链、目标、实际 `go env` 设置（包括 GOAMD64/GOARM64/GOFLAGS）、参数和二进制 SHA256。采用 CGO_ENABLED=0、-trimpath、-buildvcs=false，支持无 Git 元数据的源码。`SOURCE_DATE_EPOCH` 固定内嵌构建时间；未设置时使用本次构建的 UTC 时间。版本来源见 [CLI](../reference/cli.md#帮助与版本)。
 
 build 同时在 `build/analysis/` 生成独立分析 wheel 与 sdist。分析运行校验依赖单独锁定，不进入记录器试用包；其后续发行归 SLD-26。
 
