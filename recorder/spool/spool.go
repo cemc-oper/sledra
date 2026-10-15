@@ -73,6 +73,7 @@ type Writer struct {
 	stats              Stats
 	poisoned           bool
 	write              func(*os.File, []byte) (int, error)
+	afterSealLink      func()
 }
 
 // Open obtains a nonblocking per-session advisory lock. Cross-process session
@@ -179,82 +180,115 @@ func (w *Writer) resume() error {
 			names = append(names, entry.Name())
 		}
 	}
-	// Select only the most recently touched open segment. An older complete
-	// segment must not be resumed past a newer partial tail.
+	// Recover published segments before selecting an open segment to append.
+	// A sealed name must never remain attached to a writable inode.
 	var latest string
 	var latestTime time.Time
 	for _, name := range names {
-		st, err := os.Lstat(filepath.Join(w.dir, name))
-		if err != nil || !st.Mode().IsRegular() || st.Mode().Perm() != 0600 {
-			return bad("spool_unavailable")
-		}
-		if latest == "" || st.ModTime().After(latestTime) {
-			latest, latestTime = name, st.ModTime()
-		}
-	}
-	if latest == "" {
-		return nil
-	}
-	for _, name := range []string{latest} {
 		path := filepath.Join(w.dir, name)
 		st, err := os.Lstat(path)
 		if err != nil || !st.Mode().IsRegular() || st.Mode().Perm() != 0600 {
 			return bad("spool_unavailable")
 		}
-		if st.Size() == 0 || st.Size() >= w.limits.SegmentBytes {
+		sealed := strings.TrimSuffix(path, ".open.jsonl") + ".sealed.jsonl"
+		sealedStat, err := os.Lstat(sealed)
+		if err == nil {
+			if !sealedStat.Mode().IsRegular() || sealedStat.Mode().Perm() != 0600 || !os.SameFile(st, sealedStat) {
+				return bad("spool_unavailable")
+			}
+			if _, err := w.segmentCreated(path, name); err != nil {
+				return err
+			}
+			if err := os.Remove(path); err != nil {
+				return bad("spool_unavailable")
+			}
+			if err := syncDir(w.dir); err != nil {
+				return err
+			}
 			continue
 		}
-		f, err := os.OpenFile(path, os.O_WRONLY|os.O_APPEND|syscall.O_NOFOLLOW, 0600)
+		if !errors.Is(err, os.ErrNotExist) {
+			return bad("spool_unavailable")
+		}
+		if st.Size() == 0 {
+			if st.ModTime().After(latestTime) {
+				latest, latestTime = "", st.ModTime()
+			}
+			continue
+		}
+		created, err := w.segmentCreated(path, name)
+		if err != nil {
+			return err
+		}
+		r, err := os.OpenFile(path, os.O_RDONLY|syscall.O_NOFOLLOW, 0)
 		if err != nil {
 			return bad("spool_unavailable")
 		}
-		if st.Size() > 0 {
-			r, err := os.OpenFile(path, os.O_RDONLY|syscall.O_NOFOLLOW, 0)
-			if err != nil {
-				f.Close()
-				return bad("spool_unavailable")
-			}
-			headerLine, headerErr := bufio.NewReader(io.LimitReader(r, 4096)).ReadBytes('\n')
-			var header struct {
-				RecordKind      string `json:"record_kind"`
-				ProtocolVersion string `json:"protocol_version"`
-				SourceID        string `json:"source_id"`
-				SegmentUUID     string `json:"segment_uuid"`
-				WriterSession   string `json:"writer_session"`
-				CreatedAt       string `json:"created_at"`
-			}
-			if headerErr != nil || json.Unmarshal(headerLine, &header) != nil || header.RecordKind != "segment_header" || header.ProtocolVersion != "1.0.0" || header.SourceID != w.source || header.WriterSession != w.session || name != digest(w.session)+"-"+header.SegmentUUID+".open.jsonl" {
-				r.Close()
-				f.Close()
-				return bad("spool_unavailable")
-			}
-			created, parseErr := time.Parse(time.RFC3339Nano, header.CreatedAt)
-			if parseErr != nil {
-				r.Close()
-				f.Close()
-				return bad("spool_unavailable")
-			}
-			if time.Since(created) >= w.limits.SegmentAge {
-				r.Close()
-				f.Close()
-				continue
-			}
-			_, err = r.Seek(-1, io.SeekEnd)
-			var tail [1]byte
-			if err == nil {
-				_, err = io.ReadFull(r, tail[:])
-			}
-			r.Close()
-			if err != nil || tail[0] != '\n' {
-				f.Close()
-				continue
-			}
-			w.created = created
+		_, err = r.Seek(-1, io.SeekEnd)
+		var tail [1]byte
+		if err == nil {
+			_, err = io.ReadFull(r, tail[:])
 		}
-		w.file, w.fileName = f, name
+		r.Close()
+		if err != nil || tail[0] != '\n' {
+			if st.ModTime().After(latestTime) {
+				latest, latestTime = "", st.ModTime()
+			}
+			continue
+		}
+		if time.Since(created) >= w.limits.SegmentAge {
+			f, err := os.OpenFile(path, os.O_WRONLY|os.O_APPEND|syscall.O_NOFOLLOW, 0600)
+			if err != nil {
+				return bad("spool_unavailable")
+			}
+			w.file, w.fileName = f, name
+			if err := w.seal(); err != nil {
+				return err
+			}
+			continue
+		}
+		if st.ModTime().After(latestTime) {
+			latest, latestTime = "", st.ModTime()
+			if st.Size() < w.limits.SegmentBytes {
+				latest = name
+				w.created = created
+			}
+		}
+	}
+	if latest == "" {
 		return nil
 	}
+	f, err := os.OpenFile(filepath.Join(w.dir, latest), os.O_WRONLY|os.O_APPEND|syscall.O_NOFOLLOW, 0600)
+	if err != nil {
+		return bad("spool_unavailable")
+	}
+	w.file, w.fileName = f, latest
 	return nil
+}
+
+func (w *Writer) segmentCreated(path, name string) (time.Time, error) {
+	r, err := os.OpenFile(path, os.O_RDONLY|syscall.O_NOFOLLOW, 0)
+	if err != nil {
+		return time.Time{}, bad("spool_unavailable")
+	}
+	defer r.Close()
+	headerLine, headerErr := bufio.NewReader(io.LimitReader(r, 4096)).ReadBytes('\n')
+	var header struct {
+		RecordKind      string `json:"record_kind"`
+		ProtocolVersion string `json:"protocol_version"`
+		SourceID        string `json:"source_id"`
+		SegmentUUID     string `json:"segment_uuid"`
+		WriterSession   string `json:"writer_session"`
+		CreatedAt       string `json:"created_at"`
+	}
+	if headerErr != nil || json.Unmarshal(headerLine, &header) != nil || header.RecordKind != "segment_header" || header.ProtocolVersion != "1.0.0" || header.SourceID != w.source || header.WriterSession != w.session || name != digest(w.session)+"-"+header.SegmentUUID+".open.jsonl" {
+		return time.Time{}, bad("spool_unavailable")
+	}
+	created, err := time.Parse(time.RFC3339Nano, header.CreatedAt)
+	if err != nil {
+		return time.Time{}, bad("spool_unavailable")
+	}
+	return created, nil
 }
 
 func (w *Writer) usage() (int64, int, error) {
@@ -459,6 +493,9 @@ func (w *Writer) seal() error {
 	if err := os.Link(open, sealed); err != nil {
 		w.poisoned = true
 		return bad("spool_unavailable")
+	}
+	if w.afterSealLink != nil {
+		w.afterSealLink()
 	}
 	if err := os.Remove(open); err != nil {
 		w.poisoned = true

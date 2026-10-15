@@ -2,17 +2,22 @@ package spool
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"sync"
+	"syscall"
 	"testing"
 	"time"
 
 	"github.com/cemc-oper/sledra/recorder/event"
+	"github.com/cemc-oper/sledra/recorder/retention"
 )
 
 func fixture(t *testing.T, source, session string) []byte {
@@ -335,5 +340,242 @@ func TestWrongAssociationAndSeparateSession(t *testing.T) {
 	}
 	if len(segments(t, root)) != 0 {
 		t.Fatal("mismatched event persisted")
+	}
+}
+
+func TestResumePublicationAndAge(t *testing.T) {
+	for _, mode := range []string{"dual", "conflict", "aged", "partial"} {
+		t.Run(mode, func(t *testing.T) {
+			root := t.TempDir()
+			input := fixture(t, "node-a", "session-a")
+			limits := Limits{SegmentAge: time.Hour}
+			w := open(t, root, "node-a", "session-a", limits)
+			if err := w.Append(input); err != nil {
+				t.Fatal(err)
+			}
+			old := filepath.Join(w.dir, w.fileName)
+			if err := w.Close(); err != nil {
+				t.Fatal(err)
+			}
+			sealed := strings.TrimSuffix(old, ".open.jsonl") + ".sealed.jsonl"
+			switch mode {
+			case "dual":
+				if err := os.Link(old, sealed); err != nil {
+					t.Fatal(err)
+				}
+			case "conflict":
+				if err := os.WriteFile(sealed, []byte("conflicting sealed bytes\n"), 0600); err != nil {
+					t.Fatal(err)
+				}
+			case "aged":
+				limits.SegmentAge = time.Nanosecond
+			case "partial":
+				f, err := os.OpenFile(old, os.O_APPEND|os.O_WRONLY, 0)
+				if err != nil {
+					t.Fatal(err)
+				}
+				_, err = f.WriteString("half line")
+				f.Close()
+				if err != nil {
+					t.Fatal(err)
+				}
+				limits.SegmentAge = time.Nanosecond
+			}
+			before := segments(t, root)
+			oldHash := sha256.Sum256(before[old])
+			if mode == "conflict" {
+				if _, err := Open(root, "future_role", "node-a", "run_eeff24fb97bc287ebc5cddea33eafa8c8e958847ba82e653b501c17fd2662959", "", "", "session-a", limits); Code(err) != "spool_unavailable" {
+					t.Fatalf("conflict accepted: %v", err)
+				}
+				if got := segments(t, root); !bytes.Equal(got[old], before[old]) || !bytes.Equal(got[sealed], before[sealed]) {
+					t.Fatal("conflict evidence changed")
+				}
+				return
+			}
+			for i := 0; i < 2; i++ {
+				w = open(t, root, "node-a", "session-a", limits)
+				if i == 1 {
+					if err := w.Append(input); err != nil {
+						t.Fatal(err)
+					}
+				}
+				if err := w.Close(); err != nil {
+					t.Fatal(err)
+				}
+			}
+			got := segments(t, root)
+			if mode == "partial" {
+				if sha256.Sum256(got[old]) != oldHash || len(got) != 2 {
+					t.Fatal("partial tail changed or new segment missing")
+				}
+			} else if _, exists := got[old]; exists || sha256.Sum256(got[sealed]) != oldHash || len(got) != 2 {
+				t.Fatal("old complete segment not sealed immutably")
+			}
+		})
+	}
+}
+
+func TestKillBetweenSealLinkAndUnlink(t *testing.T) {
+	if os.Getenv("SLEDRA_SEAL_CHILD") == "1" {
+		root := os.Getenv("SLEDRA_SEAL_ROOT")
+		w := open(t, root, "node-a", "session-a", Limits{})
+		if err := w.Append(fixture(t, "node-a", "session-a")); err != nil {
+			t.Fatal(err)
+		}
+		w.afterSealLink = func() { _ = syscall.Kill(os.Getpid(), syscall.SIGKILL) }
+		_ = w.Seal()
+		t.Fatal("child survived seal cut")
+	}
+	root := t.TempDir()
+	if err := os.Chmod(root, 0700); err != nil {
+		t.Fatal(err)
+	}
+	if err := retention.InitFixture(root); err != nil {
+		t.Fatal(err)
+	}
+	cmd := exec.Command(os.Args[0], "-test.run=^TestKillBetweenSealLinkAndUnlink$")
+	cmd.Env = append(os.Environ(), "SLEDRA_SEAL_CHILD=1", "SLEDRA_SEAL_ROOT="+root)
+	if output, err := cmd.CombinedOutput(); err == nil {
+		t.Fatalf("child survived: %s", output)
+	} else if exit, ok := err.(*exec.ExitError); !ok || exit.ProcessState.Sys().(syscall.WaitStatus).Signal() != syscall.SIGKILL {
+		t.Fatalf("child failed before cut: %v %s", err, output)
+	}
+	var old, sealed string
+	for path := range segments(t, root) {
+		if strings.HasSuffix(path, ".open.jsonl") {
+			old = path
+			sealed = strings.TrimSuffix(path, ".open.jsonl") + ".sealed.jsonl"
+		}
+	}
+	if old == "" {
+		t.Fatal("missing open at cut")
+	}
+	before, err := os.ReadFile(sealed)
+	if err != nil {
+		t.Fatal(err)
+	}
+	w := open(t, root, "node-a", "session-a", Limits{})
+	if err := w.Append(fixture(t, "node-a", "session-a")); err != nil {
+		t.Fatal(err)
+	}
+	if err := w.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(old); !errors.Is(err, os.ErrNotExist) {
+		t.Fatal("open alias survived recovery")
+	}
+	after, err := os.ReadFile(sealed)
+	if err != nil || sha256.Sum256(after) != sha256.Sum256(before) {
+		t.Fatal("sealed bytes changed")
+	}
+	m, err := retention.OpenFixture(root, retention.Policy{SourceRetention: 48 * time.Hour, EvidenceRetention: 240 * time.Hour, MaxBacklogAge: 24 * time.Hour})
+	if err != nil {
+		t.Fatal(err)
+	}
+	receipt, err := m.Acknowledge(sealed)
+	if err != nil || receipt.SHA256 != fmt.Sprintf("%x", sha256.Sum256(before)) {
+		t.Fatalf("archive confirmation: %v %+v", err, receipt)
+	}
+}
+
+func TestNewerPartialBlocksOlderResume(t *testing.T) {
+	root := t.TempDir()
+	input := fixture(t, "node-a", "session-a")
+	w := open(t, root, "node-a", "session-a", Limits{})
+	if err := w.Append(input); err != nil {
+		t.Fatal(err)
+	}
+	older := filepath.Join(w.dir, w.fileName)
+	if err := w.Seal(); err != nil {
+		t.Fatal(err)
+	}
+	if err := w.Append(input); err != nil {
+		t.Fatal(err)
+	}
+	newer := filepath.Join(w.dir, w.fileName)
+	if err := w.Close(); err != nil {
+		t.Fatal(err)
+	}
+	// Restore the older sealed name as an open segment, then corrupt the
+	// newer open tail. Recovery must create a third segment.
+	olderOpen := strings.TrimSuffix(older, ".open.jsonl") + ".sealed.jsonl"
+	if err := os.Rename(olderOpen, older); err != nil {
+		t.Fatal(err)
+	}
+	oldTime := time.Now().Add(-time.Minute)
+	if err := os.Chtimes(older, oldTime, oldTime); err != nil {
+		t.Fatal(err)
+	}
+	f, err := os.OpenFile(newer, os.O_APPEND|os.O_WRONLY, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = f.WriteString("half line")
+	f.Close()
+	if err != nil {
+		t.Fatal(err)
+	}
+	before, err := os.ReadFile(older)
+	if err != nil {
+		t.Fatal(err)
+	}
+	w = open(t, root, "node-a", "session-a", Limits{})
+	if err := w.Append(input); err != nil {
+		t.Fatal(err)
+	}
+	if err := w.Close(); err != nil {
+		t.Fatal(err)
+	}
+	after, err := os.ReadFile(older)
+	if err != nil || !bytes.Equal(before, after) || len(segments(t, root)) != 3 {
+		t.Fatal("resumed older segment past partial tail")
+	}
+}
+
+func TestSealConflictPreservesBothNames(t *testing.T) {
+	root := t.TempDir()
+	w := open(t, root, "node-a", "session-a", Limits{})
+	if err := w.Append(fixture(t, "node-a", "session-a")); err != nil {
+		t.Fatal(err)
+	}
+	openPath := filepath.Join(w.dir, w.fileName)
+	sealed := strings.TrimSuffix(openPath, ".open.jsonl") + ".sealed.jsonl"
+	if err := os.WriteFile(sealed, []byte("conflict\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	before := segments(t, root)
+	if Code(w.Seal()) != "spool_unavailable" || Code(w.Append(fixture(t, "node-a", "session-a"))) != "spool_unavailable" {
+		t.Fatal("seal conflict did not poison writer")
+	}
+	_ = w.Close()
+	after := segments(t, root)
+	if !bytes.Equal(before[openPath], after[openPath]) || !bytes.Equal(before[sealed], after[sealed]) {
+		t.Fatal("seal conflict changed evidence")
+	}
+}
+
+func TestShortLivedWritersSealAgedOpen(t *testing.T) {
+	root := t.TempDir()
+	input := fixture(t, "node-a", "session-a")
+	limits := Limits{SegmentAge: time.Nanosecond}
+	for i := 0; i < 4; i++ {
+		w := open(t, root, "node-a", "session-a", limits)
+		if err := w.Append(input); err != nil {
+			t.Fatal(err)
+		}
+		if err := w.Close(); err != nil {
+			t.Fatal(err)
+		}
+		var openCount, sealedCount int
+		for path := range segments(t, root) {
+			if strings.HasSuffix(path, ".open.jsonl") {
+				openCount++
+			} else {
+				sealedCount++
+			}
+		}
+		if openCount != 1 || sealedCount != i {
+			t.Fatalf("iteration %d: open=%d sealed=%d", i, openCount, sealedCount)
+		}
 	}
 }
