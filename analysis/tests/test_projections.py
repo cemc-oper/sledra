@@ -917,6 +917,31 @@ with RawStore(Path(sys.argv[1])) as store:
         self.assertEqual(self.instance()["execution"]["state"], "ambiguous")
         self.assertEqual(self.store.counts().events, 4)
 
+    def test_cross_session_exit_cannot_complete_attempt_or_replace_old_revision(self):
+        events = self.process()
+        self.ingest(events[:2])
+        old = self.rebuild()
+        self.assertEqual(self.attempt()["execution"]["state"], "started")
+        events[-1]["source"]["session_id"] = "other-session"
+        self.ingest(events[2:])
+        new = self.rebuild()
+        self.assertEqual(self.attempt()["execution"]["state"], "conflict")
+        self.assertEqual(self.instance()["execution"]["state"], "ambiguous")
+        self.assertNotEqual(old.revision_id, new.revision_id)
+        self.assertEqual(self.engine.revision(old.revision_id), old)
+
+    def test_previous_rule_version_revision_remains_addressable(self):
+        self.ingest(self.process())
+        with patch(
+            "sledra_analysis.projections.engine.REDUCER_VERSION", "sledra-state-reducer-1.0.0"
+        ):
+            with patch.object(self.engine, "rule_version", "sledra-state-rules-1.0.0"):
+                old = self.rebuild()
+        new = self.rebuild()
+        self.assertNotEqual(old.revision_id, new.revision_id)
+        self.assertEqual(self.engine.revision(old.revision_id), old)
+        self.assertEqual(self.engine.revision(), new)
+
     def test_document_import_storage_failure_rolls_back_sources_and_work(self):
         before = self.store.projection_work()
 

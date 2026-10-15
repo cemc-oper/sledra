@@ -671,6 +671,57 @@ class TimingTests(unittest.TestCase):
         self.publish()
         self.assertEqual(self.rows("process_execution")[0]["pairing"], "conflict")
         self.assertIsNone(self.rows("process_execution")[0]["duration_ns"])
+        self.engine.rebuild(published_at=LATER)
+        self.assertEqual(
+            self.engine.get("attempts", self.context["attempt_id"])["execution"]["state"],
+            "conflict",
+        )
+
+    def test_process_pairing_consumers_agree_on_shared_facts(self):
+        documents = [
+            self.bundle[k] for k in ("definition_manifest", "run_context", "attempt_context")
+        ]
+        for mode, expected_state, expected_pairing in (
+            ("normal", "exited", "paired"),
+            ("source", "conflict", "conflict"),
+            ("session", "conflict", "conflict"),
+            ("boot", "conflict", "conflict"),
+            ("role", "conflict", "conflict"),
+            ("two_starts", "conflict", "conflict"),
+            ("start_only", "started", "start_only"),
+            ("end_only", "end_only", "end_only"),
+        ):
+            with self.subTest(mode=mode):
+                events = self.process()
+                if mode in ("source", "session", "boot"):
+                    field = {"source": "source_id", "session": "session_id", "boot": "boot_id"}[
+                        mode
+                    ]
+                    events[1]["source"]["boot_id"] = "boot-a" if mode == "boot" else None
+                    events[2]["source"][field] = "other"
+                elif mode == "two_starts":
+                    events.append(
+                        self.boundary(
+                            "attempt.started",
+                            {
+                                "invocation_id": "other",
+                                "process_role": self.context["process_role"],
+                            },
+                        )
+                    )
+                elif mode == "role":
+                    events[2]["payload"]["process_role"] = "other"
+                elif mode == "start_only":
+                    events.pop()
+                elif mode == "end_only":
+                    events.pop(1)
+                facts = [{"event": e, "hash": canonical_hash(e), "status": "known"} for e in events]
+                state = reconstruct(facts, documents, [])
+                timing = reconstruct_timing(facts, documents, state, report_as_of=AS_OF)
+                self.assertEqual(state["attempts"][0]["execution"]["state"], expected_state)
+                rows = [r for r in timing["intervals"] if r["metric"] == "process_execution"]
+                self.assertEqual(len(rows), 2 if mode == "role" else 1)
+                self.assertEqual({row["pairing"] for row in rows}, {expected_pairing})
 
     def test_distinct_attempts_do_not_join_same_interval_id(self):
         c = self.context_for("other", retry=self.context["attempt_id"])

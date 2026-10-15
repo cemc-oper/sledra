@@ -6,10 +6,11 @@ from collections import Counter, defaultdict
 from fractions import Fraction
 
 from sledra_analysis.metrics.clock import monotonic_duration, utc_ns, wall_interval
+from sledra_analysis.process_pairing import process_pairing
 from sledra_analysis.projections.reducer import event_ref
 from sledra_analysis.store.canonical import canonical_bytes, canonical_hash
 
-METRICS_VERSION = "sledra-timing-1.0.0"
+METRICS_VERSION = "sledra-timing-1.1.0"
 
 
 def _unique(events):
@@ -66,24 +67,18 @@ def pair(metric, key, starts, ends, *, report_as_of, refs, flags=()):
         "start_at": starts[0].get("occurred_at") if len(starts) == 1 else None,
         "end_at": ends[0].get("occurred_at") if len(ends) == 1 else None,
     }
+    if metric == "process_execution":
+        pairing, reason = process_pairing(starts, ends)
+        if pairing == "conflict":
+            row["pairing"] = pairing
+            row["flags"].append(reason)
+            return row
     if (
         len(starts) > 1
         or len(ends) > 1
         or set(flags) & {"conflict", "parent_mismatch", "association_uncertain", "orphan"}
     ):
         row["pairing"] = "conflict" if starts or ends else "unavailable"
-        return row
-    if (
-        metric == "process_execution"
-        and starts
-        and ends
-        and any(
-            starts[0]["source"].get(k) != ends[0]["source"].get(k)
-            for k in ("source_id", "session_id", "boot_id")
-        )
-    ):
-        row["pairing"] = "conflict"
-        row["flags"].append("process_invocation_association_uncertain")
         return row
     for event in starts + ends:
         try:

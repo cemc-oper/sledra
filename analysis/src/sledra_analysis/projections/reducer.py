@@ -4,11 +4,12 @@ from __future__ import annotations
 
 from collections import defaultdict
 
+from sledra_analysis.process_pairing import process_pairing
 from sledra_analysis.projections.documents import KINDS, check_parameters, instance_id
 from sledra_analysis.store.canonical import RecordError, canonical_bytes, canonical_hash
 
-REDUCER_VERSION = "sledra-state-reducer-1.0.0"
-RULE_VERSION = "sledra-state-rules-1.0.0"
+REDUCER_VERSION = "sledra-state-reducer-1.1.0"
+RULE_VERSION = "sledra-state-rules-1.1.0"
 
 
 def event_ref(fact):
@@ -74,12 +75,10 @@ def _execution(node, context):
         flag in node["flags"] for flag in ("conflict", "parent_mismatch", "association_uncertain")
     ):
         return dimension("conflict", node["evidence"], process_role=role)
-    if (
-        len(_values(starts, lambda e: [e["payload"], e["occurred_at"]])) > 1
-        or len(_values(ends, lambda e: [e["payload"], e["occurred_at"]])) > 1
-    ):
+    pairing, reason = process_pairing([f["event"] for f in starts], [f["event"] for f in ends])
+    if pairing == "conflict":
         node["flags"].add("conflict")
-        return dimension("conflict", refs, process_role=role)
+        return dimension("conflict", refs, process_role=role, pairing_reason=reason)
     if ends:
         end = ends[0]["event"]["payload"]
         if not starts:
