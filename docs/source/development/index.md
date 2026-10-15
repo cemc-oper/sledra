@@ -17,4 +17,5 @@ source-identity
 raw-facts
 bounded-ingest
 ingest-recovery
+state-projections
 ```

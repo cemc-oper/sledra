@@ -1,7 +1,7 @@
 """Single-writer SQLite raw facts, stable deduplication and retained conflicts.
 
-Transactions cover facts and quarantine records. Durable checkpoints, projection
-queues, archival and source acknowledgements belong to later ingestion work.
+AtomicIngestor joins facts, quarantine, checkpoints and work queues. RecoveryStore
+archives committed sources; ProjectionEngine publishes derived revisions separately.
 """
 
 from __future__ import annotations

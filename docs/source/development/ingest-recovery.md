@@ -1,6 +1,6 @@
 # 接入事务、确认与恢复
 
-SLD-13 提供 `AtomicIngestor` 与 `RecoveryStore`。管理端使用一个 `RawStore` 写者；事实、隔离、持久检查点与重建队列在同一 SQLite 事务提交。SLD-14/15 尚未提供状态投影或业务查询，队列存在不表示已经重建。
+SLD-13 提供 `AtomicIngestor` 与 `RecoveryStore`。管理端使用一个 `RawStore` 写者；事实、隔离、持久检查点与重建队列在同一 SQLite 事务提交。SLD-14 已提供[显式状态重建](state-projections.md)与消费水位；队列存在不表示已经重建，时间统计仍待 SLD-15。
 
 ## 接入入口与边界
 
@@ -32,7 +32,7 @@ open 半行保留在已提交边界之后。sealed 残尾完整隔离后才允�
 
 `ingest.registry(locator, source_id=..., collected_at=...)` 通过 no-follow descriptor 读取整个 immutable Registry JSON，保存原 wrapper、`/outbox_event` pointer 和已处理摘要，同事务提交。坏文件或超预算文件完整流式隔离；无法保存则不标已处理。采集前后核对同一文件 metadata stamp，第二次有界读取同时复核摘要。重复摘要不再写事实；同 namespace/locator 出现不同 bytes 时保留新来源世代、各摘要及冲突版本，返回 `registry_immutable_conflict`。此接口不修改登记文件或触发业务登记。
 
-`projection_work_queue` 由 SQLite trigger 写入，分别记录新事件 canonical 版本、隔离记录、验证版本；source gap/冲突、半行增长及检查点变化也会加入 source 工作项，避免没有新事件时漏重建健康状态；冲突的每个版本都会进入队列。相同对象／修订重复写入幂等，隔离重处理的事实、验证、队列和审计一起提交。`projection_work(after_id=0, limit=1000)` 按 work_id 分页，最多 10000 项；当前是追加日志，尚无投影 worker 或自动删除。后续 reducer 必须另外持久保存自己的消费／投影水位，不能把最大 queue_id 当作已完成投影。
+`projection_work_queue` 由 SQLite trigger 写入，分别记录新事件 canonical 版本、隔离记录、验证版本；source gap/冲突、半行增长及检查点变化也会加入 source 工作项，避免没有新事件时漏重建健康状态；冲突的每个版本都会进入队列。相同对象／修订重复写入幂等，隔离重处理的事实、验证、队列和审计一起提交。`projection_work(after_id=0, limit=1000)` 按 work_id 分页，最多 10000 项；当前是追加日志，尚无后台投影 worker 或自动删除。SLD-14 reducer 已另外持久保存自己的消费／投影水位，不能把最大 queue_id 当作已完成投影。
 
 `watermark()` 只允许在事务外读取，返回数据库 lineage、最后 ingestion commit_id 和 queue_id。非协调器的 raw/reprocess 写入仍有事务队列保证，由 queue_id 描述其水位。source checkpoint 行绑定对应 ingestion commit_id；Registry 摘要同样绑定。lineage 在库创建／显式升级时生成，恢复保留它，不能把不同数据库的 commit 数字混用。
 

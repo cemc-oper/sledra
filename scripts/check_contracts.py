@@ -38,7 +38,14 @@ def check_generated(root: Path) -> None:
             ("recorder/event/contract", {"event-types.json", "event.schema.json"}),
             (
                 "analysis/src/sledra_analysis/resources/contract",
-                {"event-types.json", "event.schema.json"},
+                {
+                    "event-types.json",
+                    "event.schema.json",
+                    "definition_manifest.schema.json",
+                    "run_context.schema.json",
+                    "attempt_context.schema.json",
+                    "job_ref.schema.json",
+                },
             ),
             (
                 "recorder/internal/speccontract/contract",

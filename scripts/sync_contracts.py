@@ -12,7 +12,14 @@ def sync(root: Path) -> None:
         ("recorder/event/contract", {"event.schema.json", "event-types.json"}),
         (
             "analysis/src/sledra_analysis/resources/contract",
-            {"event.schema.json", "event-types.json"},
+            {
+                "event.schema.json",
+                "event-types.json",
+                "definition_manifest.schema.json",
+                "run_context.schema.json",
+                "attempt_context.schema.json",
+                "job_ref.schema.json",
+            },
         ),
         ("recorder/internal/speccontract/contract", {p.name for p in source.glob("*.json")}),
     ):

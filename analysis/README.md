@@ -1,6 +1,6 @@
 # Sledra 离线分析组件
 
-当前交付 SLD-10 文件身份、世代和 offset 模型，SLD-11 SQLite 原始事实、去重与冲突存储，SLD-12 有界读取、校验／隔离和重处理，以及 SLD-13 接入事务、持久队列、原始归档／确认和备份恢复，独立发行名为 `sledra-analysis`，开发版本 `0.1.0.dev0`，运行使用 Python 3.12+、SQLite 标准库，以及固定 jsonschema 4.10.3；传递依赖由 analysis/uv.lock 锁定。Go/Bash 记录器不依赖此组件。存储需要 Python 内置 SQLite 3.37+ 与 Linux flock；状态投影留待 SLD-14/15。
+当前交付 SLD-10 文件身份、世代和 offset 模型，SLD-11 SQLite 原始事实、去重与冲突存储，SLD-12 有界读取、校验／隔离和重处理，以及 SLD-13 接入事务、持久队列、原始归档／确认和备份恢复，以及 SLD-14 身份关联与多维状态投影，独立发行名为 `sledra-analysis`，开发版本 `0.1.0.dev0`，运行使用 Python 3.12+、SQLite 标准库，以及固定 jsonschema 4.10.3；传递依赖由 analysis/uv.lock 锁定。Go/Bash 记录器不依赖此组件。存储需要 Python 内置 SQLite 3.37+ 与 Linux flock；时间与缺口统计留待 SLD-15。
 
 从仓库根目录执行：
 
@@ -22,7 +22,7 @@ uv run --project analysis --locked --offline --no-python-downloads --python /usr
 
 接口、offset 使用方式与完整性限制见[文件身份与世代](../docs/source/development/source-identity.md)。
 
-原始 bytes、规范 hash、冲突和来源查询见[原始事实存储](../docs/source/development/raw-facts.md)。默认组件测试覆盖 20 项 V11、24 项 V09、28 项 V10/V16 与 33 项 V12/V21；`--task SLD-10` 可只回归身份层，`--task SLD-11` 可只验证存储，`--task SLD-12` 可只验证读取／隔离，`--task SLD-13` 可验证事务／确认／恢复。
+原始 bytes、规范 hash、冲突和来源查询见[原始事实存储](../docs/source/development/raw-facts.md)。默认组件测试覆盖 20 项 V11、24 项 V09、28 项 V10/V16 、33 项 V12/V21 与 38 项状态重建回归；`--task SLD-10` 可只回归身份层，`--task SLD-11` 可只验证存储，`--task SLD-12` 可只验证读取／隔离，`--task SLD-13` 可验证事务／确认／恢复，`--task SLD-14` 可验证状态重建。
 
 行预算、隔离查询、重处理与 schema 1 的显式升级见[有界读取与隔离](../docs/source/development/bounded-ingest.md)。SLD-13 的事务入口、持久队列与确认／恢复见[接入事务与恢复](../docs/source/development/ingest-recovery.md)。普通 BoundedReader 仍只返回位置候选；AtomicIngestor 才提供检查点同事务。
 
@@ -31,3 +31,5 @@ uv run --project analysis --locked --offline --no-python-downloads --python /usr
 ```bash
 uv run --project analysis --locked --offline --no-python-downloads --python /usr/bin/python3 python analysis/tests/replay_recovery.py --report-dir /tmp/sledra-recovery-new
 ```
+
+SLD-14 的父引用解析、因果重试／选择、结束声明修订和投影水位见[状态重建](../docs/source/development/state-projections.md)。rebuild 不依赖到达顺序，不从引擎或进程状态推断产品交付。

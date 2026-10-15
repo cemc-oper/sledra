@@ -1,6 +1,6 @@
 # 开发流程
 
-在仓库根目录运行公共 Make 目标。根入口协调任务；`recorder/Makefile` 负责 Go 构建、检查和测试，`analysis/Makefile` 负责 Python 分析组件构建、检查与测试，`docs/Makefile` 负责文档检查和严格构建。根 Python 项目仅管理开发、文档和验证工具：`package = false` 不安装 Sledra 库，元数据 `0.0.0` 不是记录器发行版。Go/Bash 记录不依赖 Python；独立 `analysis/` 包现提供 SLD-10 文件身份层与 SLD-11 SQLite 原始事实存储、SLD-12 有界读取／隔离、SLD-13 接入事务与恢复，见[文件身份与世代](source-identity.md)。
+在仓库根目录运行公共 Make 目标。根入口协调任务；`recorder/Makefile` 负责 Go 构建、检查和测试，`analysis/Makefile` 负责 Python 分析组件构建、检查与测试，`docs/Makefile` 负责文档检查和严格构建。根 Python 项目仅管理开发、文档和验证工具：`package = false` 不安装 Sledra 库，元数据 `0.0.0` 不是记录器发行版。Go/Bash 记录不依赖 Python；独立 `analysis/` 包现提供 SLD-10 文件身份层与 SLD-11 SQLite 原始事实存储、SLD-12 有界读取／隔离、SLD-13 接入事务与恢复、SLD-14 身份关联与状态重建，见[文件身份与世代](source-identity.md)。
 
 ## 工具链
 

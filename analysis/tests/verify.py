@@ -39,7 +39,7 @@ def main() -> int:
         "--report-dir", type=Path, help="new private report directory; never overwrite"
     )
     parser.add_argument(
-        "--task", choices=("SLD-10", "SLD-11", "SLD-12", "SLD-13", "all"), default="all"
+        "--task", choices=("SLD-10", "SLD-11", "SLD-12", "SLD-13", "SLD-14", "all"), default="all"
     )
     args = parser.parse_args()
     if args.report_dir is not None:
@@ -52,6 +52,7 @@ def main() -> int:
         "SLD-11": "test_store.py",
         "SLD-12": "test_reader.py",
         "SLD-13": "test_transaction.py",
+        "SLD-14": "test_projections.py",
         "all": "test_*.py",
     }[args.task]
     suite = unittest.defaultTestLoader.discover(str(Path(__file__).parent), pattern=pattern)
@@ -68,7 +69,8 @@ def main() -> int:
             "SLD-11": ["V09"],
             "SLD-12": ["V10", "V16"],
             "SLD-13": ["V12", "V21"],
-            "all": ["V11", "V09", "V10", "V16", "V12", "V21"],
+            "SLD-14": ["V05", "V07", "V08", "V09"],
+            "all": ["V11", "V09", "V10", "V16", "V12", "V21", "V05", "V07", "V08"],
         }[args.task],
         "analysis_version": "0.1.0.dev0",
         "protocol_version": "1.0.0",
@@ -89,6 +91,9 @@ def main() -> int:
         "memory_observations": getattr(sys.modules.get("test_reader"), "MEMORY_OBSERVATIONS", []),
         "crash_observations": getattr(
             sys.modules.get("test_transaction"), "CRASH_OBSERVATIONS", []
+        ),
+        "projection_observations": getattr(
+            sys.modules.get("test_projections"), "PROPERTY_OBSERVATIONS", []
         ),
         "embedded_contracts": {
             path.name: hashlib.sha256(path.read_bytes()).hexdigest()

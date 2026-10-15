@@ -26,10 +26,12 @@ M1.1 为原 M1.5 工程化阶段的新编号。既定验收保留，新增工程
 
 ## M2 边界
 
-M2 已实施 SLD-10～13，创建独立 `analysis/` Python package、组件入口与 V11 测试，并纳入根 build/check/test。冻结身份回放及本地世代/冲突验证结果见[文件身份与世代](source-identity.md)。SLD-11 已交付[SQLite raw 事实、去重与冲突查询](raw-facts.md)，真实数据库回放保存 19 条过程/outbox 事实，V09 24 项通过；SLD-12 已完成[有界读取／隔离与重处理](bounded-ingest.md)，28 项 V10/V16 通过；SLD-13 已提供[接入事务、持久队列和归档确认／恢复](ingest-recovery.md)，33 项 V12/V21 与 19 个真实进程 SIGKILL 切点通过。SLD-09 本地真实确认衔接在私有恢复域验证，生产清理及 A6/HPC 资格仍未启用。
+M2 已实施 SLD-10～14，创建独立 `analysis/` Python package、组件入口与 V11 测试，并纳入根 build/check/test。冻结身份回放及本地世代/冲突验证结果见[文件身份与世代](source-identity.md)。SLD-11 已交付[SQLite raw 事实、去重与冲突查询](raw-facts.md)，真实数据库回放保存 19 条过程/outbox 事实，V09 24 项通过；SLD-12 已完成[有界读取／隔离与重处理](bounded-ingest.md)，28 项 V10/V16 通过；SLD-13 已提供[接入事务、持久队列和归档确认／恢复](ingest-recovery.md)，33 项 V12/V21 与 19 个真实进程 SIGKILL 切点通过。SLD-09 本地真实确认衔接在私有恢复域验证，生产清理及 A6/HPC 资格仍未启用。
 
 普通测试不替换冻结 handoff。维护者显式要求刷新时，需要新旧摘要、原始身份/事件审查及 M2 输入再评估；候选先生成到新报告目录，审查后同步全部摘要引用。平台、性能和发行条件限制各自分支，不阻断 M2 合成本地开发。
 
 ## 待验证分支
 
 远端 Actions 需要真实运行链接与环境证据。真实跨节点/HPC 需要站点参数及计算节点窗口。A6 需要批准预算和目标测量；A7 仍属后续许可/发行决定。SLD-26 扩展到分析产物、离线升级/回滚与备份恢复。真实业务材料、集成和 M4 尚未完成。联系入口为 [Issues](https://github.com/cemc-oper/sledra/issues)。
+
+SLD-14 已提供[身份关联与状态投影](state-projections.md)：父文档与 Registry context、retry/selection 因果图、不可变结束覆盖、Run/Instance/Attempt/Job 投影和版本／证据／消费水位；38 项新增、143 项组件回归，40 轮性质验证与 4 个发布 SIGKILL 切点通过。SLD-15 时间统计和21/22产品规则／报告、23核心集保持待做。

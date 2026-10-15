@@ -9,7 +9,7 @@ UV_PY := $(UV) run --project .. --locked --offline --no-python-downloads --pytho
 
 .PHONY: help setup build check test
 help:
-	@printf '%s\n' 'make setup  Prepare pinned analysis build backend' 'make build  Build analysis wheel and sdist in OUTPUT_DIR/analysis' 'make check  Check analysis lock, formatting and lint' 'make test   Run identity, fact, reader and transaction recovery regressions'
+	@printf '%s\n' 'make setup  Prepare pinned analysis build backend' 'make build  Build analysis wheel and sdist in OUTPUT_DIR/analysis' 'make check  Check analysis lock, formatting and lint' 'make test   Run ingestion, recovery and causal state projection regressions'
 setup:
 	UV_OFFLINE=0 $(UV) sync --locked --no-python-downloads --python "$(ANALYSIS_PYTHON)"
 build:
