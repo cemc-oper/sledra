@@ -1,7 +1,7 @@
 """Identify source generations without treating a pathname as a segment identity.
 
-The tracker is single-reader, in-memory state. Callers persist Checkpoint alongside
-facts in a future ingestion transaction; nothing here acknowledges or deletes sources.
+The tracker is single-reader, in-memory state. AtomicIngestor persists Checkpoint
+alongside facts; nothing here acknowledges or deletes sources.
 Legacy sources require an explicit namespace and always carry a limited-integrity warning.
 """
 
@@ -216,6 +216,18 @@ class SourceLease:
         if before != _stamp(os.fstat(self._fd)):
             raise SourceChanged("source changed during read; discard bytes and retry")
         return result
+
+    @contextmanager
+    def archive_stream(self) -> Iterator[SourceStream]:
+        """Read the entire verified immutable segment, including its header."""
+        if self.decision.resume_offset is None or self.decision.checkpoint.sealed_hash is None:
+            raise SourceError("archive requires a verified immutable segment")
+        self._verify()
+        stream = SourceStream(self._fd, 0, self.decision.checkpoint.last_size, 65536)
+        yield stream
+        stream.verify()
+        self._verify()
+        stream.verify()
 
     @contextmanager
     def stream(self, offset: int, *, chunk_size: int = 65536) -> Iterator[SourceStream]:

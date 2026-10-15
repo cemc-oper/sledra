@@ -2,7 +2,7 @@
 
 Sledra 为工作流保存可追溯的运行事实。当前提供独立 Go 记录器、Bash 生命周期钩子、版本化 JSON 契约、合成示例和 Linux 本地试用包。
 
-M1 独立记录、M1.1 工程化与 M1.2 构建及目录整理的既定本地范围已通过验收，当前工程入口见[工程交接](docs/source/development/engineering-handoff.md)。M2 已交付 SLD-10 文件身份与世代模型，SLD-11 原始事实存储、去重和冲突查询，以及 SLD-12 有界读取、隔离和重处理，见[分析组件](analysis/README.md)。状态投影、业务查询、真实采集确认及透明 `sledra exec` supervisor 尚未实现。
+M1 独立记录、M1.1 工程化与 M1.2 构建及目录整理的既定本地范围已通过验收，当前工程入口见[工程交接](docs/source/development/engineering-handoff.md)。M2 已交付 SLD-10 文件身份与世代模型，SLD-11 原始事实存储、去重和冲突查询，SLD-12 有界读取、隔离和重处理，以及 SLD-13 检查点事务、持久队列、归档确认与备份恢复，见[分析组件](analysis/README.md)。状态投影、业务查询及透明 `sledra exec` supervisor 尚未实现。
 
 ## 项目结构
 

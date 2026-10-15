@@ -158,7 +158,7 @@ class BoundedReader:
         start = state.committed_offset
         if state.protocol_version is not None:
             start = max(start, state.header_size)
-        safe_offset = state.committed_offset
+        safe_offset = start if start == state.last_size else state.committed_offset
         frame = self._frame(start)
         quarantined, opaque = [], []
         diagnostics = list(lease.decision.diagnostics)

@@ -1,6 +1,6 @@
 # 有界读取、隔离与重处理
 
-SLD-12 提供 `BoundedReader`、`EventValidator` 和 SQLite 隔离／重处理接口。沿用 [source 身份与世代](source-identity.md)，正常事实与隔离都保留原始 bytes 和位置。返回的 checkpoint 仍是内存候选；持久检查点、投影队列和真实采集确认由 SLD-13 接续。
+SLD-12 提供 `BoundedReader`、`EventValidator` 和 SQLite 隔离／重处理接口。沿用 [source 身份与世代](source-identity.md)，正常事实与隔离都保留原始 bytes 和位置。返回的 checkpoint 仍是内存候选；SLD-13 已通过 [AtomicIngestor 与 RecoveryStore](ingest-recovery.md)提供持久检查点同事务、队列及归档后的确认／恢复。
 
 ## 行边界与位置
 
@@ -42,14 +42,14 @@ sealed 残尾没有完整行，只有经过隔离保存的 EOF 才可使用 `che
 
 默认行内存／正常 raw/canonical 各 1 MiB、chunk 64 KiB、每次最多 1024 个记录和 64 MiB 源 bytes。reader 达到记录／扫描预算会停在前一个已保存边界；部分扫描记录报 scan_partial_record，不能当真实 EOF。默认单隔离 BLOB 64 MiB、隔离 BLOB 总量 512 MiB；预算按唯一 BLOB bytes 计算，不含 SQLite/journal/临时文件开销。超出容量只能扩容或保留源重试，不允许丢弃原始内容。管理侧临时文件位于显式数据库父目录，不要求计算节点本地盘。
 
-新库直接建立 schema 2。已有 schema 1 默认拒绝打开，必须显式使用：
+SLD-12 初始引入 schema 2；当前新库为 schema 3，见[事务升级](ingest-recovery.md#schema-与验证)。已有 schema 1/2 默认拒绝打开，必须显式使用：
 
 ```python
 with RawStore(existing_management_path, upgrade=True) as store:
     ...
 ```
 
-升级只在确认的 Sledra schema 1／canonical 编码版本上同事务增加表和更新版本，不改旧事实、bytes、来源或冲突。升级失败保留 schema 1；旧程序不支持 schema 2，不把此开发升级机制解释为备份、降级或生产发行资格。SLD-26 后续验证完整发行／回滚，SLD-13 验证备份水位。当前验证只使用私有测试库，未升级运营数据库。
+升级只在确认的 Sledra schema 1/2／canonical 编码版本上同事务增加表、队列和更新版本，不改旧事实、bytes、来源或冲突。升级失败保留原 schema；旧程序不支持 schema 3，不把此开发升级机制解释为备份、降级或生产发行资格。SLD-26 后续验证完整发行／回滚，SLD-13 已验证本地备份水位。当前验证只使用私有测试库，未升级运营数据库。
 
 ## 开发入口
 
@@ -65,4 +65,4 @@ uv run --project analysis --locked --offline --no-python-downloads --python /usr
 
 显式报告必须使用不存在的新目录；普通测试与 demo 使用私有临时现场。demo 保留源、facts.sqlite 和 replay.json，可查看坏行 bytes／位置、open 补尾、sealed 残尾和 accepted/retained 重处理结果，使用的 checkpoint 仅在内存目录中。
 
-本地 28 项 V10/V16、20 项 V11、24 项 V09 共 72 项通过。8 MiB 大行测试在 1 KiB 行窗口／4 KiB chunk 下，Python tracemalloc 峰值低于 2 MiB，且逐块取回的尺寸与 SHA256 完全一致；该数字不包含 SQLite 原生内存、页缓存或总 RSS，不代表 A6 性能资格。真实共享/HPC、持久 checkpoint/quarantine/队列同事务、逐崩溃点恢复和真实 ack 仍待 SLD-13/23。
+本地 28 项 V10/V16、20 项 V11、24 项 V09 共 72 项通过。8 MiB 大行测试在 1 KiB 行窗口／4 KiB chunk 下，Python tracemalloc 峰值低于 2 MiB，且逐块取回的尺寸与 SHA256 完全一致；该数字不包含 SQLite 原生内存、页缓存或总 RSS，不代表 A6 性能资格。SLD-13 的本地事务、逐崩溃点恢复和真实 ack 结果见对应开发页；真实共享/HPC、生产清理与 M2 核心集仍待后续验收。

@@ -507,7 +507,15 @@ class ReaderTests(unittest.TestCase):
         expected = self.store.events()
         self.store.close()
         with sqlite3.connect(self.root / "facts.sqlite") as connection:
+            for trigger in ("enqueue_event", "enqueue_validation", "enqueue_quarantine"):
+                connection.execute(f"DROP TRIGGER {trigger}")
             for table in (
+                "raw_archives",
+                "registry_checkpoints",
+                "checkpoints",
+                "projection_work_queue",
+                "ingestion_commits",
+                "ingestion_identity",
                 "quarantine_replays",
                 "event_validations",
                 "quarantine",
@@ -524,7 +532,7 @@ class ReaderTests(unittest.TestCase):
         with RawStore(self.root / "facts.sqlite", upgrade=True) as migrated:
             self.assertEqual(migrated.events(), expected)
             self.assertEqual(migrated.quarantines(), ())
-            self.assertEqual(migrated._connection.execute("PRAGMA user_version").fetchone()[0], 2)
+            self.assertEqual(migrated._connection.execute("PRAGMA user_version").fetchone()[0], 3)
             self.assertEqual(
                 migrated._connection.execute("PRAGMA foreign_key_check").fetchall(), []
             )
@@ -534,7 +542,15 @@ class ReaderTests(unittest.TestCase):
         self.store.close()
         path = self.root / "facts.sqlite"
         with sqlite3.connect(path) as connection:
+            for trigger in ("enqueue_event", "enqueue_validation", "enqueue_quarantine"):
+                connection.execute(f"DROP TRIGGER {trigger}")
             for table in (
+                "raw_archives",
+                "registry_checkpoints",
+                "checkpoints",
+                "projection_work_queue",
+                "ingestion_commits",
+                "ingestion_identity",
                 "quarantine_replays",
                 "event_validations",
                 "quarantine",

@@ -1,6 +1,6 @@
 # 原始事实存储与冲突
 
-SLD-11 提供 `sledra_analysis.store.raw.RawStore`。管理端显式指定 SQLite 文件，保存完整原始 bytes、规范事件版本与来源位置。当前只有事实批次事务；SLD-12 已提供[坏行隔离](bounded-ingest.md)；持久检查点、投影队列、归档、备份及真实采集确认由后续任务接续。事件数量是不同 `event_id` 的原始事实数，不代表成功作业数或状态投影。
+SLD-11 提供 `sledra_analysis.store.raw.RawStore`。管理端显式指定 SQLite 文件，保存完整原始 bytes、规范事件版本与来源位置。SLD-12 已提供[坏行隔离](bounded-ingest.md)，SLD-13 的[AtomicIngestor 与 RecoveryStore](ingest-recovery.md)提供持久检查点同事务、队列、归档确认与备份恢复。事件数量是不同 `event_id` 的原始事实数，不代表成功作业数或状态投影。
 
 ## 数据与查询
 
@@ -25,7 +25,7 @@ SLD-11 提供 `sledra_analysis.store.raw.RawStore`。管理端显式指定 SQLit
 
 规范 hash 覆盖完整事件，包括 `recorded_at` 和未知扩展；采集时间是 `RawRecord.collected_at`，位于事件之外，不参与事件 hash。扩展中的任何同名采集字段仍是事件内容，会参与 hash。Raw SHA256 和 canonical SHA256 的用途分开，不因原始编码变化制造业务冲突。
 
-数据库保存 canonical 编码版本 `sledra-canonical-1.0.0`、application ID 与 schema version 2。未知数据库或编码版本拒绝打开；SLD-11 schema 1 只在显式 upgrade=True 时增加隔离表，旧事实与字节不变，见[升级边界](bounded-ingest.md#预算与旧库升级)。编码版本来自契约，不用阶段编号替代。已通过冻结 golden 的事件摘要、Unicode/类型/负零向量和既有同 ID 冲突反例。
+数据库保存 canonical 编码版本 `sledra-canonical-1.0.0`、application ID 与 schema version 3。未知数据库或编码版本拒绝打开；既有 schema 1/2 只在显式 upgrade=True 时补齐隔离／事务表及队列，旧事实与字节不变，见[升级边界](ingest-recovery.md#schema-与验证)。编码版本来自契约，不用阶段编号替代。已通过冻结 golden 的事件摘要、Unicode/类型/负零向量和既有同 ID 冲突反例。
 
 ## 使用接口
 
@@ -68,6 +68,6 @@ PYTHONPATH=analysis/src python3 analysis/tests/replay_store.py --report-dir /tmp
 
 24 项 V09 覆盖真实 SQLite 的 19 条冻结事实、重复/排列、来源定位、重开、payload/recorded_at/扩展冲突、golden 编码、数据库约束、单写者、限额、写失败和读锁导致的提交失败。组件入口同时回归 20 项 SLD-10 V11 和 28 项 SLD-12 V10/V16。显式报告必须使用新私有目录；普通测试只打印结果，不改冻结输入。
 
-这些事务仅证明事实批次一致性。源检查点与事实同事务、quarantine 已在 SLD-12 实现；其与检查点／持久投影队列的同事务、确认与清理、备份水位及崩溃点恢复仍归 SLD-13/23，不以本页结果声明 M2 完成。
+本页的独立 ingest 证明事实批次一致性；需要源检查点／隔离／队列同事务时使用 SLD-13 AtomicIngestor。确认与恢复见对应开发页，SLD-14/15/23 和生产清理资格仍未完成。
 
 `replay_store.py` 仅回放冻结合成样本，显式报告目录保留 `facts.sqlite`、22 个原始输入与 `replay.json`；重复/乱序写入和重开后的事实数固定为 19。未指定目录时使用临时库，成功后清理，不作为生产采集服务。

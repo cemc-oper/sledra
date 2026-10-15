@@ -41,7 +41,7 @@ with tracker.open("spool/example.open.jsonl") as source:
         # tracker.remember(proposed)
 ```
 
-`checkpoint(offset)` 默认提出完整行边界的位置；SLD-12 可对已隔离的 immutable sealed 残尾显式提出 EOF 位置，不能后退、越过扫描尺寸或在冲突源上推进。`remember()` 只是安装调用方状态，不代表提交；扫描自身不会推进 committed_offset。SLD-11 已实现独立事实去重与批次事务，SLD-12 已提供持久隔离；检查点与事实／隔离的同事务和 ack 由 SLD-13 实现。
+`checkpoint(offset)` 默认提出完整行边界的位置；SLD-12 可对已隔离的 immutable sealed 残尾显式提出 EOF 位置，不能后退、越过扫描尺寸或在冲突源上推进。`remember()` 只是安装调用方状态，不代表提交；扫描自身不会推进 committed_offset。SLD-11 已实现独立事实去重与批次事务，SLD-12 已提供持久隔离；SLD-13 的 [AtomicIngestor](ingest-recovery.md)已实现检查点与事实／隔离／队列同事务，并由 RecoveryStore 提供原始归档后的确认与备份恢复。
 
 ## Legacy 完整性限制
 

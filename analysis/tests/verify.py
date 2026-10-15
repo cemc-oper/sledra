@@ -38,7 +38,9 @@ def main() -> int:
     parser.add_argument(
         "--report-dir", type=Path, help="new private report directory; never overwrite"
     )
-    parser.add_argument("--task", choices=("SLD-10", "SLD-11", "SLD-12", "all"), default="all")
+    parser.add_argument(
+        "--task", choices=("SLD-10", "SLD-11", "SLD-12", "SLD-13", "all"), default="all"
+    )
     args = parser.parse_args()
     if args.report_dir is not None:
         args.report_dir.mkdir(parents=True, exist_ok=False, mode=0o700)
@@ -49,6 +51,7 @@ def main() -> int:
         "SLD-10": "test_source.py",
         "SLD-11": "test_store.py",
         "SLD-12": "test_reader.py",
+        "SLD-13": "test_transaction.py",
         "all": "test_*.py",
     }[args.task]
     suite = unittest.defaultTestLoader.discover(str(Path(__file__).parent), pattern=pattern)
@@ -64,7 +67,8 @@ def main() -> int:
             "SLD-10": ["V11"],
             "SLD-11": ["V09"],
             "SLD-12": ["V10", "V16"],
-            "all": ["V11", "V09", "V10", "V16"],
+            "SLD-13": ["V12", "V21"],
+            "all": ["V11", "V09", "V10", "V16", "V12", "V21"],
         }[args.task],
         "analysis_version": "0.1.0.dev0",
         "protocol_version": "1.0.0",
@@ -83,6 +87,9 @@ def main() -> int:
             for path in sources
         },
         "memory_observations": getattr(sys.modules.get("test_reader"), "MEMORY_OBSERVATIONS", []),
+        "crash_observations": getattr(
+            sys.modules.get("test_transaction"), "CRASH_OBSERVATIONS", []
+        ),
         "embedded_contracts": {
             path.name: hashlib.sha256(path.read_bytes()).hexdigest()
             for path in (ROOT / "analysis/src/sledra_analysis/resources/contract").glob("*.json")
@@ -98,7 +105,9 @@ def main() -> int:
         "unverified": [
             "real shared/HPC filesystem",
             "real inode allocator reuse (hint simulated)",
-            "durable ingest transaction and acknowledgement (SLD-13)",
+            "hardware power loss and target shared-filesystem durability",
+            "production retention policy, deployment and cross-node cleanup",
+            "A6/A7 qualification and full M2 closure",
             "legacy arbitrary equal-length rewrite detection (unprovable)",
         ],
     }

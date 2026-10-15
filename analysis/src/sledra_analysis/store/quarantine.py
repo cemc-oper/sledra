@@ -130,7 +130,7 @@ class QuarantineMixin:
             raise QuarantineError("semantic support must be explicit")
         _metadata("known" if supported else "unsupported_semantics", validator_version)
         event, canonical, digest, raw_hash = self._prepare(record)
-        with self.transaction():
+        with self._write_scope():
             self._put(record, event, canonical, digest, raw_hash)
             self._mark_validation(record, digest, validator_version, supported)
 
@@ -176,7 +176,7 @@ class QuarantineMixin:
             raise QuarantineError("isolation stream exceeds declared size")
         raw_hash = digest.hexdigest()
         connection = self._db()
-        with self.transaction():
+        with self._write_scope():
             found = connection.execute(
                 "SELECT blob_id, byte_size FROM quarantine_blobs WHERE raw_hash = ?", (raw_hash,)
             ).fetchone()
@@ -323,7 +323,7 @@ class QuarantineMixin:
             except RecordError as exc:
                 status, reason = "retained", exc.code
         _metadata(reason, validator.version)
-        with self.transaction():
+        with self._write_scope():
             event_id = digest = None
             if prepared is not None:
                 event, canonical, digest, raw_hash = prepared

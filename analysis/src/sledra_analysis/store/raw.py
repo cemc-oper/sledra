@@ -26,9 +26,10 @@ from sledra_analysis.store.canonical import (
     canonical_bytes,
     parse_json,
 )
+from sledra_analysis.store.ingestion import INGESTION_SCHEMA, IngestionMixin
 from sledra_analysis.store.quarantine import QUARANTINE_SCHEMA, QuarantineMixin
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 APPLICATION_ID = int.from_bytes(b"SLDA", "big")
 DEFAULT_MAX_RECORD_BYTES = 1024 * 1024
 DEFAULT_MAX_BATCH_RECORDS = 1024
@@ -225,7 +226,7 @@ def _event(value: object, pointer: str) -> dict:
     return value
 
 
-class RawStore(QuarantineMixin):
+class RawStore(IngestionMixin, QuarantineMixin):
     """Own one disk database and its advisory writer lock until close()."""
 
     def __init__(
@@ -263,6 +264,7 @@ class RawStore(QuarantineMixin):
         self._lock_fd = None
         self._connection = None
         self._active = False
+        self._joining_ingest = False
         self._owner_pid = os.getpid()
         try:
             # Lock the database inode, not a pathname sidecar: hard-link aliases
@@ -291,9 +293,9 @@ class RawStore(QuarantineMixin):
             "SELECT name FROM sqlite_master WHERE type = 'table'"
         ).fetchall()
         fresh = identity == 0 and version == 0 and not tables
-        migration = identity == APPLICATION_ID and version == 1
+        migration = identity == APPLICATION_ID and version in (1, 2)
         if migration and not upgrade:
-            raise StoreError("schema 1 requires explicit upgrade=True")
+            raise StoreError(f"schema {version} requires explicit upgrade=True")
         if (
             not fresh
             and not migration
@@ -304,7 +306,9 @@ class RawStore(QuarantineMixin):
             # executescript owns this explicit DDL transaction. A failed creation
             # leaves no partial schema to mistake for a usable store on restart.
             try:
-                connection.executescript("BEGIN IMMEDIATE;\n" + SCHEMA + QUARANTINE_SCHEMA)
+                connection.executescript(
+                    "BEGIN IMMEDIATE;\n" + SCHEMA + QUARANTINE_SCHEMA + INGESTION_SCHEMA
+                )
                 connection.execute("INSERT INTO store_metadata VALUES(?)", (CANONICAL_VERSION,))
                 connection.execute(f"PRAGMA application_id = {APPLICATION_ID}")
                 connection.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
@@ -319,7 +323,11 @@ class RawStore(QuarantineMixin):
             raise StoreError("unsupported canonical encoding version")
         if migration:
             try:
-                connection.executescript("BEGIN IMMEDIATE;\n" + QUARANTINE_SCHEMA)
+                connection.executescript(
+                    "BEGIN IMMEDIATE;\n"
+                    + (QUARANTINE_SCHEMA if version == 1 else "")
+                    + INGESTION_SCHEMA
+                )
                 connection.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
                 connection.execute("COMMIT")
             except BaseException:
@@ -427,7 +435,7 @@ class RawStore(QuarantineMixin):
             prepared.append((record, self._prepare(record)))
         new_events = new_versions = new_sources = 0
         identities = set()
-        with self.transaction():
+        with self._write_scope():
             for record, (event, canonical, digest, raw_hash) in prepared:
                 added = self._put(record, event, canonical, digest, raw_hash)
                 new_events += added[0]
