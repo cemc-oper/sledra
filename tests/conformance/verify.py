@@ -18,70 +18,14 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "analysis/tests"))
 
+from evidence import EvidenceResult, go_cases  # noqa: E402
 from flow import HANDOFF_HASH, save  # noqa: E402
 from matrix import evaluate  # noqa: E402
 from scripts.test_session import TestSession, add_arguments, source_identity  # noqa: E402
+from sledra_analysis.ingest.validation import VALIDATOR_VERSION  # noqa: E402
+from sledra_analysis.metrics.reducer import METRICS_VERSION  # noqa: E402
+from sledra_analysis.projections.reducer import REDUCER_VERSION, RULE_VERSION  # noqa: E402
 import test_core  # noqa: E402
-
-
-class EvidenceResult(unittest.TextTestResult):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.cases = {}
-
-    def startTest(self, test):
-        super().startTest(test)
-        self.cases[test.id()] = {"test": test.id(), "status": "running"}
-        root = getattr(test, "root", None)
-        if root:
-            self.cases[test.id()]["work"] = str(root)
-
-    def stopTest(self, test):
-        root = getattr(test, "root", None)
-        if root:
-            self.cases[test.id()]["work"] = str(root)
-        super().stopTest(test)
-
-    def addSuccess(self, test):
-        super().addSuccess(test)
-        self.cases[test.id()]["status"] = "pass"
-
-    def addFailure(self, test, err):
-        super().addFailure(test, err)
-        self.cases[test.id()].update(status="fail", detail=self._exc_info_to_string(err, test))
-
-    def addError(self, test, err):
-        super().addError(test, err)
-        self.cases.setdefault(test.id(), {"test": test.id()}).update(
-            status="error", detail=self._exc_info_to_string(err, test)
-        )
-
-    def addSkip(self, test, reason):
-        super().addSkip(test, reason)
-        self.cases[test.id()].update(status="skip", detail=reason)
-
-    def addSubTest(self, test, subtest, err):
-        super().addSubTest(test, subtest, err)
-        if err:
-            self.cases[test.id()].update(
-                status="fail", detail=self._exc_info_to_string(err, test), subtest=str(subtest)
-            )
-
-
-def go_cases(raw):
-    """Top-level and subtest identities remain separate; package failures also gate."""
-    cases = {}
-    package_failed = False
-    for line in raw.splitlines():
-        value = json.loads(line)
-        if value.get("Action") not in ("pass", "fail", "skip"):
-            continue
-        if "Test" in value:
-            identity = "go:" + value["Package"] + ":" + value["Test"]
-            cases[identity] = {"test": identity, "status": value["Action"]}
-        elif value["Action"] == "fail":
-            package_failed = True
-    return list(cases.values()), package_failed
 
 
 def main():
@@ -138,7 +82,7 @@ def main():
             ]
         )
         result = unittest.TextTestRunner(verbosity=2, resultclass=EvidenceResult).run(suite)
-        cases = list(result.cases.values())
+        cases = list(result.cases)
         go = session.run(
             ["go", "test", "-count=1", "-json", "./..."],
             cwd=ROOT / "recorder",
@@ -179,9 +123,10 @@ def main():
                 "raw_schema": 3,
                 "projection_schema": 1,
                 "timing_schema": 1,
-                "state_reducer": "sledra-state-reducer-1.0.0",
-                "state_rules": "sledra-state-rules-1.0.0",
-                "timing_rules": "sledra-timing-1.0.0",
+                "event_validator": VALIDATOR_VERSION,
+                "state_reducer": REDUCER_VERSION,
+                "state_rules": RULE_VERSION,
+                "timing_rules": METRICS_VERSION,
             },
             "tools": {
                 "python": platform.python_version(),

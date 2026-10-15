@@ -162,21 +162,6 @@ class TimingTests(unittest.TestCase):
         self.assertIsNone(row["duration_ns"])
         self.assertIn("wall_clock_conflict", row["flags"])
 
-    def test_unknown_timezone_and_excess_precision_unavailable(self):
-        for stamp in (
-            "2026-10-11T00:00:00",
-            "2026-10-11T00:00:00-00:00",
-            "2026-10-11T00:00:00.1234567891Z",
-            "2026-10-11T00:00:00+01:99",
-        ):
-            with self.subTest(stamp=stamp):
-                with self.assertRaises(ValueError):
-                    utc_ns(stamp)
-                self.assertEqual(
-                    wall_interval({"occurred_at": stamp}, {"occurred_at": AS_OF})["quality"],
-                    "unavailable",
-                )
-
     def test_unknown_native_timezone_remains_raw_and_unavailable(self):
         events = self.stages(start="2026-10-10T23:59:58-00:00", duration=77)
         self.ingest(events)
@@ -711,40 +696,6 @@ class TimingTests(unittest.TestCase):
         self.assertTrue(report.data["diagnostics"])
         self.assertFalse(any(r["duration_ns"] is not None for r in self.rows("stage")))
 
-    def test_permutation_duplicates_and_late_prefix_property(self):
-        events = self.process(code=2) + self.stages("a", duration=10) + self.stages("b")[:1]
-        facts = [
-            {"event": e, "hash": canonical_hash(e), "status": "known", "reason": None}
-            for e in events
-        ]
-        documents = [
-            self.bundle[k] for k in ("definition_manifest", "run_context", "attempt_context")
-        ]
-
-        def reduce(items):
-            dedup = list({event_ref(f): f for f in items}.values())
-            return reconstruct_timing(
-                dedup, documents, reconstruct(dedup, documents, []), report_as_of=AS_OF
-            )
-
-        expected = reduce(facts)
-        rng = random.Random(15)
-        for _ in range(60):
-            shuffled = facts + rng.sample(facts, 3)
-            rng.shuffle(shuffled)
-            reduce(shuffled[: rng.randrange(len(shuffled))])
-            self.assertEqual(reduce(shuffled), expected)
-        for order in itertools.permutations(facts[:3]):
-            self.assertEqual(reduce(list(order) + facts[3:]), expected)
-        PROPERTY_OBSERVATIONS.append(
-            {
-                "seed": 15,
-                "permutations": 60,
-                "boundary_permutations": 6,
-                "duplicates_and_late_prefix": True,
-            }
-        )
-
     def test_large_duration_mean_uses_exact_rational_strings(self):
         self.ingest(self.stages("a", duration=LIMIT) + self.stages("b", duration=LIMIT - 1))
         self.publish()
@@ -1102,6 +1053,67 @@ with RawStore(Path(sys.argv[1])) as store:
         )
         self.assertNotEqual(first.report_id, second.report_id)
         self.assertEqual(self.publish(), second)
+
+
+class TimingReducerTests(unittest.TestCase):
+    event = projections.ProjectionTests.event
+    register = projections.ProjectionTests.register
+    set_up_facts = projections.ProjectionTests.set_up_facts
+    boundary = TimingTests.boundary
+    process = TimingTests.process
+    stages = TimingTests.stages
+
+    def setUp(self):
+        self.set_up_facts()
+
+    def test_unknown_timezone_and_excess_precision_unavailable(self):
+        for stamp in (
+            "2026-10-11T00:00:00",
+            "2026-10-11T00:00:00-00:00",
+            "2026-10-11T00:00:00.1234567891Z",
+            "2026-10-11T00:00:00+01:99",
+        ):
+            with self.subTest(stamp=stamp):
+                with self.assertRaises(ValueError):
+                    utc_ns(stamp)
+                self.assertEqual(
+                    wall_interval({"occurred_at": stamp}, {"occurred_at": AS_OF})["quality"],
+                    "unavailable",
+                )
+
+    def test_permutation_duplicates_and_late_prefix_property(self):
+        events = self.process(code=2) + self.stages("a", duration=10) + self.stages("b")[:1]
+        facts = [
+            {"event": e, "hash": canonical_hash(e), "status": "known", "reason": None}
+            for e in events
+        ]
+        documents = [
+            self.bundle[k] for k in ("definition_manifest", "run_context", "attempt_context")
+        ]
+
+        def reduce(items):
+            dedup = list({event_ref(f): f for f in items}.values())
+            return reconstruct_timing(
+                dedup, documents, reconstruct(dedup, documents, []), report_as_of=AS_OF
+            )
+
+        expected = reduce(facts)
+        rng = random.Random(15)
+        for _ in range(60):
+            shuffled = facts + rng.sample(facts, 3)
+            rng.shuffle(shuffled)
+            reduce(shuffled[: rng.randrange(len(shuffled))])
+            self.assertEqual(reduce(shuffled), expected)
+        for order in itertools.permutations(facts[:3]):
+            self.assertEqual(reduce(list(order) + facts[3:]), expected)
+        PROPERTY_OBSERVATIONS.append(
+            {
+                "seed": 15,
+                "permutations": 60,
+                "boundary_permutations": 6,
+                "duplicates_and_late_prefix": True,
+            }
+        )
 
 
 if __name__ == "__main__":

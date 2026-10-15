@@ -30,6 +30,7 @@ from sledra_analysis.projections.documents import (
     length_digest,
 )
 from sledra_analysis.projections.engine import ProjectionEngine, ProjectionError
+from sledra_analysis.projections.reducer import event_ref, reconstruct
 from sledra_analysis.store.canonical import RecordError, canonical_bytes, canonical_hash
 from sledra_analysis.store.raw import RawStore
 from sledra_analysis.store.recovery import RecoveryStore
@@ -57,17 +58,20 @@ class ProjectionTests(unittest.TestCase):
         self.store = RawStore(self.root / "facts.sqlite")
         self.addCleanup(self.store.close)
         self.engine = ProjectionEngine(self.store)
-        self.bundle = fixture("valid-bundle.json")
-        self.context = self.bundle["attempt_context"]
-        self.run = self.bundle["run_context"]
-        self.catalog = json.loads((ROOT / "spec/1.0.0/event-types.json").read_bytes())
-        self.serial = 0
+        ProjectionTests.set_up_facts(self)
         self.engine.import_documents(
             [
                 docrecord(self.bundle[k])
                 for k in ("definition_manifest", "run_context", "attempt_context")
             ]
         )
+
+    def set_up_facts(self):
+        self.bundle = fixture("valid-bundle.json")
+        self.context = self.bundle["attempt_context"]
+        self.run = self.bundle["run_context"]
+        self.catalog = json.loads((ROOT / "spec/1.0.0/event-types.json").read_bytes())
+        self.serial = 0
 
     def event(self, name, payload, *, context=None, assoc=None, **updates):
         context = context or self.context
@@ -742,60 +746,23 @@ class ProjectionTests(unittest.TestCase):
         self.assertNotEqual(first.revision_id, second.revision_id)
         self.assertNotIn("pending_source_bytes", self.run_projection()["observability"]["flags"])
 
-    def test_seeded_permutations_duplicates_and_late_prefixes_have_identical_final_revision(self):
+    def test_representative_storage_replays_converge_after_late_prefix(self):
         events = self.process() + [self.finish([self.context["attempt_id"]])]
         docs = [self.bundle[k] for k in ("definition_manifest", "run_context", "attempt_context")]
-        rng = random.Random(14)
         baseline = None
-        for index in range(40):
-            with RawStore(self.root / f"perm-{index}.sqlite") as store:
+        for index, order in enumerate((events, list(reversed(events)), events[2:] + events[:2])):
+            with RawStore(self.root / f"replay-{index}.sqlite") as store:
                 engine = ProjectionEngine(store)
-                order = list(events) + rng.choices(events, k=3)
-                rng.shuffle(order)
-                shuffled = docs[:]
-                rng.shuffle(shuffled)
-                engine.import_documents([docrecord(d) for d in shuffled])
-                store.ingest([record(e, locator=e["event_id"]) for e in order[:2]])
+                engine.import_documents([docrecord(doc) for doc in docs])
+                arrivals = list(order) + order[:2]
+                store.ingest([record(event, locator=event["event_id"]) for event in arrivals[:2]])
                 engine.rebuild(published_at=COLLECTED)
-                store.ingest([record(e, locator=e["event_id"]) for e in order[2:]])
+                store.ingest([record(event, locator=event["event_id"]) for event in arrivals[2:]])
                 result = engine.rebuild(published_at=LATER)
                 current = (result.revision_id, result.data)
                 if baseline is None:
                     baseline = current
                 self.assertEqual(current, baseline)
-        PROPERTY_OBSERVATIONS.append(
-            {
-                "property": "permutation_duplicate_late_prefix_invariance",
-                "seed": 14,
-                "trials": 40,
-                "pass": True,
-                "revision_id": baseline[0],
-            }
-        )
-
-    def test_exhaustive_start_end_registration_order_has_identical_state(self):
-        events = self.process()
-        baseline = None
-        for index, order in enumerate(itertools.permutations(events)):
-            with RawStore(self.root / f"exhaustive-{index}.sqlite") as store:
-                engine = ProjectionEngine(store)
-                engine.import_documents(
-                    [
-                        docrecord(self.bundle[k])
-                        for k in ("definition_manifest", "run_context", "attempt_context")
-                    ]
-                )
-                for e in order:
-                    store.ingest([record(e, locator=e["event_id"])])
-                    engine.rebuild(published_at=LATER)
-                current = engine.revision()
-                if baseline is None:
-                    baseline = current
-                self.assertEqual(current.revision_id, baseline.revision_id)
-                self.assertEqual(current.data, baseline.data)
-        PROPERTY_OBSERVATIONS.append(
-            {"property": "all_boundary_permutations", "trials": 6, "pass": True}
-        )
 
     def test_process_sigkill_before_and_after_projection_commit_recovers_cursor(self):
         self.ingest(self.process())
@@ -1004,6 +971,62 @@ with RawStore(Path(sys.argv[1])) as store:
                 f"UPDATE {table} SET canonical_bytes=? WHERE rowid=?", (row[1], row[0])
             )
         self.assertEqual(self.rebuild(), old)
+
+
+class ProjectionReducerTests(unittest.TestCase):
+    event = ProjectionTests.event
+    register = ProjectionTests.register
+    process = ProjectionTests.process
+    finish = ProjectionTests.finish
+    set_up_facts = ProjectionTests.set_up_facts
+
+    def setUp(self):
+        self.set_up_facts()
+
+    def test_seeded_permutations_duplicates_and_late_prefixes_have_identical_final_revision(self):
+        events = self.process() + [self.finish([self.context["attempt_id"]])]
+        docs = [self.bundle[k] for k in ("definition_manifest", "run_context", "attempt_context")]
+        facts = [
+            {"event": event, "hash": canonical_hash(event), "status": "known", "reason": None}
+            for event in events
+        ]
+
+        def reduce(order, documents):
+            unique = list({event_ref(fact): fact for fact in order}.values())
+            return reconstruct(unique, documents, [])
+
+        rng = random.Random(14)
+        baseline = reduce(facts, docs)
+        for _ in range(40):
+            order = list(facts) + rng.choices(facts, k=3)
+            rng.shuffle(order)
+            shuffled = docs[:]
+            rng.shuffle(shuffled)
+            reduce(order[:2], shuffled)
+            self.assertEqual(reduce(order, shuffled), baseline)
+        PROPERTY_OBSERVATIONS.append(
+            {
+                "property": "permutation_duplicate_late_prefix_invariance",
+                "seed": 14,
+                "trials": 40,
+                "pass": True,
+                "layer": "reducer",
+            }
+        )
+
+    def test_exhaustive_start_end_registration_order_has_identical_state(self):
+        events = self.process()
+        docs = [self.bundle[k] for k in ("definition_manifest", "run_context", "attempt_context")]
+        facts = [
+            {"event": event, "hash": canonical_hash(event), "status": "known", "reason": None}
+            for event in events
+        ]
+        baseline = reconstruct(facts, docs, [])
+        for order in itertools.permutations(facts):
+            self.assertEqual(reconstruct(list(order), docs, []), baseline)
+        PROPERTY_OBSERVATIONS.append(
+            {"property": "all_boundary_permutations", "trials": 6, "pass": True, "layer": "reducer"}
+        )
 
 
 if __name__ == "__main__":
