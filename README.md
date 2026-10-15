@@ -2,13 +2,13 @@
 
 Sledra 为工作流保存可追溯的运行事实。当前提供独立 Go 记录器、Bash 生命周期钩子、版本化 JSON 契约、合成示例和 Linux 本地试用包。
 
-M1 独立记录、M1.1 工程化与 M1.2 构建及目录整理的既定本地范围已通过验收，当前工程入口见[工程交接](docs/source/development/engineering-handoff.md)。M2 已交付 SLD-10 文件身份与世代模型，SLD-11 原始事实存储、去重和冲突查询，SLD-12 有界读取、隔离和重处理，以及 SLD-13 检查点事务、持久队列、归档确认与备份恢复，以及 SLD-14 身份关联、多维状态与版本化投影，见[分析组件](analysis/README.md)。时间统计、产品规则聚合、业务报告及透明 `sledra exec` supervisor 尚未实现。
+M1 独立记录、M1.1 工程化与 M1.2 构建及目录整理的既定本地范围已通过验收，当前工程入口见[工程交接](docs/source/development/engineering-handoff.md)。M2 已交付 SLD-10 文件身份与世代模型，SLD-11 原始事实存储、去重和冲突查询，SLD-12 有界读取、隔离和重处理，以及 SLD-13 检查点事务、持久队列、归档确认与备份恢复，SLD-14 身份关联、多维状态与版本化投影，以及 SLD-15 时间分解与不完整样本统计，见[分析组件](analysis/README.md)。产品规则聚合、业务报告及透明 `sledra exec` supervisor 尚未实现。
 
 ## 项目结构
 
 | 目录 | 用途 |
 |---|---|
-| [analysis](analysis/README.md) | Python 文件身份、世代和 SQLite 原始事实／冲突存储、有界读取与隔离（SLD-10～12） |
+| [analysis](analysis/README.md) | Python 原始事实接入／恢复、状态投影和时间统计（SLD-10～15） |
 | [recorder](recorder/context/README.md) | Go 记录器：Registry、context、事件、spool 和隔离保留夹具 |
 | [integrations/bash](integrations/bash/README.md) | 由明确的生命周期 owner 调用的 Bash API |
 | [spec](spec/README.md) | 1.0.0 契约草案、生成脚本和合成正反例 |

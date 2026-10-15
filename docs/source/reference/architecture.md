@@ -1,6 +1,6 @@
 # 记录架构
 
-Sledra 采用一个产品、一个仓库、多个组件的结构：Go 实现记录，Bash 将显式钩子接入已有 owner，JSON 契约定义身份和事件。Python 除开发、文档和测试工具外，已通过独立 `analysis/` 包提供 M2 SLD-10 的[文件身份与世代](../development/source-identity.md)及 SLD-11 的[原始事实、去重与冲突存储](../development/raw-facts.md)与 SLD-12 的[有界读取／隔离](../development/bounded-ingest.md)与 SLD-13 的[接入事务、归档确认和恢复](../development/ingest-recovery.md)及 SLD-14 的[身份关联与状态重建](../development/state-projections.md)；时间统计与产品规则聚合仍待后续任务。
+Sledra 采用一个产品、一个仓库、多个组件的结构：Go 实现记录，Bash 将显式钩子接入已有 owner，JSON 契约定义身份和事件。Python 除开发、文档和测试工具外，已通过独立 `analysis/` 包提供 M2 SLD-10 的[文件身份与世代](../development/source-identity.md)及 SLD-11 的[原始事实、去重与冲突存储](../development/raw-facts.md)与 SLD-12 的[有界读取／隔离](../development/bounded-ingest.md)与 SLD-13 的[接入事务、归档确认和恢复](../development/ingest-recovery.md)及 SLD-14 的[身份关联与状态重建](../development/state-projections.md)及 SLD-15 的[时间分解与不完整样本统计](../development/timing-metrics.md)；产品规则聚合仍待后续任务。
 
 生命周期 owner 使用显式 launch token 创建 Run，再用 execution token 为任务实例创建 Attempt。[Registry](https://github.com/cemc-oper/sledra/blob/main/recorder/internal/registry/README.md)原子发布不可变权威记录及注册 outbox。相同请求重复提交复用身份，同 token 异内容为冲突；新的业务尝试使用新 token，可明确关联重试父级。
 

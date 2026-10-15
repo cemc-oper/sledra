@@ -18,4 +18,5 @@ raw-facts
 bounded-ingest
 ingest-recovery
 state-projections
+timing-metrics
 ```

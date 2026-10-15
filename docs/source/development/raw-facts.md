@@ -68,6 +68,6 @@ PYTHONPATH=analysis/src python3 analysis/tests/replay_store.py --report-dir /tmp
 
 24 项 V09 覆盖真实 SQLite 的 19 条冻结事实、重复/排列、来源定位、重开、payload/recorded_at/扩展冲突、golden 编码、数据库约束、单写者、限额、写失败和读锁导致的提交失败。组件入口同时回归 20 项 SLD-10 V11 和 28 项 SLD-12 V10/V16。显式报告必须使用新私有目录；普通测试只打印结果，不改冻结输入。
 
-本页的独立 ingest 证明事实批次一致性；需要源检查点／隔离／队列同事务时使用 SLD-13 AtomicIngestor。确认与恢复见对应开发页，SLD-14 已提供[版本化状态重建](state-projections.md)，SLD-15/23 和生产清理资格仍未完成。
+本页的独立 ingest 证明事实批次一致性；需要源检查点／隔离／队列同事务时使用 SLD-13 AtomicIngestor。确认与恢复见对应开发页，SLD-14 已提供[版本化状态重建](state-projections.md)，SLD-15 已提供[时间统计](timing-metrics.md)，SLD-23 和生产清理资格仍未完成。
 
 `replay_store.py` 仅回放冻结合成样本，显式报告目录保留 `facts.sqlite`、22 个原始输入与 `replay.json`；重复/乱序写入和重开后的事实数固定为 19。未指定目录时使用临时库，成功后清理，不作为生产采集服务。
