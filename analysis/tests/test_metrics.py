@@ -14,13 +14,13 @@ import unittest
 from unittest.mock import patch
 
 import test_projections as projections
-from test_store import LATER
+from test_store import LATER, record
 from test_source import segment
 
 from sledra_analysis.ingest.transaction import AtomicIngestor
 from sledra_analysis.metrics.clock import LIMIT, utc_ns, wall_interval
 from sledra_analysis.metrics.engine import MetricsEngine
-from sledra_analysis.metrics.reducer import reconstruct_timing
+from sledra_analysis.metrics.reducer import pair, reconstruct_timing, summarize
 from sledra_analysis.projections.reducer import event_ref, reconstruct
 from sledra_analysis.projections.engine import ProjectionError
 from sledra_analysis.snapshot import read_inputs
@@ -112,8 +112,9 @@ class TimingTests(unittest.TestCase):
         )
         self.publish()
         row = self.rows("process_execution")[0]
-        # End is 1ns after as_of, so retained but excluded from this report's means.
-        self.assertIsNone(row["duration_ns"])
+        # End is 1ns after as_of, so its duration is displayed but excluded from means.
+        self.assertEqual(row["duration_ns"], 2)
+        self.assertFalse(row["statistics_eligible"])
         self.assertIn("after_report_as_of", row["flags"])
         report = self.metrics.publish(report_as_of="2026-10-11T00:00:01Z", published_at=LATER)
         self.assertEqual(self.rows("process_execution", report)[0]["duration_ns"], 2)
@@ -177,11 +178,16 @@ class TimingTests(unittest.TestCase):
                 )
 
     def test_unknown_native_timezone_remains_raw_and_unavailable(self):
-        events = self.stages(start="2026-10-10T23:59:58-00:00")
+        events = self.stages(start="2026-10-10T23:59:58-00:00", duration=77)
         self.ingest(events)
         report = self.publish()
-        self.assertEqual(self.rows("stage")[0]["clock"]["quality"], "unavailable")
-        self.assertIsNone(self.rows("stage")[0]["duration_ns"])
+        row = self.rows("stage")[0]
+        self.assertEqual(row["clock"]["quality"], "unavailable")
+        self.assertEqual(row["duration_ns"], 77)
+        self.assertIn("endpoint_time_unavailable", row["flags"])
+        self.assertFalse(row["statistics_eligible"])
+        self.assertEqual(self.stats("stage")[0]["statistics"]["n"], 0)
+        self.assertEqual(self.stats("stage")[0]["statistics"]["excluded"], 1)
         self.assertEqual(len(report.data["diagnostics"]), 0)
 
     def mono(self, events, delta=123):
@@ -241,6 +247,62 @@ class TimingTests(unittest.TestCase):
         self.assertEqual(by_key["declared"]["duration_basis"], "producer_duration")
         self.assertEqual(by_key["conflict"]["pairing"], "conflict")
 
+    def test_duration_evidence_and_cutoff_qualification_are_separate(self):
+        cases = (
+            ("declared_before", "declared", "2026-10-10T23:59:59Z", True),
+            ("declared_equal", "declared", AS_OF, True),
+            ("declared_after", "declared", "2026-10-11T00:00:01Z", False),
+            ("declared_unknown_start", "declared", AS_OF, False),
+            ("declared_unknown_end", "declared", "2026-10-11T00:00:00-00:00", False),
+            ("monotonic_unknown_end", "monotonic", "2026-10-11T00:00:00-00:00", False),
+            ("wall_equal", "wall", AS_OF, True),
+        )
+        rows = []
+        for label, basis, end_at, eligible in cases:
+            with self.subTest(label=label):
+                declared = {
+                    "declared_before": 1_000_000_000,
+                    "declared_equal": 2_000_000_000,
+                    "declared_after": 3_000_000_000,
+                }.get(label, 7)
+                events = self.stages(
+                    label, end=end_at, duration=declared if basis == "declared" else None
+                )
+                if label == "declared_equal":
+                    events[1]["payload"]["result"] = "failure"
+                if label == "declared_unknown_start":
+                    events[0]["occurred_at"] = None
+                    events[0]["time_quality"] = {"basis": "unknown", "reason": "missing"}
+                if basis == "monotonic":
+                    self.mono(events)
+                row = pair(
+                    "stage",
+                    [self.run["run_id"], self.context["attempt_id"], label],
+                    events[:1],
+                    events[1:],
+                    report_as_of=AS_OF,
+                    refs=[],
+                )
+                row["stratum"] = {"metric": "stage"}
+                rows.append(row)
+                self.assertEqual(row["pairing"], "paired")
+                self.assertIsNotNone(row["duration_ns"])
+                self.assertEqual(row["statistics_eligible"], eligible)
+                if not eligible:
+                    self.assertTrue(
+                        set(row["flags"]) & {"after_report_as_of", "endpoint_time_unavailable"}
+                    )
+        stat = summarize(rows)[0]
+        self.assertEqual(stat["total"], len(cases))
+        self.assertEqual(stat["statistics"]["n"], 3)
+        self.assertEqual(stat["statistics"]["excluded"], 4)
+        self.assertEqual(stat["statistics"]["failure_n"], 1)
+        self.assertEqual(stat["statistics"]["p95_ns"], 2_000_000_000)
+        self.assertEqual(
+            stat["statistics"]["duration_basis_counts"],
+            {"producer_duration": 2, "utc_declared_bounds": 1},
+        )
+
     def test_end_only_never_manufactures_duration_or_start(self):
         self.ingest(self.stages(duration=100)[1:])
         self.publish()
@@ -270,6 +332,42 @@ class TimingTests(unittest.TestCase):
         stat = self.stats("process_execution")[0]
         self.assertEqual((stat["total"], stat["unavailable"], stat["statistics"]["n"]), (1, 1, 0))
 
+    def test_raw_invalid_association_keeps_bytes_and_other_timing_samples(self):
+        valid = self.stages("valid", duration=10)
+        invalid = self.boundary(
+            "stage.started", {"stage_key": "forecast", "interval_id": "invalid"}, assoc={}
+        )
+        original = canonical_bytes(invalid) + b"\n"
+        self.store.ingest([record(invalid, locator="invalid.jsonl", raw=original)])
+        self.ingest(valid)
+        state = self.engine.rebuild(published_at=LATER)
+        report = self.publish()
+        self.assertEqual(self.rows("stage", report)[0]["duration_ns"], 10)
+        self.assertTrue(
+            any(
+                d.get("fact") == event_ref({"event": invalid, "hash": canonical_hash(invalid)})
+                for d in report.data["diagnostics"]
+            )
+        )
+        self.assertEqual(self.store.sources(invalid["event_id"])[0].raw_bytes, original)
+        self.assertIsNotNone(state)
+
+    def test_atomic_ingestor_quarantines_invalid_association(self):
+        invalid = self.boundary(
+            "stage.started", {"stage_key": "forecast", "interval_id": "invalid"}, assoc={}
+        )
+        shared = self.root / "shared"
+        shared.mkdir()
+        raw = segment(canonical_bytes(invalid) + b"\n")
+        (shared / "invalid.sealed.jsonl").write_bytes(raw)
+        AtomicIngestor(self.store, shared, "root").scan("invalid.sealed.jsonl", collected_at=LATER)
+        report = self.publish()
+        self.assertEqual(len(self.store.quarantines()), 1)
+        self.assertEqual(self.stats("stage", report)[0]["statistics"]["n"], 0)
+        self.assertFalse(
+            any(invalid["event_id"] in str(row["because"]) for row in self.rows("stage", report))
+        )
+
     def test_mixed_failure_incomplete_and_censored_golden(self):
         events = (
             self.stages("success", duration=10)
@@ -286,6 +384,7 @@ class TimingTests(unittest.TestCase):
         )
         self.assertEqual(stat["outcome_counts"], {"failure": 1, "success": 2, "unknown": 1})
         self.assertEqual(stat["statistics"]["n"], 2)
+        self.assertEqual(stat["statistics"]["excluded"], 2)
         self.assertEqual(stat["statistics"]["failure_n"], 1)
         self.assertEqual(stat["statistics"]["mean_ns"], {"numerator": "20", "denominator": "1"})
         self.assertEqual(stat["statistics"]["median_ns"], {"numerator": "20", "denominator": "1"})

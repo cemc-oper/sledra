@@ -23,9 +23,9 @@ with RawStore(Path("/private/management/facts.sqlite")) as store:
 
 先通过 AtomicIngestor 接入事实，通过 ProjectionEngine.import_documents 接入 Definition 等父文档，参见[接入事务](ingest-recovery.md)与[状态投影](state-projections.md)。`cycle_window` 可省略；存在时按 Run context 的业务 cycle 选取半开区间，执行日期不参与选样。没有计划输入时只报告 `observed_runs`，不补造未启动周期。窗口内无法确定 cycle 的 Run 单列在 unlocated_cycle_run_ids 及诊断中。
 
-`report_as_of` 是显式 UTC 截止点，用于缺 end 样本的观测删失和端点筛选。快照保留发布时已知事实，包括截止点之后的端点；这些端点标 `after_report_as_of`，不进入完成耗时统计。它不是按历史接入时间倒查的数据库。`published_at` 单独记录发布时间。
+`report_as_of` 是显式 UTC 截止点，用于缺 end 样本的观测删失和端点筛选。快照保留发布时已知事实，包括截止点之后的端点；这些端点标 `after_report_as_of`，时长证据可展示但不进入完成耗时统计。`occurred_at` 无法定位到已知 UTC 时点（包括 `-00:00`、null）的端点标 `endpoint_time_unavailable`，即使有显式或单调时长也不能据此证明截止资格。它不是按历史接入时间倒查的数据库。`published_at` 单独记录发布时间。
 
-`TimingReport` 包含 report_id、input_hash、report_as_of、published_at、watermark 和 data。当前规则版本为 `sledra-timing-1.2.0`。data 包含 intervals、statistics、diagnostics、source_health、版本及范围说明。每个区间保留 because，指向原事件版本或父文档；外部 accounting 原始归一化输入保存在快照内。Registry 与段来源的当前健康进入内容地址；扫描预算等执行历史仍可在原 checkpoint diagnostics 中查询，不改变相同语义输入的报告 ID。
+`TimingReport` 包含 report_id、input_hash、report_as_of、published_at、watermark 和 data。当前规则版本为 `sledra-timing-1.3.0`。data 包含 intervals、statistics、diagnostics、source_health、版本及范围说明。每个区间保留 because，指向原事件版本或父文档；外部 accounting 原始归一化输入保存在快照内。Registry 与段来源的当前健康进入内容地址；扫描预算等执行历史仍可在原 checkpoint diagnostics 中查询，不改变相同语义输入的报告 ID。RawStore 可保存无效事实的原 bytes；时间重建先识别其状态并记录诊断，再处理可关联的事实。AtomicIngestor 对同类非法输入执行隔离。
 
 ## 区间及身份
 
@@ -83,7 +83,7 @@ because 必须引用已接入、同 Run/Job 的 known 原始事件版本；Job �
 
 每个分层同时给 total、pairing_counts、outcome_counts、missing_start、missing_end、unavailable、right_censored、incomplete，以及时钟质量、耗时口径和诊断计数。start-only 的删失表示“截至此时没有观察到 end”，不证明进程仍在运行；已知 start 时间且不晚于截止时点才计删失。时钟界足够时另列截至 report_as_of 的 observed_lower_bound_ns，绝不混入完成耗时。
 
-均值、中位数和 p95 只对完整配对且存在 exact/显式 duration、端点不晚于截止时点的样本计算。成功、失败和 unknown 结果都在这个条件内；报告同时列 n 和 failure_n。p95 使用 nearest-rank；均值和中位数使用字符串 numerator/denominator 的精确有理数，避免累计纳秒溢出或浮点舍入。n=0 时统计量为 null。
+均值、中位数和 p95 只对完整配对、有 exact/显式 duration、且两个端点的已知 UTC 时间均不晚于截止时点的样本计算。每个区间的 `statistics_eligible` 单独表明此资格；`duration_ns` 只表明时长证据，不代替端点资格。成功、失败和 unknown 结果都在这个条件内；报告列 `n`、`failure_n` 和 `excluded`，满足 `total=n+excluded`。不合格原因可由 pairing、duration 缺失及 `after_report_as_of`/`endpoint_time_unavailable` flags 核对，`incomplete` 仍只计配对或时长缺失。p95 使用 nearest-rank；均值和中位数使用字符串 numerator/denominator 的精确有理数，避免累计纳秒溢出或浮点舍入。n=0 时统计量为 null。
 
 分层键保留指标、阶段或 selector、purpose、definition_ref、config_refs、platform_id、task_key、参数及 metrics 规则版本。accounting 另含 queue_basis、includes_hold、adapter_version，引擎另含 mapping 版本；不同口径不自动合并或排名。
 

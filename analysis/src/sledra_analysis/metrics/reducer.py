@@ -10,7 +10,7 @@ from sledra_analysis.process_pairing import process_pairing
 from sledra_analysis.projections.reducer import event_ref
 from sledra_analysis.store.canonical import canonical_bytes, canonical_hash
 
-METRICS_VERSION = "sledra-timing-1.2.0"
+METRICS_VERSION = "sledra-timing-1.3.0"
 
 
 def _unique(events):
@@ -59,6 +59,7 @@ def pair(metric, key, starts, ends, *, report_as_of, refs, flags=()):
         else "unavailable",
         "duration_ns": None,
         "duration_basis": None,
+        "statistics_eligible": False,
         "clock": None,
         "outcome": _outcome(ends[0]) if len(ends) == 1 else "unknown",
         "right_censored": False,
@@ -85,7 +86,7 @@ def pair(metric, key, starts, ends, *, report_as_of, refs, flags=()):
             if utc_ns(event.get("occurred_at")) > utc_ns(report_as_of):
                 row["flags"].append("after_report_as_of")
         except (ValueError, TypeError, OverflowError):
-            pass
+            row["flags"].append("endpoint_time_unavailable")
     if starts and not ends:
         try:
             row["right_censored"] = utc_ns(starts[0].get("occurred_at")) <= utc_ns(report_as_of)
@@ -131,11 +132,14 @@ def pair(metric, key, starts, ends, *, report_as_of, refs, flags=()):
             row["flags"].append("wall_clock_conflict")
         if error or "duration_evidence_conflict" in row["flags"]:
             row["pairing"] = "conflict"
-        if "after_report_as_of" in row["flags"]:
-            row["duration_ns"] = None
     # A measured end duration never manufactures a missing start endpoint.
     if ends and not starts and "duration_ns" in ends[0]["payload"]:
         row["unpaired_declared_duration_ns"] = ends[0]["payload"]["duration_ns"]
+    row["statistics_eligible"] = (
+        row["pairing"] == "paired"
+        and row["duration_ns"] is not None
+        and not set(row["flags"]) & {"after_report_as_of", "endpoint_time_unavailable"}
+    )
     row["flags"] = sorted(set(row["flags"]))
     return row
 
@@ -152,11 +156,7 @@ def summarize(rows):
         groups[canonical_bytes(row["stratum"])].append(row)
     result = []
     for samples in groups.values():
-        values = sorted(
-            r["duration_ns"]
-            for r in samples
-            if r["pairing"] == "paired" and r["duration_ns"] is not None
-        )
+        values = sorted(r["duration_ns"] for r in samples if r["statistics_eligible"])
         n = len(values)
         counts = Counter(r["pairing"] for r in samples)
         outcomes = Counter(r["outcome"] for r in samples)
@@ -184,13 +184,11 @@ def summarize(rows):
                     r["pairing"] != "paired" or r["duration_ns"] is None for r in samples
                 ),
                 "statistics": {
-                    "condition": "paired, exact_or_explicit_duration, endpoints_not_after_report_as_of; all outcomes",
+                    "condition": "paired, exact_or_explicit_duration, both_endpoints_known_and_not_after_report_as_of; all outcomes",
                     "n": n,
+                    "excluded": len(samples) - n,
                     "failure_n": sum(
-                        r["outcome"] == "failure"
-                        and r["duration_ns"] is not None
-                        and r["pairing"] == "paired"
-                        for r in samples
+                        r["outcome"] == "failure" and r["statistics_eligible"] for r in samples
                     ),
                     "mean_ns": _rational(Fraction(sum(values), n)) if n else None,
                     "median_ns": _rational(Fraction(values[(n - 1) // 2] + values[n // 2], 2))
@@ -201,9 +199,7 @@ def summarize(rows):
                     "duration_basis_counts": dict(
                         sorted(
                             Counter(
-                                r["duration_basis"]
-                                for r in samples
-                                if r["duration_ns"] is not None and r["pairing"] == "paired"
+                                r["duration_basis"] for r in samples if r["statistics_eligible"]
                             ).items()
                         )
                     ),
@@ -245,10 +241,10 @@ def reconstruct_timing(
 
     for f in facts:
         e, ref = f["event"], event_ref(f)
-        if e["association"]["run_id"] not in selected:
-            continue
         if f["status"] != "known" or ref in rejected:
             diagnostics.append({"fact": ref, "reason": f.get("reason") or "rejected_association"})
+            continue
+        if e["association"].get("run_id") not in selected:
             continue
         a, p, name = e["association"], e["payload"], e["event_type"]
         base = [a["run_id"], a.get("attempt_id")]
@@ -406,6 +402,7 @@ def reconstruct_timing(
                     flags=flags,
                 )
                 row["duration_ns"], row["duration_basis"] = None, None
+                row["statistics_eligible"] = False
                 row["transition_window"] = {
                     "after": row["start_at"],
                     "no_later_than": row["end_at"],
