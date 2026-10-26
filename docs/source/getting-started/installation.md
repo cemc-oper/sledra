@@ -52,7 +52,7 @@ install_dir="$HOME/.local/opt/sledra-dev-linux-amd64"
 
 ## 在其他目录运行
 
-合成示例需要 Bash >=5.2 和 dirname/cat/sleep。记录无需 Python；安装可以只读，工作目录必须可写：
+合成示例需要 Bash >=4.4 和 dirname/cat/sleep。记录无需 Python；安装可以只读，工作目录必须可写。Bash 4.4.18 的本地对照已通过，目标 HPC 仍须实测：
 
 ```bash
 work_dir=$(mktemp -d "${TMPDIR:-/tmp}/sledra-trial.XXXXXX")

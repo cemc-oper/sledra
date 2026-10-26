@@ -166,8 +166,8 @@ class TestSession:
             bash = self.run(["bash", "--version"])
             if bash.returncode or tuple(
                 int(x) for x in bash.stdout.split("version ")[1].split("(")[0].split(".")[:2]
-            ) < (5, 2):
-                raise ValueError("verification requires Bash >=5.2")
+            ) < (4, 4):
+                raise ValueError("verification requires Bash >=4.4")
             self.data["bash"] = bash.stdout.splitlines()[0]
             for tool in ("dirname", "cat", "sleep"):
                 if shutil.which(tool) is None:

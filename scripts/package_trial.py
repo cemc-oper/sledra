@@ -211,7 +211,7 @@ def main() -> None:
             "build": build_manifest,
             "elf": elf,
             "runtime": {
-                "recording": ["target binary", "Bash >=5.2"],
+                "recording": ["target binary", "Bash >=4.4"],
                 "synthetic_example": ["dirname", "cat", "sleep"],
                 "verification": ["Python >=3.12 standard library"],
                 "retention_tool": "not included; fixture-only, not production cleanup",

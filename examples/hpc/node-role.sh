@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
+if (( BASH_VERSINFO[0] < 4 || (BASH_VERSINFO[0] == 4 && BASH_VERSINFO[1] < 4) )); then
+    printf 'Sledra HPC worker requires Bash >=4.4; got %s\n' "$BASH_VERSION" >&2
+    exit 2
+fi
+printf 'Sledra HPC worker on %s: Bash %s\n' "$(hostname)" "$BASH_VERSION"
 # srun starts exactly one task on each of two compute nodes.
 : "${SLURM_PROCID:?run through the generated two-node srun job}"
 case "$SLURM_PROCID" in
