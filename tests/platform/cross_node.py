@@ -28,6 +28,41 @@ from scripts.package_tools import elf_info, host_arch  # noqa: E402
 ROLES = ("a", "b")
 
 
+def optional_digest(path: Path) -> str | None:
+    try:
+        return digest(path) if path.is_file() else None
+    except OSError:
+        return None
+
+
+def cross_node_identity(mode: str, a: dict, b: dict) -> dict:
+    if mode != "hpc" or a["node"] == b["node"]:
+        return {"status": "unverified", "reason": "distinct site nodes not confirmed"}
+    boot_a, boot_b = a.get("boot_id_sha256"), b.get("boot_id_sha256")
+    if boot_a and boot_b:
+        if boot_a != boot_b:
+            return {
+                "status": "pass",
+                "reason": "distinct host names and kernel boot identities; scoped to synthetic operations",
+                "identity_basis": "boot_id_sha256",
+            }
+        return {
+            "status": "unverified",
+            "reason": "host names differ but kernel boot identity is shared",
+        }
+    machine_a, machine_b = a.get("machine_id"), b.get("machine_id")
+    if machine_a and machine_b and machine_a != machine_b:
+        return {
+            "status": "pass",
+            "reason": "distinct host names and machine identities; scoped to synthetic operations",
+            "identity_basis": "machine_id",
+        }
+    return {
+        "status": "unverified",
+        "reason": "host names differ without distinct boot or machine identities",
+    }
+
+
 def publish(path: Path, value: object) -> None:
     temporary = path.with_name(f".{path.name}-{os.getpid()}.tmp")
     with temporary.open("x") as output:
@@ -125,7 +160,8 @@ def worker(run: Path, role: str) -> int:
         "reason": "preflight incomplete",
         "role": role,
         "node": platform.node(),
-        "machine_id": digest(Path("/etc/machine-id")) if Path("/etc/machine-id").exists() else None,
+        "machine_id": optional_digest(Path("/etc/machine-id")),
+        "boot_id_sha256": optional_digest(Path("/proc/sys/kernel/random/boot_id")),
         "architecture": platform.machine(),
         "python": platform.python_version(),
         "command": [sys.executable, *sys.argv],
@@ -362,17 +398,7 @@ def collect(run: Path, report: Path, timeout: float, *, announce: bool = True) -
             fixed_context=a["fixed_context"],
             work_retained=True,
         )
-        if (
-            cfg["mode"] == "hpc"
-            and a["node"] != b["node"]
-            and a["machine_id"] != b["machine_id"]
-            and a["machine_id"]
-            and b["machine_id"]
-        ):
-            data["real_cross_node"] = {
-                "status": "pass",
-                "reason": "two distinct host and machine identities; scoped to these synthetic operations",
-            }
+        data["real_cross_node"] = cross_node_identity(cfg["mode"], a, b)
     except (OSError, ValueError, KeyError, AssertionError, subprocess.SubprocessError) as exc:
         data["reason"] = str(exc)
     finally:
