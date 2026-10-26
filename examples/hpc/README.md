@@ -1,12 +1,12 @@
 # 站点测试模板
 
-site.example.json只是输入模板，复制到新的用户文件后补scheduler、partition、wckey、comment、Python、安装/test-home、共享work父根和report父根。account 可为 null，此时不生成 --account 指令。当前仅支持Slurm，其他scheduler需适配。路径必须已存在且两计算节点同位置可见。测试需Python>=3.12、Bash>=4.4及示例工具；显式bin不需Go。Bash 4.4 的 WSL 本地回归通过不代替真实计算节点验证。
+site.example.json只是输入模板，复制到新的用户文件后补scheduler、partition、wckey、comment、allocation_tasks_per_node、Python、安装/test-home、共享work父根和report父根。account 可为 null，此时不生成 --account 指令。当前仅支持Slurm，其他scheduler需适配。路径必须已存在且两计算节点同位置可见。测试需Python>=3.12、Bash>=4.4及示例工具；显式bin不需Go。Bash 4.4 的 WSL 本地回归通过不代替真实计算节点验证。
 
 ```bash
 python3 examples/hpc/site.py --config /absolute/path/to/site.json
 ```
 
-准备生成唯一report、共享测试子目录和job.sh，打印提交/收集命令，不自动提交。站点窗口内审查job后再执行打印的sbatch。每节点一个task运行双角色，有界barrier及timeout；完成后即使失败也收集，失联非零退出并保留树/已有结果。报告旁保存job ID、allocation/node、日志和archive摘要。
+准备生成唯一report、共享测试子目录和job.sh，打印提交/收集命令，不自动提交。站点窗口内审查job后再执行打印的sbatch。批作业按allocation_tasks_per_node申请每节点任务槽，验证步骤仍每节点启动一个角色；有界barrier及timeout；完成后即使失败也收集，失联非零退出并保留树/已有结果。报告旁保存job ID、allocation/node、日志和archive摘要。
 
 单节点可用probe、M1、Shell及可选benchmark，加--mode hpc --bin/--work-root/--report-dir/--keep-work，每个report须新建；按站点策略在计算节点执行。手动双角色流程见源码docs/source/guides/hpc.md，安装版位于share/sledra/docs/testing-hpc.md。
 

@@ -4,6 +4,7 @@
   "account": null,
   "wckey": "REPLACE_WITH_SITE_WCKEY",
   "comment": "REPLACE_WITH_SITE_COMMENT",
+  "allocation_tasks_per_node": "REPLACE_WITH_SITE_TASKS_PER_NODE",
   "python": "/usr/bin/python3",
   "test_home": "/shared/REPLACE/sledra/share/sledra",
   "binary": "/shared/REPLACE/sledra/bin/sledra",

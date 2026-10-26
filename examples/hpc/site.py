@@ -35,6 +35,9 @@ def main() -> int:
             raise ValueError(f"configure a concrete safe site {name}")
     if not re.fullmatch(r"\d{2}:\d{2}:\d{2}", cfg["time_limit"]):
         raise ValueError("time_limit must be HH:MM:SS")
+    allocation_tasks_per_node = cfg.get("allocation_tasks_per_node")
+    if type(allocation_tasks_per_node) is not int or allocation_tasks_per_node < 1:
+        raise ValueError("allocation_tasks_per_node must be a positive integer")
     for name in ("python", "test_home", "binary", "spec_dir", "work_root", "output_parent"):
         path = Path(cfg[name])
         if not path.is_absolute() or "\n" in str(path) or "\r" in str(path):
@@ -70,6 +73,7 @@ def main() -> int:
     prepared = json.loads((output / "prepare/summary.json").read_text())
     replacements = {
         "PARTITION": cfg["partition"],
+        "ALLOCATION_TASKS_PER_NODE": str(allocation_tasks_per_node),
         "WCKEY": cfg["wckey"],
         "COMMENT": cfg["comment"],
         "TIME_LIMIT": cfg["time_limit"],

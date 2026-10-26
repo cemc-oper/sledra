@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 #SBATCH --nodes=2
-#SBATCH --ntasks=2
-#SBATCH --ntasks-per-node=1
+#SBATCH --ntasks-per-node=@ALLOCATION_TASKS_PER_NODE@
 #SBATCH --partition=@PARTITION@
 @ACCOUNT_DIRECTIVE@
 #SBATCH --wckey=@WCKEY@
