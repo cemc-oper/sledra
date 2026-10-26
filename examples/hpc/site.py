@@ -23,8 +23,15 @@ def main() -> int:
         raise ValueError(
             "this template supports Slurm only; other schedulers require a site adapter"
         )
-    for name in ("partition", "account"):
-        if not re.fullmatch(r"[A-Za-z0-9_.-]+", cfg[name]) or "REPLACE" in cfg[name]:
+    for name in ("partition", "account", "wckey", "comment"):
+        value = cfg.get(name)
+        if name == "account" and value is None:
+            continue
+        if (
+            not isinstance(value, str)
+            or not re.fullmatch(r"[A-Za-z0-9_.-]+", value)
+            or "REPLACE" in value
+        ):
             raise ValueError(f"configure a concrete safe site {name}")
     if not re.fullmatch(r"\d{2}:\d{2}:\d{2}", cfg["time_limit"]):
         raise ValueError("time_limit must be HH:MM:SS")
@@ -63,7 +70,8 @@ def main() -> int:
     prepared = json.loads((output / "prepare/summary.json").read_text())
     replacements = {
         "PARTITION": cfg["partition"],
-        "ACCOUNT": cfg["account"],
+        "WCKEY": cfg["wckey"],
+        "COMMENT": cfg["comment"],
         "TIME_LIMIT": cfg["time_limit"],
         "OUTPUT": str(output / "slurm-%j.log"),
         "NODE_SCRIPT": str(Path(cfg["test_home"]) / "examples/hpc/node-role.sh"),
@@ -72,6 +80,8 @@ def main() -> int:
         "RUN_DIR": prepared["prepared_run"],
     }
     job = (HERE / "slurm.job.in").read_text()
+    account = cfg.get("account")
+    job = job.replace("@ACCOUNT_DIRECTIVE@", f"#SBATCH --account={account}" if account else "")
     for key, value in replacements.items():
         job = job.replace(f"@{key}@", shlex.quote(value))
     (output / "job.sh").write_text(job)

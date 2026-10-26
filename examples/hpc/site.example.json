@@ -1,7 +1,9 @@
 {
   "scheduler": "slurm",
   "partition": "REPLACE_WITH_SITE_PARTITION",
-  "account": "REPLACE_WITH_SITE_ACCOUNT",
+  "account": null,
+  "wckey": "REPLACE_WITH_SITE_WCKEY",
+  "comment": "REPLACE_WITH_SITE_COMMENT",
   "python": "/usr/bin/python3",
   "test_home": "/shared/REPLACE/sledra/share/sledra",
   "binary": "/shared/REPLACE/sledra/bin/sledra",

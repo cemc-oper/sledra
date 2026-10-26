@@ -1,6 +1,6 @@
 # 站点测试模板
 
-site.example.json只是输入模板，复制到新的用户文件后补scheduler、partition、account、Python、安装/test-home、共享work父根和report父根。当前仅支持Slurm，其他scheduler需适配。路径必须已存在且两计算节点同位置可见。测试需Python>=3.12、Bash>=4.4及示例工具；显式bin不需Go。Bash 4.4 的 WSL 本地回归通过不代替真实计算节点验证。
+site.example.json只是输入模板，复制到新的用户文件后补scheduler、partition、wckey、comment、Python、安装/test-home、共享work父根和report父根。account 可为 null，此时不生成 --account 指令。当前仅支持Slurm，其他scheduler需适配。路径必须已存在且两计算节点同位置可见。测试需Python>=3.12、Bash>=4.4及示例工具；显式bin不需Go。Bash 4.4 的 WSL 本地回归通过不代替真实计算节点验证。
 
 ```bash
 python3 examples/hpc/site.py --config /absolute/path/to/site.json

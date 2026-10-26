@@ -3,7 +3,9 @@
 #SBATCH --ntasks=2
 #SBATCH --ntasks-per-node=1
 #SBATCH --partition=@PARTITION@
-#SBATCH --account=@ACCOUNT@
+@ACCOUNT_DIRECTIVE@
+#SBATCH --wckey=@WCKEY@
+#SBATCH --comment=@COMMENT@
 #SBATCH --time=@TIME_LIMIT@
 #SBATCH --output=@OUTPUT@
 set -euo pipefail

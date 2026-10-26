@@ -56,4 +56,4 @@ python3 "$TEST_HOME/tests/platform/cross_node.py" collect --run-dir "$RUN_DIR" \
 
 角色只能独占领取一次，有界等待 readiness/registration/lock barrier，并发重复相同 Run/Attempt 请求，比较身份、校验同一绝对 context，写共享 spool。A 持锁，B 必须观察排斥并在释放后取得锁。收集检查两份回执、context 字节/路径、恰好两份 Registry 记录和过程事件；回执保存节点、mount、二进制、命令和样本。收集保留工作树，失联/失败非零退出并纳入已收到的结果。不同 node/machine ID 只为这些操作提供跨节点证据，完整 HPC 资格仍单列；仅 prepare 的执行状态为 unverified。
 
-站点模板位于源码 examples/hpc/ 或安装 share/sledra/examples/hpc/，分开准备、审查/提交与收集，scheduler/partition/account 由配置提供。当前仅 Slurm 渲染，准备工具不提交作业。实际测试保留 allocation/job/node 信息，在计算节点按站点窗口执行。本地开发未访问 HPC；03/25负责平台资格，32只交付工具和本地验证。
+站点模板位于源码 examples/hpc/ 或安装 share/sledra/examples/hpc/，分开准备、审查/提交与收集，scheduler/partition/wckey/comment 由配置提供；account 可为 null，此时不生成 --account。当前仅 Slurm 渲染，准备工具不提交作业。实际测试保留 allocation/job/node 信息，在计算节点按站点窗口执行。本地开发未访问 HPC；03/25负责平台资格，32只交付工具和本地验证。
