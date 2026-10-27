@@ -1,6 +1,6 @@
 # P0 收口：P1/P2 实现位置与依赖边界
 
-本文件固定后续源码位置、资源分发与验收入口，不新增任务清单。任务状态和 session 交接仍只在仓库外原 implementation-plan.md 维护。格式与接口分别沿用 [记录契约](README.md)、[Shell/CLI 接口](interfaces.md)，不得另建一套协议。下面标为“新增”的运行时代码**当前不存在**，本次不建立空壳模块或提前实现 P1/P2。
+本文件固定源码位置、资源分发与验收入口，不新增任务清单。任务状态和 session 交接仍只在仓库外原 implementation-plan.md 维护。格式与接口分别沿用 [记录契约](README.md)、[Shell/CLI 接口](interfaces.md)，不得另建协议。P1-01 已落实 recorder/execution 的 codec/root/writer/独立资源及测试；下表其余“新增”项仍是后续位置，不表示对应运行时已经实现。
 
 ## 共享检查与格式收口
 

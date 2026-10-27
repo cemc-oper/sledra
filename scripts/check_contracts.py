@@ -12,6 +12,17 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def check_execution_resource(root: Path) -> None:
+    """Check the independent Go resource without touching frozen 1.0 resources."""
+    canonical = root / "spec/execution-v2/contract.schema.json"
+    target = root / "recorder/execution/contract/contract.schema.json"
+    if not target.is_file() or target.read_bytes() != canonical.read_bytes():
+        raise ValueError(
+            "recorder/execution/contract/contract.schema.json: differs from canonical spec"
+        )
+    print("Execution 2.0.0 embedded Go resource matches canonical spec")
+
+
 def check_generated(root: Path) -> None:
     with tempfile.TemporaryDirectory(prefix="sledra-contract-check-") as tmp:
         copy = Path(tmp) / "spec"
@@ -68,6 +79,9 @@ def check_generated(root: Path) -> None:
         print(
             f"Generated contract/fixture bytes match: {checked} files; embedded event and context resources match"
         )
+        # Existing partial-tree regression fixtures contain only the legacy component.
+        if (root / "recorder/execution").is_dir():
+            check_execution_resource(root)
 
 
 if __name__ == "__main__":
