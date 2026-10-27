@@ -1,0 +1,624 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sledra:execution:2.0.0",
+  "title": "Sledra Execution 2.0.0 (P0)",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/root"
+    },
+    {
+      "$ref": "#/$defs/run"
+    },
+    {
+      "$ref": "#/$defs/event"
+    }
+  ],
+  "$defs": {
+    "uuid": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "namespace": {
+      "type": "object",
+      "properties": {
+        "system": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9_.-]{0,63}$"
+        },
+        "deployment": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9_.-]{0,63}$"
+        }
+      },
+      "required": [
+        "system",
+        "deployment"
+      ],
+      "additionalProperties": false
+    },
+    "scope": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,127}$"
+    },
+    "time": {
+      "type": "string",
+      "minLength": 20,
+      "maxLength": 35
+    },
+    "cycle_kind": {
+      "enum": [
+        "single",
+        "none",
+        "multiple"
+      ]
+    },
+    "json_value": {
+      "anyOf": [
+        {
+          "type": [
+            "string",
+            "number",
+            "boolean",
+            "null"
+          ]
+        },
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/json_value"
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/json_value"
+          }
+        }
+      ]
+    },
+    "parameters": {
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^[a-z][a-z0-9_]{0,63}$"
+      },
+      "additionalProperties": {
+        "type": [
+          "string",
+          "number",
+          "boolean",
+          "null"
+        ]
+      }
+    },
+    "engine": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "service": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "node": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1024
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "alias": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "service",
+        "node"
+      ],
+      "additionalProperties": false
+    },
+    "root": {
+      "type": "object",
+      "properties": {
+        "format_version": {
+          "const": "2.0.0"
+        },
+        "layout_version": {
+          "const": 2,
+          "type": "integer"
+        },
+        "namespace": {
+          "$ref": "#/$defs/namespace"
+        },
+        "partition_timezone": {
+          "type": "string",
+          "pattern": "^[+-][0-9]{2}:[0-9]{2}$"
+        }
+      },
+      "required": [
+        "format_version",
+        "layout_version",
+        "namespace",
+        "partition_timezone"
+      ],
+      "additionalProperties": false
+    },
+    "run": {
+      "type": "object",
+      "properties": {
+        "format_version": {
+          "const": "2.0.0"
+        },
+        "run_id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "namespace": {
+          "$ref": "#/$defs/namespace"
+        },
+        "scope": {
+          "$ref": "#/$defs/scope"
+        },
+        "created_at": {
+          "$ref": "#/$defs/time"
+        },
+        "cycle_kind": {
+          "$ref": "#/$defs/cycle_kind"
+        },
+        "cycle": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "creator_execution_id": {
+          "$ref": "#/$defs/uuid"
+        }
+      },
+      "required": [
+        "format_version",
+        "run_id",
+        "namespace",
+        "scope",
+        "created_at",
+        "cycle_kind",
+        "cycle",
+        "creator_execution_id"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "cycle_kind": {
+                "const": "single"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "cycle": {
+                "$ref": "#/$defs/time"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "cycle": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "started": {
+      "type": "object",
+      "properties": {
+        "task": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "engine": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/engine"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "task",
+        "engine"
+      ],
+      "additionalProperties": false
+    },
+    "context": {
+      "type": "object",
+      "properties": {
+        "task": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "parameters": {
+          "$ref": "#/$defs/parameters"
+        },
+        "scope": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/scope"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "cycle_kind": {
+          "$ref": "#/$defs/cycle_kind"
+        },
+        "cycle": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "run_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/uuid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "task",
+        "parameters",
+        "scope",
+        "cycle_kind",
+        "cycle",
+        "run_id"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "cycle_kind": {
+                "const": "single"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "cycle": {
+                "$ref": "#/$defs/time"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "cycle": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "run_id": {
+                "type": "string"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "scope": {
+                "$ref": "#/$defs/scope"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "ended": {
+      "type": "object",
+      "properties": {
+        "exit_code": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "signal": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 127
+        },
+        "duration_ns": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9223372036854775807
+        }
+      },
+      "required": [],
+      "additionalProperties": false,
+      "oneOf": [
+        {
+          "required": [
+            "exit_code"
+          ],
+          "not": {
+            "required": [
+              "signal"
+            ]
+          }
+        },
+        {
+          "required": [
+            "signal"
+          ],
+          "not": {
+            "required": [
+              "exit_code"
+            ]
+          }
+        }
+      ]
+    },
+    "stage_started": {
+      "type": "object",
+      "properties": {
+        "stage": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "stage_id": {
+          "$ref": "#/$defs/uuid"
+        }
+      },
+      "required": [
+        "stage",
+        "stage_id"
+      ],
+      "additionalProperties": false
+    },
+    "stage_ended": {
+      "type": "object",
+      "properties": {
+        "stage": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "stage_id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "exit_code": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "signal": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 127
+        },
+        "duration_ns": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9223372036854775807
+        }
+      },
+      "required": [
+        "stage",
+        "stage_id"
+      ],
+      "additionalProperties": false,
+      "oneOf": [
+        {
+          "required": [
+            "exit_code"
+          ],
+          "not": {
+            "required": [
+              "signal"
+            ]
+          }
+        },
+        {
+          "required": [
+            "signal"
+          ],
+          "not": {
+            "required": [
+              "exit_code"
+            ]
+          }
+        }
+      ]
+    },
+    "event": {
+      "type": "object",
+      "properties": {
+        "format_version": {
+          "const": "2.0.0"
+        },
+        "event_id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$"
+        },
+        "occurred_at": {
+          "$ref": "#/$defs/time"
+        },
+        "execution_id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "attributes": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/json_value"
+          }
+        }
+      },
+      "required": [
+        "format_version",
+        "event_id",
+        "name",
+        "occurred_at",
+        "execution_id",
+        "attributes"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "name": {
+                "const": "execution.started"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "attributes": {
+                "$ref": "#/$defs/started"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "name": {
+                "const": "execution.context"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "attributes": {
+                "$ref": "#/$defs/context"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "name": {
+                "const": "execution.ended"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "attributes": {
+                "$ref": "#/$defs/ended"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "name": {
+                "const": "stage.started"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "attributes": {
+                "$ref": "#/$defs/stage_started"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "name": {
+                "const": "stage.ended"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "attributes": {
+                "$ref": "#/$defs/stage_ended"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "name": {
+                "pattern": "^(execution|stage)\\."
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "name": {
+                "enum": [
+                  "execution.started",
+                  "execution.context",
+                  "execution.ended",
+                  "stage.started",
+                  "stage.ended"
+                ]
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

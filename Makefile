@@ -76,6 +76,7 @@ _test:
 	$(UV_PY) spec/verify.py
 	$(UV_PY) spec/verify_event.py
 	$(UV_PY) spec/verify_context.py
+	$(UV_PY) -m unittest discover -s spec/execution-v2 -v
 	$(UV_PY) tests/cli/verify.py
 	$(UV_PY) tests/m1/verify.py
 	$(UV_PY) tests/m1/replay.py tests/m1/results/handoff.json

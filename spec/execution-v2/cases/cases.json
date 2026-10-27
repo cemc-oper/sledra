@@ -1,0 +1,246 @@
+[
+  {
+    "file": "root.json",
+    "kind": "root",
+    "expected": "ok"
+  },
+  {
+    "file": "run-single.json",
+    "kind": "run",
+    "expected": "ok"
+  },
+  {
+    "file": "run-none.json",
+    "kind": "run",
+    "expected": "ok"
+  },
+  {
+    "file": "context-none.json",
+    "kind": "event",
+    "expected": "ok"
+  },
+  {
+    "file": "run-multiple.json",
+    "kind": "run",
+    "expected": "ok"
+  },
+  {
+    "file": "context-multiple.json",
+    "kind": "event",
+    "expected": "ok"
+  },
+  {
+    "file": "unresolved.jsonl",
+    "kind": "stream",
+    "expected": "ok",
+    "conflicts": []
+  },
+  {
+    "file": "lifecycle.jsonl",
+    "kind": "stream",
+    "expected": "ok",
+    "conflicts": []
+  },
+  {
+    "file": "decimal-and-int64.json",
+    "kind": "event",
+    "expected": "ok"
+  },
+  {
+    "file": "signal.json",
+    "kind": "event",
+    "expected": "ok"
+  },
+  {
+    "file": "synthetic-run-context.json",
+    "kind": "event",
+    "expected": "ok"
+  },
+  {
+    "file": "synthetic-alias.jsonl",
+    "kind": "stream",
+    "expected": "ok",
+    "conflicts": []
+  },
+  {
+    "file": "retransmission.jsonl",
+    "kind": "stream",
+    "expected": "ok",
+    "conflicts": []
+  },
+  {
+    "file": "same-context.jsonl",
+    "kind": "stream",
+    "expected": "ok",
+    "conflicts": []
+  },
+  {
+    "file": "conflicting-context.jsonl",
+    "kind": "stream",
+    "expected": "ok",
+    "conflicts": [
+      "conflicting_context"
+    ]
+  },
+  {
+    "file": "conflicting-id.jsonl",
+    "kind": "stream",
+    "expected": "ok",
+    "conflicts": [
+      "conflicting_context",
+      "conflicting_event_id"
+    ]
+  },
+  {
+    "file": "conflicting-end.jsonl",
+    "kind": "stream",
+    "expected": "ok",
+    "conflicts": [
+      "conflicting_end"
+    ]
+  },
+  {
+    "file": "duplicate-key.json",
+    "kind": "event",
+    "expected": "duplicate_key"
+  },
+  {
+    "file": "escaped-duplicate-key.json",
+    "kind": "event",
+    "expected": "duplicate_key"
+  },
+  {
+    "file": "integer-overflow.json",
+    "kind": "event",
+    "expected": "number_out_of_range"
+  },
+  {
+    "file": "integer-underflow.json",
+    "kind": "event",
+    "expected": "number_out_of_range"
+  },
+  {
+    "file": "nan.json",
+    "kind": "event",
+    "expected": "invalid_number"
+  },
+  {
+    "file": "infinity.json",
+    "kind": "event",
+    "expected": "invalid_number"
+  },
+  {
+    "file": "float-overflow.json",
+    "kind": "event",
+    "expected": "number_out_of_range"
+  },
+  {
+    "file": "float-underflow.json",
+    "kind": "event",
+    "expected": "number_out_of_range"
+  },
+  {
+    "file": "unpaired-surrogate.json",
+    "kind": "event",
+    "expected": "invalid_unicode"
+  },
+  {
+    "file": "invalid-utf8.json",
+    "kind": "event",
+    "expected": "invalid_unicode"
+  },
+  {
+    "file": "nul.json",
+    "kind": "event",
+    "expected": "invalid_unicode"
+  },
+  {
+    "file": "missing-cycle.json",
+    "kind": "event",
+    "expected": "schema_invalid"
+  },
+  {
+    "file": "unknown-cycle-kind.json",
+    "kind": "event",
+    "expected": "schema_invalid"
+  },
+  {
+    "file": "none-with-cycle.json",
+    "kind": "event",
+    "expected": "schema_invalid"
+  },
+  {
+    "file": "missing-scope.json",
+    "kind": "event",
+    "expected": "schema_invalid"
+  },
+  {
+    "file": "naive-time.json",
+    "kind": "event",
+    "expected": "schema_invalid"
+  },
+  {
+    "file": "invalid-date.json",
+    "kind": "event",
+    "expected": "invalid_time"
+  },
+  {
+    "file": "unknown-offset.json",
+    "kind": "event",
+    "expected": "invalid_time"
+  },
+  {
+    "file": "invalid-offset.json",
+    "kind": "event",
+    "expected": "invalid_time"
+  },
+  {
+    "file": "old-version.json",
+    "kind": "event",
+    "expected": "unsupported_version"
+  },
+  {
+    "file": "future-version.json",
+    "kind": "event",
+    "expected": "unsupported_version"
+  },
+  {
+    "file": "extra-core.json",
+    "kind": "event",
+    "expected": "schema_invalid"
+  },
+  {
+    "file": "reserved-name.json",
+    "kind": "event",
+    "expected": "schema_invalid"
+  },
+  {
+    "file": "wrong-uuid.json",
+    "kind": "event",
+    "expected": "schema_invalid"
+  },
+  {
+    "file": "two-results.json",
+    "kind": "event",
+    "expected": "schema_invalid"
+  },
+  {
+    "file": "invalid-partition-timezone.json",
+    "kind": "root",
+    "expected": "invalid_timezone"
+  },
+  {
+    "file": "same-run.json",
+    "kind": "run-set",
+    "expected": "ok",
+    "conflicts": []
+  },
+  {
+    "file": "conflicting-run.json",
+    "kind": "run-set",
+    "expected": "ok",
+    "conflicts": [
+      "conflicting_run_id"
+    ]
+  }
+]

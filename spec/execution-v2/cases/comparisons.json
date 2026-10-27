@@ -1,0 +1,47 @@
+[
+  {
+    "left": "9007199254740993",
+    "right": "9007199254740993.0",
+    "equal": true
+  },
+  {
+    "left": "9007199254740993",
+    "right": "9007199254740992",
+    "equal": false
+  },
+  {
+    "left": "1",
+    "right": "1e0",
+    "equal": true
+  },
+  {
+    "left": "-0",
+    "right": "0.0",
+    "equal": true
+  },
+  {
+    "left": "true",
+    "right": "1",
+    "equal": false
+  },
+  {
+    "left": "\"25\"",
+    "right": "25",
+    "equal": false
+  },
+  {
+    "left": "\"é\"",
+    "right": "\"e\\u0301\"",
+    "equal": false
+  },
+  {
+    "left": "\"\\ud83d\\ude00\"",
+    "right": "\"😀\"",
+    "equal": true
+  },
+  {
+    "left": "{\"a\":1,\"b\":2}",
+    "right": "{\"b\":2,\"a\":1.0}",
+    "equal": true
+  }
+]
