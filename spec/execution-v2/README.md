@@ -2,6 +2,8 @@
 
 本目录是简化方案 P0-01 的规范成果。格式版本固定为 `2.0.0`，布局版本为整数 `2`；两者独立于软件发行版本。仅定义格式和校验，不表示 Go writer、Shell 生命周期、查询或真实 Run 接入已实现。旧 `spec/1.0.0`、旧命令、旧样例及历史结果保留原义。
 
+P0-02 的公共函数、类型化参数、owner/失败状态与新旧分发已固定在 [Shell/CLI 接口规范](interfaces.md)；其中范例和检查不代表 P1 运行时已实现。
+
 [contract.schema.json](contract.schema.json) 是独立、无远程引用的 JSON Schema Draft 2020-12 资源；入口为 `$defs.root`、`$defs.run`、`$defs.event`，顶层接受这三种记录之一。[check.py](check.py) 补充 JSON 字节边界、时间和冲突语义，只用于离线契约验收。它不导入旧 recorder、Registry、context、Manifest、spool 或分析模块，不读取业务目录、登记身份、创建记录根或建立数据库。P1/P2 分别在自己的语言中实现本契约，复用本目录的共享向量；不把此检查器作为记录节点的 Python 依赖。
 
 ## 根与物理布局
