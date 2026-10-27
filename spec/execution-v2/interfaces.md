@@ -1,6 +1,6 @@
 # Execution 2.0.0 Shell/CLI 接口
 
-这是 P0-02 固定的接口规范，与 [记录契约](README.md) 共用格式 `2.0.0`、布局 `2`。**当前尚未实现这些运行时入口**；P1 实现 owner/writer，P0-03 核对阶段一致性。本文件中的新命令不能作为当前发行版的操作手册。
+这是 P0-02 固定、经 P0-03 一致性核对的接口规范，与 [记录契约](README.md) 共用格式 `2.0.0`、布局 `2`。**当前尚未实现这些运行时入口**；P1 实现 owner/writer，具体位置见 [后续实现映射](runtime-map.md)。本文件中的新命令不能作为当前发行版的操作手册。
 
 普通脚本只需部署好的 Go 二进制、Bash 库和独立记录根。公共入口调用一次 begin，应用解析实际参数后调用 context，再按需写事件/阶段/结束。用户不生成 execution_id、event_id、stage_id、token 或请求 JSON，不配置 producer/session，不需要 Python、jq、ecFlow、takflow 或后台服务。
 
@@ -134,7 +134,7 @@ Shell 必须在自身进程更新 disabled/closed 状态，再返回业务控制
 
 ## P0 检查与后续验收
 
-运行 `uv run --locked --offline --no-python-downloads python -m unittest discover -s spec/execution-v2 -v`。新增的 [test_interfaces.py](test_interfaces.py) 用临时 Bash mock 检查范例的调用参数、配置前 begin、正常/非零退出、配置失败、TERM、原 argv/输出/callback 及单次业务调用；故障 mock 仅兑现“hook 返回 0”这项接口前提，不实现身份、上下文、禁写或 JSONL。
+运行 `uv run --locked --offline --no-python-downloads python spec/execution-v2/verify.py`。其中 [test_interfaces.py](test_interfaces.py) 用临时 Bash mock 检查范例的调用参数、配置前 begin、正常/非零退出、配置失败、TERM、原 argv/输出/callback 及单次业务调用；故障 mock 仅兑现“hook 返回 0”这项接口前提，不实现身份、上下文、禁写或 JSONL。[一致性检查](test_consistency.py) 将实际范例调用参数与合法的合成事件对照，不把合成流当作生产输出。
 
 | 场景 | P0-02 定案；实际运行时验收位置 |
 |---|---|

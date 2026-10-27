@@ -4,6 +4,8 @@
 
 P0-02 的公共函数、类型化参数、owner/失败状态与新旧分发已固定在 [Shell/CLI 接口规范](interfaces.md)；其中范例和检查不代表 P1 运行时已实现。
 
+P0-03 的 [共享检查与 P1/P2 实现位置](runtime-map.md) 固定后续模块、资源与依赖边界；新阶段沿用本契约，不重新选择格式。
+
 [contract.schema.json](contract.schema.json) 是独立、无远程引用的 JSON Schema Draft 2020-12 资源；入口为 `$defs.root`、`$defs.run`、`$defs.event`，顶层接受这三种记录之一。[check.py](check.py) 补充 JSON 字节边界、时间和冲突语义，只用于离线契约验收。它不导入旧 recorder、Registry、context、Manifest、spool 或分析模块，不读取业务目录、登记身份、创建记录根或建立数据库。P1/P2 分别在自己的语言中实现本契约，复用本目录的共享向量；不把此检查器作为记录节点的 Python 依赖。
 
 ## 根与物理布局
@@ -108,9 +110,12 @@ JSON Schema 无法独立验证的 UTF-8 字节数、重复键、整数词法、�
 在 Sledra 根执行（已有开发环境的 jsonschema 4.10.3，无网络）：
 
 ```bash
+uv run --locked --offline --no-python-downloads python spec/execution-v2/verify.py
 uv run --locked --offline --no-python-downloads python -m unittest discover -s spec/execution-v2 -v
 uv run --locked --offline --no-python-downloads python spec/execution-v2/check.py stream spec/execution-v2/cases/lifecycle.jsonl
 uv run --locked --offline --no-python-downloads python spec/execution-v2/check.py run spec/execution-v2/cases/run-single.json
 ```
 
 单记录命令退出 0 表示通过、1 表示拒绝，诊断不回显原始值。stream 中的格式错误退出 1；格式合法的冲突流退出 0 并在 `conflicts` 明列冲突，不代表确定的业务分组可用。P0 的 Python 参考校验通过不能宣称跨语言实际读写已验收；Go 编码在 P1、Python 直接查询和跨语言闭环在 P2 验证。
+
+verify.py 为根 make check/test 共用的 P0 检查入口，还运行 schema/样例/接口的一致性检查。P0-03 为 ASCII 标识增加显式 CR/LF 排除，防止正则 `$` 对尾部 LF 的宽松匹配；业务属性的合法转义换行不受影响。原 45 项共享样例保留，追加 8 项后共 53 项，格式/布局版本不变。

@@ -59,6 +59,7 @@ _check:
 	$(MAKE) -C recorder check
 	@find . -name '*.sh' -not -path './build/*' -not -path './dist/*' -not -path './test-results/*' -not -path './.venv/*' -exec bash -n '{}' +
 	$(UV_PY) scripts/check_contracts.py
+	$(UV_PY) spec/execution-v2/verify.py
 	$(MAKE) -C docs OUTPUT_DIR="$(BUILD_ROOT)" check
 	$(PYTHON) scripts/check_ci.py
 
@@ -76,7 +77,7 @@ _test:
 	$(UV_PY) spec/verify.py
 	$(UV_PY) spec/verify_event.py
 	$(UV_PY) spec/verify_context.py
-	$(UV_PY) -m unittest discover -s spec/execution-v2 -v
+	$(UV_PY) spec/execution-v2/verify.py
 	$(UV_PY) tests/cli/verify.py
 	$(UV_PY) tests/m1/verify.py
 	$(UV_PY) tests/m1/replay.py tests/m1/results/handoff.json

@@ -16,18 +16,27 @@
   "$defs": {
     "uuid": {
       "type": "string",
-      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+      "not": {
+        "pattern": "[\\r\\n]"
+      }
     },
     "namespace": {
       "type": "object",
       "properties": {
         "system": {
           "type": "string",
-          "pattern": "^[a-z0-9][a-z0-9_.-]{0,63}$"
+          "pattern": "^[a-z0-9][a-z0-9_.-]{0,63}$",
+          "not": {
+            "pattern": "[\\r\\n]"
+          }
         },
         "deployment": {
           "type": "string",
-          "pattern": "^[a-z0-9][a-z0-9_.-]{0,63}$"
+          "pattern": "^[a-z0-9][a-z0-9_.-]{0,63}$",
+          "not": {
+            "pattern": "[\\r\\n]"
+          }
         }
       },
       "required": [
@@ -38,7 +47,10 @@
     },
     "scope": {
       "type": "string",
-      "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,127}$"
+      "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,127}$",
+      "not": {
+        "pattern": "[\\r\\n]"
+      }
     },
     "time": {
       "type": "string",
@@ -79,7 +91,10 @@
     "parameters": {
       "type": "object",
       "propertyNames": {
-        "pattern": "^[a-z][a-z0-9_]{0,63}$"
+        "pattern": "^[a-z][a-z0-9_]{0,63}$",
+        "not": {
+          "pattern": "[\\r\\n]"
+        }
       },
       "additionalProperties": {
         "type": [
@@ -151,7 +166,10 @@
         },
         "partition_timezone": {
           "type": "string",
-          "pattern": "^[+-][0-9]{2}:[0-9]{2}$"
+          "pattern": "^[+-][0-9]{2}:[0-9]{2}$",
+          "not": {
+            "pattern": "[\\r\\n]"
+          }
         }
       },
       "required": [
@@ -491,7 +509,10 @@
         "name": {
           "type": "string",
           "maxLength": 128,
-          "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$"
+          "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$",
+          "not": {
+            "pattern": "[\\r\\n]"
+          }
         },
         "occurred_at": {
           "$ref": "#/$defs/time"

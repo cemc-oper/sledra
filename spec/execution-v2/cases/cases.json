@@ -242,5 +242,46 @@
     "conflicts": [
       "conflicting_run_id"
     ]
+  },
+  {
+    "file": "interface-example.jsonl",
+    "kind": "stream",
+    "expected": "ok",
+    "conflicts": []
+  },
+  {
+    "file": "invalid-uuid-line-break.json",
+    "kind": "event",
+    "expected": "schema_invalid"
+  },
+  {
+    "file": "invalid-name-line-break.json",
+    "kind": "event",
+    "expected": "schema_invalid"
+  },
+  {
+    "file": "invalid-parameter-line-break.json",
+    "kind": "event",
+    "expected": "schema_invalid"
+  },
+  {
+    "file": "invalid-scope-line-break.json",
+    "kind": "run",
+    "expected": "schema_invalid"
+  },
+  {
+    "file": "invalid-system-line-break.json",
+    "kind": "root",
+    "expected": "schema_invalid"
+  },
+  {
+    "file": "invalid-deployment-line-break.json",
+    "kind": "root",
+    "expected": "schema_invalid"
+  },
+  {
+    "file": "invalid-zone-line-break.json",
+    "kind": "root",
+    "expected": "schema_invalid"
   }
 ]
