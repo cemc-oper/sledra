@@ -1,12 +1,12 @@
 # Execution 2.0.0 Shell/CLI 接口
 
-这是 P0-02 固定、经 P0-03 一致性核对的接口规范，与 [记录契约](README.md) 共用格式 `2.0.0`、布局 `2`。**当前尚未实现这些运行时入口**；P1 实现 owner/writer，具体位置见 [后续实现映射](runtime-map.md)。本文件中的新命令不能作为当前发行版的操作手册。
+这是 P0-02 固定、经 P0-03 一致性核对的接口规范，与 [记录契约](README.md) 共用格式 `2.0.0`、布局 `2`。P1-01/P1-02 已实现 writer、CLI init-root/prepare start/context/end/append 和 Bash begin/context/end；事件/阶段留在 P1-03，完整示例留在 P1-04。已交付部分的用法见 [生命周期说明](../../integrations/bash/execution-v2.md)，位置见 [实现映射](runtime-map.md)；不能将本文件全部接口或 P5 发行归档视为已交付。
 
 普通脚本只需部署好的 Go 二进制、Bash 库和独立记录根。公共入口调用一次 begin，应用解析实际参数后调用 context，再按需写事件/阶段/结束。用户不生成 execution_id、event_id、stage_id、token 或请求 JSON，不配置 producer/session，不需要 Python、jq、ecFlow、takflow 或后台服务。
 
 ## 模式、安装与根配置
 
-新库的固定源码位置为 `integrations/bash/sledra-execution.sh`（待 P1 新增），原 `integrations/bash/sledra.sh` 继续服务旧接口。两个入口明确分开；不把旧函数换成新版语义，也不因旧配置缺失而自动切换。
+新库的固定源码位置为 `integrations/bash/sledra-execution.sh`（P1-02 已新增生命周期部分），原 `integrations/bash/sledra.sh` 继续服务旧接口。两个入口明确分开；不把旧函数换成新版语义，也不因旧配置缺失而自动切换。
 
 | 设置 | 新接口规则 |
 |---|---|
@@ -18,7 +18,7 @@
 
 source 新库只加载定义，不开始业务、不写记录、不改变 options/trap，也不重置当前 owner。模式、二进制路径和根在第一次 begin 冻结，后续环境修改不重新激活/转根/切模式；换配置须是一次新的作业入口。默认关闭不产生诊断、文件或 CLI 调用。
 
-部署者一次性使用以下**待实现**命令准备根；这不是每任务身份登记：
+部署者一次性使用以下命令准备根（P1-02 已实现）；这不是每任务身份登记：
 
 ```bash
 /opt/sledra/bin/sledra execution init-root \
@@ -120,7 +120,7 @@ Shell 必须在自身进程更新 disabled/closed 状态，再返回业务控制
 
 ## 独立脚本与 callback 边界
 
-[standalone.sh](interface-examples/standalone.sh) 是可做 Bash 语法与控制流检查的接口范例，部署后只需源库路径、SLEDRA_MODE/BIN/ROOT。它不生成身份、请求 JSON 或 producer 配置；其中合成业务 cycle/分辨率只作说明，不代表 MCV 接入。**当前只能在测试提供的 mock 函数下运行；真实库由 P1 提供。**
+[standalone.sh](interface-examples/standalone.sh) 是可做 Bash 语法与控制流检查的接口范例，部署后只需源库路径、SLEDRA_MODE/BIN/ROOT。它不生成身份、请求 JSON 或 producer 配置；其中合成业务 cycle/分辨率只作说明，不代表 MCV 接入。**当前范例仍只能在测试提供的 mock 函数下运行；P1-02 真实库已交付生命周期，范例所需的事件/阶段留在 P1-03，实际可运行示例由 P1-04 提供。**
 
 范例 source 后立即 begin，再执行配置检查。业务命令在顶层原控制流执行，不能变成 `if run_business`、`run_business || ...`、`$(run_business)` 或交给 Sledra launcher。退出 handler 首先保存原 rc，signal handler 保存实际信号；库不安装 trap。已有 ecFlow callback 继续由业务 owner 按原顺序调用，允许外层仍 exit 0，但传给 end 的必须是此前保存的真实业务 rc/signal。
 

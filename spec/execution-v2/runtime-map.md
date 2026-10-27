@@ -1,6 +1,6 @@
 # P0 收口：P1/P2 实现位置与依赖边界
 
-本文件固定源码位置、资源分发与验收入口，不新增任务清单。任务状态和 session 交接仍只在仓库外原 implementation-plan.md 维护。格式与接口分别沿用 [记录契约](README.md)、[Shell/CLI 接口](interfaces.md)，不得另建协议。P1-01 已落实 recorder/execution 的 codec/root/writer/独立资源及测试；下表其余“新增”项仍是后续位置，不表示对应运行时已经实现。
+本文件固定源码位置、资源分发与验收入口，不新增任务清单。任务状态和 session 交接仍只在仓库外原 implementation-plan.md 维护。格式与接口分别沿用 [记录契约](README.md)、[Shell/CLI 接口](interfaces.md)，不得另建协议。P1-01 已落实 recorder/execution 的 codec/root/writer/独立资源及测试；P1-02 已落实 cmd/sledra/execution.go 的生命周期 CLI、前置分发/根隔离/帮助与版本信息、Bash owner 和 tests/shell/test_execution.py。prepare event/stage-start/stage-end 及对应公共函数待 P1-03，其他后续项不表示已经实现。
 
 ## 共享检查与格式收口
 

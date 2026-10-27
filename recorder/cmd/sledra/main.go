@@ -1,4 +1,4 @@
-// sledra exposes the SLD-05 context lifecycle and SLD-07 event recording.
+// sledra exposes independent Execution v2 recording and the legacy commands.
 // These commands never execute or submit business work.
 package main
 
@@ -27,6 +27,10 @@ const maxRequestBytes = 4 << 20
 func main() {
 	if err := run(os.Args[1:]); err != nil {
 		_ = json.NewEncoder(os.Stderr).Encode(map[string]any{"ok": false, "code": err.Error()})
+		var failure *executionError
+		if errors.As(err, &failure) {
+			os.Exit(failure.status)
+		}
 		os.Exit(1)
 	}
 }
@@ -39,11 +43,17 @@ func runWithOutput(args []string, output io.Writer) error {
 	if handled, err := information(args, output); handled {
 		return err
 	}
+	if len(args) > 0 && args[0] == "execution" {
+		return executionCommand(args[1:], os.Stdin, output)
+	}
 	if len(args) == 0 {
 		return errors.New("usage")
 	}
 	if args[0] == "event" {
 		return recordEvent(args[1:], os.Stderr)
+	}
+	if err := rejectExecutionRoot(os.Getenv("SLEDRA_ROOT")); err != nil {
+		return err
 	}
 	if len(args) < 2 {
 		return errors.New("usage")

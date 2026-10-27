@@ -56,6 +56,9 @@ func recordEvent(args []string, diagnostics io.Writer) error {
 		return nil
 	}
 	root := os.Getenv("SLEDRA_ROOT")
+	if err := rejectExecutionRoot(root); err != nil {
+		return failure(err)
+	}
 	spec := os.Getenv("SLEDRA_SPEC_DIR")
 	cfgPath := os.Getenv("SLEDRA_CONFIG")
 	if root == "" {

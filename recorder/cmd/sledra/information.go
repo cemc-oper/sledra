@@ -19,14 +19,43 @@ Usage: sledra COMMAND [OPTIONS]
   context validate          Validate context and immutable parent references
   run finish                Declare finish for an explicit covered Attempt set
   event                     Record a context-bound event (best effort by default)
+  execution                 Record independent Execution v2 files
   help [COMMAND]            Show command help
   --help, -h                Show this help without environment configuration
   --version                 Print software, build and contract provenance as JSON
 
 Use sledra COMMAND --help for options; e.g. sledra registry run-create --help.
-Recording requires an existing absolute SLEDRA_ROOT. Events also require
+Legacy recording requires an existing absolute SLEDRA_ROOT. Legacy events also require
 SLEDRA_CONFIG. The default contract is embedded 1.0.0; optional SLEDRA_SPEC_DIR
 must be absolute and compatible. Successful recording leaves stdout empty.
+`,
+	"execution": `Usage: sledra execution init-root|prepare|append [OPTIONS]
+Independent format 2.0.0, layout 2. No legacy producer/context configuration.
+Use sledra execution init-root --help, prepare --help or append --help.
+Lifecycle commands are available; business events and stages follow in P1-03.
+`,
+	"execution init-root": `Usage: sledra execution init-root --root ROOT --system SYSTEM --deployment DEPLOYMENT --partition-timezone OFFSET
+ROOT must be absolute, empty/new or already configured identically. OFFSET is
+a fixed signed HH:MM offset. Existing settings and unknown roots are never adopted.
+Stdout stays empty. Validation exits 2; root/I/O failures exit 3 with bounded JSON.
+`,
+	"execution prepare": `Usage: sledra execution prepare start|context|end [OPTIONS]
+start: [--task TASK] [--engine-kind KIND --engine-service SERVICE --engine-node NODE --engine-alias true|false]
+context: --execution-id UUID --task TASK --cycle-kind single|none|multiple [--cycle TIME] [--scope SCOPE] [TYPED_VALUES]
+end: --execution-id UUID (--exit-code 0..255 | --signal 1..127)
+TYPED_VALUES: repeated --string KEY VALUE, --int KEY VALUE, --float KEY VALUE,
+--bool KEY true|false, --null KEY. Duplicate keys/options are rejected.
+Internal context/end may pass --previous-event JSON for exact idempotency.
+Pure preparation, no filesystem access. Stdout: execution_id TAB auxiliary TAB
+event_json LF; auxiliary is UTC entry time for start, otherwise '-'.
+Validation exits 2; context/end conflict or uncertain failure exits 3.
+`,
+	"execution append": `Usage: sledra execution append --root ROOT --execution-id UUID --entry-time TIME [--create]
+Internal owner interface. Stdin is exactly one validated event JSON plus LF.
+--create is only for execution.started, with the matching entry time; subsequent
+appends never create missing files. One sequential owner per execution file.
+Success includes successful close and leaves stdout empty; prewrite validation
+exits 2, root/tail/I/O/uncertain failures exit 3. No retries or tail repair.
 `,
 	"registry": `Usage: sledra registry run-create|attempt-create [OPTIONS]
 Register identities without submitting or executing business work.

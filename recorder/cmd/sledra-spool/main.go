@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 
 	"github.com/cemc-oper/sledra/recorder/event"
 	"github.com/cemc-oper/sledra/recorder/spool"
@@ -53,6 +54,10 @@ func run(args []string, diag io.Writer) int {
 	root := os.Getenv("SLEDRA_ROOT")
 	if root == "" {
 		return failure(errors.New("root_missing"))
+	}
+	// This legacy writer must not add session spool directories to a v2 root.
+	if _, err := os.Lstat(filepath.Join(root, "sledra.json")); !errors.Is(err, os.ErrNotExist) {
+		return failure(errors.New("root_incompatible"))
 	}
 	configFile, err := os.Open(*configPath)
 	if err != nil {
