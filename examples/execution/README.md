@@ -108,3 +108,50 @@ uv run --locked --offline --no-python-downloads python -m unittest discover \
 | 后续接入 | MCV/takflow 仍等待 25 km 接口/入口时序/业务回归/版本范围稳定及后续授权；P0–P2 完成不证明这些条件已满足 |
 
 本轮在 P0–P2 停止。Loki/OTel/Prometheus、真实 Run 传递、历史迁移、自动清理和查询索引均不纳入当前交付；旧试用归档与历史 M1–M3 资格结论不被本地闭环替换。
+
+## P3-01：独立 Bash 三组对照
+
+P0–P2 的上述历史验收保留。后续 P3-01 增加 [compare.sh](compare.sh)，复用已有
+standalone owner、Go recorder 和 Bash API，比较观测关闭、正常启用、启用但记录器缺失三组。
+记录过程不使用 Python、takflow、ecFlow、Manifest、Run 或外部平台。
+
+从源码根准备 recorder，选择一个**尚不存在**的绝对目录（父目录必须存在）：
+
+```bash
+make -C recorder build
+export SLEDRA_BIN="$PWD/build/bin/sledra"
+trial_parent=$(mktemp -d)
+bash examples/execution/compare.sh "$trial_parent/comparison"
+```
+
+也可以设置 `SLEDRA_BASH_LIBRARY` 为已安装库的绝对路径。脚本拒绝复用现有输出目录，
+不会删除业务或历史。它初始化 synthetic／p3-local／+00:00 的独立根，写入自己的小型合成业务，
+用实际 Bash owner 分别执行成功、业务退出 7、配置退出 23、受控 TERM 四种场景。
+逐组比较真实 argv（空值、Unicode、换行和命令替换字面文本）、执行次数、产物、stdout/stderr、
+回调和退出码；故障组仅额外允许一条固定观测诊断。
+TERM 只发给本例 fixture 的 owner，子进程随即退出以解除 Bash 等待；不证明任意 MPI 信号转发。
+示例明确采用 cycle_kind=none，不从缺少日期推断业务时次。三组业务目录和 records 根互相分离。
+
+管理侧用已配置的查询环境读取真实文件，例如：
+
+```bash
+PYTHONPATH="$PWD/analysis/src" .venv/bin/python -m sledra_analysis.execution.cli \
+    --root "$trial_parent/comparison/records" --all-record-dates --format jsonl
+```
+
+正常启用组产生四次 Execution：结束为 exit_code 0／7／23 和 signal 15；配置失败没有 context，
+其他三次 context 是 none，所有 entry.engine 为 null，所有成功 context 的 run_id 为 null。
+关闭／记录器缺失组没有新增 Execution。CLI 将配置失败展示为 context 缺失，并报告窗口不完整；
+缺 context 本身不属于读取错误，因此这里查询退出 0，不能只用退出码判断记录完整性。
+
+[P3 通用接入回归](../../tests/execution/test_p3_common.py) 还验证重复 source／begin、实际重启、
+业务目录重建后历史可查、显式 none／multiple、缺完整 single cycle 时不补 00 时，以及实际读取
+前一时次的合成输入后用 target_cycle 查询事件、最终 context 保持不变：
+
+```bash
+uv run --locked --offline --no-python-downloads python -m unittest discover \
+    -s tests/execution -p test_p3_common.py -v
+```
+
+根 make test 自动发现该回归。试点业务、GFS 模板、真实 HPC／ecFlow 和 P3 整阶段验收另列，
+本示例及本地测试只证明通用接入范围，不升级为真实业务或平台证据。
