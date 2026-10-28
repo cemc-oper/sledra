@@ -32,22 +32,27 @@ must be absolute and compatible. Successful recording leaves stdout empty.
 	"execution": `Usage: sledra execution init-root|prepare|append [OPTIONS]
 Independent format 2.0.0, layout 2. No legacy producer/context configuration.
 Use sledra execution init-root --help, prepare --help or append --help.
-Lifecycle commands are available; business events and stages follow in P1-03.
+Lifecycle, business event and sequential stage recording are available.
 `,
 	"execution init-root": `Usage: sledra execution init-root --root ROOT --system SYSTEM --deployment DEPLOYMENT --partition-timezone OFFSET
 ROOT must be absolute, empty/new or already configured identically. OFFSET is
 a fixed signed HH:MM offset. Existing settings and unknown roots are never adopted.
 Stdout stays empty. Validation exits 2; root/I/O failures exit 3 with bounded JSON.
 `,
-	"execution prepare": `Usage: sledra execution prepare start|context|end [OPTIONS]
+	"execution prepare": `Usage: sledra execution prepare start|context|event|stage-start|stage-end|end [OPTIONS]
 start: [--task TASK] [--engine-kind KIND --engine-service SERVICE --engine-node NODE --engine-alias true|false]
 context: --execution-id UUID --task TASK --cycle-kind single|none|multiple [--cycle TIME] [--scope SCOPE] [TYPED_VALUES]
+event NAME: --execution-id UUID [TYPED_VALUES]; execution.* and stage.* are reserved
+stage-start: --execution-id UUID --stage NAME; automatically allocates stage_id
+stage-end: --execution-id UUID --stage NAME --stage-id UUID (--exit-code 0..255 | --signal 1..127)
 end: --execution-id UUID (--exit-code 0..255 | --signal 1..127)
 TYPED_VALUES: repeated --string KEY VALUE, --int KEY VALUE, --float KEY VALUE,
 --bool KEY true|false, --null KEY. Duplicate keys/options are rejected.
 Internal context/end may pass --previous-event JSON for exact idempotency.
 Pure preparation, no filesystem access. Stdout: execution_id TAB auxiliary TAB
-event_json LF; auxiliary is UTC entry time for start, otherwise '-'.
+event_json LF; auxiliary is UTC entry time for start, stage_id for stage-start,
+otherwise '-'. Each business event call is a new fact; retransmit cached bytes
+only when safe, never retry a possibly written fact by allocating a new ID.
 Validation exits 2; context/end conflict or uncertain failure exits 3.
 `,
 	"execution append": `Usage: sledra execution append --root ROOT --execution-id UUID --entry-time TIME [--create]

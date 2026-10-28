@@ -488,6 +488,393 @@ sledra_execution_end --exit-code 0
                 self.assertEqual(log.read_text().splitlines(), ["execution prepare start"])
                 self.assertEqual(self.histories(), [])
 
+    def test_business_events_and_repeated_stage_names(self) -> None:
+        message = '中文\n$HOME $(touch must-not-run) `literal` "quoted" \\ tab\t'
+        result = self.shell(
+            r"""
+set -euo pipefail
+source "$LIBRARY"
+sledra_execution_begin
+sledra_execution_event configuration.progress --string status early
+sledra_stage_begin '积分阶段'
+first=$_SLEDRA_V2_STAGE_ID
+source "$LIBRARY"
+sledra_execution_begin
+[[ $_SLEDRA_V2_STAGE_ID == "$first" ]]
+sledra_execution_event forecast.progress --int step 9007199254740993 --float fraction 0.10000000000000001 \
+    --bool ready false --null absent --string empty '' --string '任意 key' "$MESSAGE"
+sledra_execution_context --task forecast --cycle-kind multiple
+sledra_stage_end --exit-code 7
+sledra_stage_begin '积分阶段'
+[[ $_SLEDRA_V2_STAGE_ID != "$first" ]]
+sledra_execution_event forecast.progress --int step 9007199254740993 --float fraction 0.10000000000000001 \
+    --bool ready false --null absent --string empty '' --string '任意 key' "$MESSAGE"
+sledra_stage_end --signal 15
+sledra_execution_end --exit-code 0
+sledra_execution_event forecast.progress
+sledra_stage_begin ignored
+sledra_stage_end --exit-code 0
+""",
+            env={"MESSAGE": message},
+        )
+        self.assertEqual((result.stdout, result.stderr), (b"", b""))
+        events = self.histories()[0]
+        self.assertEqual(
+            [e["name"] for e in events],
+            [
+                "execution.started",
+                "configuration.progress",
+                "stage.started",
+                "forecast.progress",
+                "execution.context",
+                "stage.ended",
+                "stage.started",
+                "forecast.progress",
+                "stage.ended",
+                "execution.ended",
+            ],
+        )
+        first, second = events[2]["attributes"], events[6]["attributes"]
+        self.assertNotEqual(first["stage_id"], second["stage_id"])
+        for start, end in [(2, 5), (6, 8)]:
+            self.assertEqual(
+                events[start]["attributes"]["stage_id"], events[end]["attributes"]["stage_id"]
+            )
+            self.assertEqual(
+                events[start]["attributes"]["stage"], events[end]["attributes"]["stage"]
+            )
+            self.assertNotIn("duration_ns", events[end]["attributes"])
+        attrs = events[3]["attributes"]
+        self.assertEqual(attrs["任意 key"], message)
+        self.assertEqual(attrs["step"], 9007199254740993)
+        self.assertEqual(attrs, events[7]["attributes"])
+        self.assertNotEqual(events[3]["event_id"], events[7]["event_id"])
+        self.assertIsNone(events[4]["attributes"]["run_id"])
+        self.assertFalse((self.work / "must-not-run").exists())
+
+    def test_stage_rejections_preserve_active_interval(self) -> None:
+        result = self.shell(r"""
+set -euo pipefail
+source "$LIBRARY"
+sledra_execution_begin
+sledra_stage_end --exit-code 0
+sledra_stage_begin
+sledra_stage_begin first extra
+sledra_stage_begin ''
+sledra_stage_begin first
+saved=$_SLEDRA_V2_STAGE_ID
+sledra_stage_begin nested
+sledra_stage_end --exit-code 256
+sledra_stage_end --signal 0
+sledra_stage_end --exit-code 0 --signal 15
+sledra_stage_end --stage-id forged --exit-code 0
+source "$LIBRARY"
+[[ $_SLEDRA_V2_STAGE == first && $_SLEDRA_V2_STAGE_ID == "$saved" && $_SLEDRA_V2_STATE == active ]]
+sledra_stage_end --exit-code 0
+sledra_stage_end --exit-code 0
+[[ -z ${_SLEDRA_V2_STAGE:-} && -z ${_SLEDRA_V2_STAGE_ID:-} && $_SLEDRA_V2_STATE == active ]]
+sledra_stage_begin first
+[[ $_SLEDRA_V2_STAGE_ID != "$saved" ]]
+sledra_stage_end --signal 127
+sledra_execution_end --exit-code 0
+""")
+        self.assertEqual((result.stdout, result.stderr), (b"", DIAG))
+        events = self.histories()[0]
+        self.assertEqual(
+            [e["name"] for e in events],
+            [
+                "execution.started",
+                "stage.started",
+                "stage.ended",
+                "stage.started",
+                "stage.ended",
+                "execution.ended",
+            ],
+        )
+        self.assertEqual(events[2]["attributes"]["exit_code"], 0)
+        self.assertEqual(events[4]["attributes"]["signal"], 127)
+
+    def test_invalid_and_oversized_events_do_not_change_context_or_stage(self) -> None:
+        result = self.shell(
+            r"""
+set -euo pipefail
+source "$LIBRARY"
+sledra_execution_begin
+sledra_execution_context --task forecast --cycle-kind none
+accepted=$_SLEDRA_V2_CONTEXT
+sledra_stage_begin forecast
+saved=$_SLEDRA_V2_STAGE_ID
+sledra_execution_event
+sledra_execution_event execution.started --string task forged --null engine
+sledra_execution_event stage.started --string stage forged --string stage_id "$saved"
+sledra_execution_event 'Bad Name'
+sledra_execution_event forecast.progress --string key first --null key
+sledra_execution_event forecast.progress --float count NaN
+sledra_execution_event forecast.progress --int count 9223372036854775808
+sledra_execution_event forecast.progress --execution-id forged
+sledra_execution_event forecast.progress --previous-event "$accepted"
+sledra_execution_event forecast.progress --string text "$TOO_LONG"
+printf -v value '%04096d' 0
+args=()
+for ((i=0;i<16;i++)); do args+=(--string "field_$i" "$value"); done
+sledra_execution_event forecast.progress "${args[@]}"
+[[ $_SLEDRA_V2_STATE == active && $_SLEDRA_V2_STAGE_ID == "$saved" && $_SLEDRA_V2_CONTEXT == "$accepted" ]]
+# Fifteen individually bounded fields fit; sixteen exceed the complete record.
+sledra_execution_event forecast.progress "${args[@]:0:45}"
+sledra_stage_end --exit-code 0
+sledra_execution_end --exit-code 0
+""",
+            env={"TOO_LONG": "x" * 4097},
+        )
+        self.assertEqual((result.stdout, result.stderr), (b"", DIAG))
+        events = self.histories()[0]
+        self.assertEqual(len(events), 6)
+        self.assertEqual(events[3]["name"], "forecast.progress")
+        self.assertEqual(len(events[3]["attributes"]), 15)
+        self.assertTrue(all(len(v) == 4096 for v in events[3]["attributes"].values()))
+
+    def test_cached_event_retransmission_preserves_bytes_and_identity(self) -> None:
+        log = self.work / "retransmission.calls"
+        wrapper = self.fault_binary("")
+        result = self.shell(
+            r"""
+set -euo pipefail
+source "$LIBRARY"
+sledra_execution_begin
+sledra_execution_event forecast.progress --int step 1
+cached=$_SLEDRA_V2_PENDING
+# Test-only safe replay after a known successful append. Do not prepare again.
+if ! _sledra_v2_append; then exit 99; fi
+[[ $_SLEDRA_V2_PENDING == "$cached" ]]
+sledra_execution_event forecast.progress --int step 1
+[[ $_SLEDRA_V2_PENDING != "$cached" ]]
+sledra_execution_end --exit-code 0
+""",
+            env={"SLEDRA_BIN": str(wrapper), "REAL_SLEDRA": str(self.binary), "CALL_LOG": str(log)},
+        )
+        self.assertEqual((result.stdout, result.stderr), (b"", b""))
+        path = next(self.root.glob("executions/*/*/*.jsonl"))
+        lines = path.read_bytes().splitlines()
+        self.assertEqual(lines[1], lines[2])
+        events = self.histories()[0]
+        self.assertNotEqual(events[2]["event_id"], events[3]["event_id"])
+        calls = log.read_text().splitlines()
+        self.assertEqual(calls.count("execution prepare event"), 2)
+        self.assertEqual(len(calls), 9)
+
+    def test_new_hooks_keep_owner_options_and_do_not_complete_open_stage(self) -> None:
+        empty_path = self.work / "empty-path"
+        empty_path.mkdir()
+        result = self.shell(
+            r"""
+set -aEeuf -o pipefail
+IFS=$'\n_'
+trap ':' EXIT
+flags=$-:$SHELLOPTS:$BASHOPTS
+handlers=$(trap -p)
+source "$LIBRARY"
+sledra_execution_event before.begin
+sledra_stage_begin before
+sledra_stage_end --exit-code 0
+sledra_execution_begin
+(sledra_execution_event child.event; sledra_stage_begin child; sledra_stage_end --signal 15)
+[[ -z $(sledra_execution_event child.event) ]]
+[[ -z $(sledra_stage_begin child) ]]
+sledra_stage_begin child | :
+[[ -z ${_SLEDRA_V2_STAGE:-} ]]
+sledra_stage_begin open
+saved=$_SLEDRA_V2_STAGE_ID
+(sledra_stage_end --exit-code 0)
+sledra_stage_end --exit-code 0 | :
+[[ $_SLEDRA_V2_STAGE_ID == "$saved" ]]
+source "$LIBRARY"
+sledra_execution_event owner.event
+for name in "${!_SLEDRA_V2_@}"; do
+    value=$(declare -p "$name")
+    [[ ! $value =~ ^declare\ -[^\ ]*x ]]
+done
+[[ $(export -fp) != *sledra* && $-:$SHELLOPTS:$BASHOPTS == "$flags" && $(trap -p) == "$handlers" ]]
+sledra_execution_end --exit-code 7
+sledra_stage_end --exit-code 0
+sledra_stage_begin later
+sledra_execution_event later.event
+""",
+            env={"PATH": str(empty_path)},
+        )
+        self.assertEqual((result.stdout, result.stderr), (b"", DIAG))
+        self.assertEqual(
+            [e["name"] for e in self.histories()[0]],
+            ["execution.started", "stage.started", "owner.event", "execution.ended"],
+        )
+
+    def test_exec_restart_cannot_inherit_an_active_stage(self) -> None:
+        child = self.work / "stage-child.sh"
+        child.write_text("""#!/bin/bash
+set -euo pipefail
+source "$LIBRARY"
+sledra_execution_begin
+[[ $_SLEDRA_V2_ID != "$OLD_ID" && -z ${_SLEDRA_V2_STAGE:-} && -z ${_SLEDRA_V2_STAGE_ID:-} ]]
+sledra_stage_begin first
+[[ $_SLEDRA_V2_STAGE_ID != "$OLD_STAGE" ]]
+sledra_stage_end --exit-code 0
+sledra_execution_end --exit-code 0
+""")
+        result = self.shell(
+            r"""
+set -euo pipefail
+source "$LIBRARY"
+sledra_execution_begin
+sledra_stage_begin first
+export OLD_ID=$_SLEDRA_V2_ID OLD_STAGE=$_SLEDRA_V2_STAGE_ID
+for name in "${!_SLEDRA_V2_@}"; do export "$name"; done
+exec /bin/bash "$CHILD"
+""",
+            env={"CHILD": str(child)},
+        )
+        self.assertEqual((result.stdout, result.stderr), (b"", b""))
+        histories = sorted(self.histories(), key=len)
+        self.assertEqual([len(h) for h in histories], [2, 4])
+        self.assertEqual([e["name"] for e in histories[0]], ["execution.started", "stage.started"])
+        self.assertNotEqual(
+            histories[0][1]["attributes"]["stage_id"], histories[1][1]["attributes"]["stage_id"]
+        )
+
+    def test_event_and_stage_write_failures_never_retry_or_allocate_again(self) -> None:
+        for kind in ["event", "stage-start", "stage-end"]:
+            for fault in ["short", "complete"]:
+                with self.subTest(kind=kind, fault=fault):
+                    case_root = self.work / f"{kind}-{fault}"
+                    self.cli(
+                        "init-root",
+                        "--root",
+                        str(case_root),
+                        "--system",
+                        "synthetic",
+                        "--deployment",
+                        "local",
+                        "--partition-timezone",
+                        "+00:00",
+                    )
+                    log = self.work / f"{kind}-{fault}.calls"
+                    wrapper = self.fault_binary(r"""
+if [[ $2 == append && ${ARMED:-0} == 1 ]]; then
+    if [[ $FAULT == short ]]; then
+        files=("$SLEDRA_ROOT"/executions/*/*/*.jsonl)
+        IFS= read -r -n 7 prefix
+        printf '%s' "$prefix" >> "${files[0]}"
+    else
+        "$REAL_SLEDRA" "$@"
+    fi
+    exit 3
+fi
+""")
+                    result = self.shell(
+                        r"""
+set -euo pipefail
+source "$LIBRARY"
+sledra_execution_begin
+if [[ $KIND == stage-end ]]; then sledra_stage_begin first; fi
+export ARMED=1
+case $KIND in
+    event) sledra_execution_event forecast.progress --int step 1 ;;
+    stage-start) sledra_stage_begin first ;;
+    stage-end) sledra_stage_end --exit-code 0 ;;
+esac
+pending=$_SLEDRA_V2_PENDING
+[[ $_SLEDRA_V2_STATE == disabled ]]
+source "$LIBRARY"
+sledra_execution_begin
+sledra_execution_context --task later --cycle-kind none
+sledra_execution_event later.event
+sledra_stage_begin later
+sledra_stage_end --exit-code 0
+sledra_execution_end --exit-code 0
+[[ $_SLEDRA_V2_PENDING == "$pending" ]]
+printf 'business once\n'
+""",
+                        env={
+                            "SLEDRA_ROOT": str(case_root),
+                            "SLEDRA_BIN": str(wrapper),
+                            "REAL_SLEDRA": str(self.binary),
+                            "CALL_LOG": str(log),
+                            "KIND": kind,
+                            "FAULT": fault,
+                        },
+                    )
+                    self.assertEqual((result.stdout, result.stderr), (b"business once\n", DIAG))
+                    self.assertEqual(
+                        len(log.read_text().splitlines()), 6 if kind == "stage-end" else 4
+                    )
+                    raw = next(case_root.glob("executions/*/*/*.jsonl")).read_bytes()
+                    lines = raw.splitlines()
+                    if fault == "short":
+                        self.assertTrue(raw.endswith(b'{"attri'))
+                        lines = lines[:-1]
+                    else:
+                        self.assertTrue(raw.endswith(b"\n"))
+                        self.assertEqual(
+                            validate("event", lines[-1])["name"],
+                            {
+                                "event": "forecast.progress",
+                                "stage-start": "stage.started",
+                                "stage-end": "stage.ended",
+                            }[kind],
+                        )
+                    self.assertTrue(
+                        all(validate("event", line)["name"] != "execution.ended" for line in lines)
+                    )
+
+    def test_stage_and_event_receipt_auxiliary_is_checked(self) -> None:
+        for kind, aux in [
+            ("stage-start", "-"),
+            ("stage-start", "bad-id"),
+            ("event", "11111111-1111-4111-8111-111111111111"),
+            ("stage-end", "11111111-1111-4111-8111-111111111111"),
+        ]:
+            with self.subTest(kind=kind, aux=aux):
+                log = self.work / f"aux-{kind}-{aux}.calls"
+                wrapper = self.fault_binary(r"""
+if [[ $2 == prepare && ${ARMED:-0} == 1 ]]; then
+    IFS=$'\t' read -r id aux event < <("$REAL_SLEDRA" "$@")
+    printf '%s\t%s\t%s\n' "$id" "$BAD_AUX" "$event"
+    exit 0
+fi
+""")
+                result = self.shell(
+                    r"""
+set -euo pipefail
+source "$LIBRARY"
+sledra_execution_begin
+if [[ $KIND == stage-end ]]; then sledra_stage_begin first; fi
+export ARMED=1
+case $KIND in
+    event) sledra_execution_event forecast.progress ;;
+    stage-start) sledra_stage_begin first ;;
+    stage-end) sledra_stage_end --exit-code 0 ;;
+esac
+[[ $_SLEDRA_V2_STATE == disabled ]]
+sledra_execution_event later.event
+sledra_stage_end --exit-code 0
+sledra_execution_end --exit-code 0
+""",
+                    env={
+                        "SLEDRA_BIN": str(wrapper),
+                        "REAL_SLEDRA": str(self.binary),
+                        "CALL_LOG": str(log),
+                        "KIND": kind,
+                        "BAD_AUX": aux,
+                    },
+                )
+                self.assertEqual((result.stdout, result.stderr), (b"", DIAG))
+                self.assertEqual(len(log.read_text().splitlines()), 5 if kind == "stage-end" else 3)
+        self.assertTrue(
+            all(
+                e["name"] in {"execution.started", "stage.started"}
+                for history in self.histories()
+                for e in history
+            )
+        )
+
     def test_no_python_or_path_lookup_and_cli_statuses(self) -> None:
         empty_path = self.work / "empty-path"
         empty_path.mkdir()

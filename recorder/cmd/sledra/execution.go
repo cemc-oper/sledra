@@ -44,7 +44,7 @@ func rejectExecutionRoot(root string) error {
 type executionOptions map[string]string
 
 // Fixed arities preserve negative values and avoid last-wins flag parsing.
-// Typed values are deliberately limited to context parameters in P1-02.
+// Typed values encode context parameters and business event attributes.
 func parseExecutionOptions(args []string, allowed string, typed bool) (executionOptions, map[string]any, error) {
 	opts, values := executionOptions{}, map[string]any{}
 	for len(args) > 0 {
@@ -168,6 +168,17 @@ func prepareExecution(args []string, output io.Writer) error {
 		return executionFailure("usage", 2)
 	}
 	kind := args[0]
+	var businessName string
+	if kind == "event" {
+		if len(args) < 2 {
+			return executionFailure("usage", 2)
+		}
+		businessName = args[1]
+		args = append([]string{kind}, args[2:]...)
+		if strings.HasPrefix(businessName, "execution.") || strings.HasPrefix(businessName, "stage.") {
+			return executionFailure("reserved_event_name", 2)
+		}
+	}
 	var allowed string
 	switch kind {
 	case "start":
@@ -176,10 +187,16 @@ func prepareExecution(args []string, output io.Writer) error {
 		allowed = "--execution-id --task --cycle-kind --cycle --scope --previous-event"
 	case "end":
 		allowed = "--execution-id --exit-code --signal --previous-event"
+	case "event":
+		allowed = "--execution-id"
+	case "stage-start":
+		allowed = "--execution-id --stage"
+	case "stage-end":
+		allowed = "--execution-id --stage --stage-id --exit-code --signal"
 	default:
 		return executionFailure("usage", 2)
 	}
-	opts, params, err := parseExecutionOptions(args[1:], allowed, kind == "context")
+	opts, params, err := parseExecutionOptions(args[1:], allowed, kind == "context" || kind == "event")
 	if err != nil {
 		return err
 	}
@@ -209,8 +226,22 @@ func prepareExecution(args []string, output io.Writer) error {
 		name := "execution.context"
 		attrs := map[string]any{"task": opts["--task"], "parameters": params, "cycle_kind": opts["--cycle-kind"],
 			"cycle": optionalExecutionString(opts, "--cycle"), "scope": optionalExecutionString(opts, "--scope"), "run_id": nil}
-		if kind == "end" {
+		switch kind {
+		case "event":
+			name, attrs = businessName, params
+		case "stage-start":
+			stageID, idErr := execution.NewID()
+			if idErr != nil {
+				return executionProblem(idErr, 3)
+			}
+			aux = stageID
+			name, attrs = "stage.started", map[string]any{"stage": opts["--stage"], "stage_id": stageID}
+		case "stage-end":
+			name, attrs = "stage.ended", map[string]any{"stage": opts["--stage"], "stage_id": opts["--stage-id"]}
+		case "end":
 			name, attrs = "execution.ended", map[string]any{}
+		}
+		if kind == "end" || kind == "stage-end" {
 			for _, key := range []string{"--exit-code", "--signal"} {
 				if value, exists := opts[key]; exists {
 					decoded, decodeErr := execution.Decode([]byte(value))

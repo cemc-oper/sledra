@@ -82,8 +82,9 @@ _sledra_v2_public() {
                 _arity=2 ;;
             start:--task=*|start:--engine-kind=*|start:--engine-service=*|start:--engine-node=*|start:--engine-alias=*|\
             context:--task=*|context:--cycle-kind=*|context:--cycle=*|context:--scope=*|end:--exit-code=*|end:--signal=*) ;;
-            context:--string|context:--int|context:--float|context:--bool) _arity=3 ;;
-            context:--null) _arity=2 ;;
+            context:--string|context:--int|context:--float|context:--bool|\
+            event:--string|event:--int|event:--float|event:--bool) _arity=3 ;;
+            context:--null|event:--null) _arity=2 ;;
             *) _sledra_v2_diag; return 1 ;;
         esac
         if [[ $# -lt $_arity ]]; then _sledra_v2_diag; return 1; fi
@@ -118,11 +119,18 @@ _sledra_v2_prepare() {
         fi
         declare -g _SLEDRA_V2_ID="$_id" _SLEDRA_V2_ENTRY="$_aux"
         export -n _SLEDRA_V2_ID _SLEDRA_V2_ENTRY
-    elif [[ $_id != "$_SLEDRA_V2_ID" || $_aux != - ]]; then
-        _sledra_v2_disable; return 1
+    else
+        if [[ $_id != "$_SLEDRA_V2_ID" ]]; then _sledra_v2_disable; return 1; fi
+        if [[ $_kind == stage-start ]]; then
+            if [[ ! $_aux =~ ^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$ ]]; then
+                _sledra_v2_disable; return 1
+            fi
+        elif [[ $_aux != - ]]; then
+            _sledra_v2_disable; return 1
+        fi
     fi
-    declare -g _SLEDRA_V2_PENDING="$_json"
-    export -n _SLEDRA_V2_PENDING
+    declare -g _SLEDRA_V2_PENDING="$_json" _SLEDRA_V2_AUX="$_aux"
+    export -n _SLEDRA_V2_PENDING _SLEDRA_V2_AUX
     return 0
 }
 
@@ -188,6 +196,38 @@ sledra_execution_context() {
     return 0
 }
 
+sledra_execution_event() {
+    if ! _sledra_v2_active; then return 0; fi
+    if [[ $# -lt 1 ]]; then _sledra_v2_diag; return 0; fi
+    local +x _event_name=$1
+    shift
+    if ! _sledra_v2_public event "$@"; then return 0; fi
+    if ! _sledra_v2_prepare event "$_event_name" --execution-id "$_SLEDRA_V2_ID" "$@"; then return 0; fi
+    if ! _sledra_v2_append; then return 0; fi
+    return 0
+}
+
+sledra_stage_begin() {
+    if ! _sledra_v2_active; then return 0; fi
+    if [[ $# != 1 || -n ${_SLEDRA_V2_STAGE:-} ]]; then _sledra_v2_diag; return 0; fi
+    if ! _sledra_v2_prepare stage-start --execution-id "$_SLEDRA_V2_ID" --stage "$1"; then return 0; fi
+    if ! _sledra_v2_append; then return 0; fi
+    declare -g _SLEDRA_V2_STAGE="$1" _SLEDRA_V2_STAGE_ID="$_SLEDRA_V2_AUX"
+    export -n _SLEDRA_V2_STAGE _SLEDRA_V2_STAGE_ID
+    return 0
+}
+
+sledra_stage_end() {
+    if ! _sledra_v2_active; then return 0; fi
+    if [[ -z ${_SLEDRA_V2_STAGE:-} ]]; then _sledra_v2_diag; return 0; fi
+    if ! _sledra_v2_public end "$@"; then return 0; fi
+    if ! _sledra_v2_prepare stage-end --execution-id "$_SLEDRA_V2_ID" \
+        --stage "$_SLEDRA_V2_STAGE" --stage-id "$_SLEDRA_V2_STAGE_ID" "$@"; then return 0; fi
+    if ! _sledra_v2_append; then return 0; fi
+    unset -v _SLEDRA_V2_STAGE _SLEDRA_V2_STAGE_ID
+    return 0
+}
+
 sledra_execution_end() {
     if ! _sledra_v2_owner; then return 0; fi
     if [[ ${_SLEDRA_V2_STATE:-} != closed ]]; then
@@ -210,4 +250,5 @@ sledra_execution_end() {
 # source-only even in that caller mode; do not export a child recording service.
 export -nf _sledra_v2_owner _sledra_v2_diag _sledra_v2_disable _sledra_v2_call \
     _sledra_v2_public _sledra_v2_prepare _sledra_v2_append _sledra_v2_active \
-    sledra_execution_begin sledra_execution_context sledra_execution_end
+    sledra_execution_begin sledra_execution_context sledra_execution_end \
+    sledra_execution_event sledra_stage_begin sledra_stage_end

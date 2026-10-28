@@ -1,8 +1,8 @@
-# 独立 Execution 生命周期（P1-02）
+# 独立 Execution 记录 API（P1-02/P1-03）
 
 源码入口为 [sledra-execution.sh](sledra-execution.sh)，使用 Bash 4.3 及以上版本和编译后的 `sledra` Go 二进制。只需这两项及已初始化的独立记录根；记录节点不需要 Python、jq、ecFlow 或旧 producer/context 配置。
 
-当前已实现 begin/context/end、CLI init-root/prepare start/context/end/append。业务事件及阶段函数待 P1-03，完整独立示例和故障/信号对照待 P1-04；[P0 接口范例](../../spec/execution-v2/interface-examples/standalone.sh) 仍依赖尚未交付的事件/阶段函数，不能直接当作运行示例。全部签名和错误语义沿用 [2.0.0 冻结接口](../../spec/execution-v2/interfaces.md)。
+当前已实现全部六个公共函数，以及 CLI init-root、prepare 六种 KIND 和 append。完整独立示例和故障/信号对照待 P1-04；[P0 接口范例](../../spec/execution-v2/interface-examples/standalone.sh) 保留为规范范例，本轮 API 测试不代替 P1 阶段收口。全部签名和错误语义沿用 [2.0.0 冻结接口](../../spec/execution-v2/interfaces.md)。
 
 ## 部署和启用
 
@@ -36,6 +36,31 @@ sledra_execution_end --exit-code "$business_rc"
 
 有业务时次时用 `--cycle-kind single --cycle TIME`；处理多时次时显式用 `multiple`。`none`/`multiple` 不传 cycle；未记录 context 就是尚未确定。参数支持重复的 --string/--int/--float/--bool/--null，空字符串和 null 不同，数字按契约精确保留。参数键重复或选项非法时拒绝本条；不接受 --run-id、用户指定的 execution_id 或 previous-event。
 
+## 业务事件和顺序阶段
+
+公共函数为 `sledra_execution_event NAME [TYPED_VALUES]`、`sledra_stage_begin NAME`、`sledra_stage_end --exit-code N` 或 `--signal N`。在同一个已 begin 的 owner 中使用，例如：
+
+```bash
+sledra_stage_begin forecast
+# 原业务命令留在自己的控制流；owner 先保存其真实结果。
+sledra_execution_event forecast.progress \
+    --int step 9007199254740993 --float fraction 0.10000000000000001 \
+    --bool ready false --null optional --string message '预报进度'
+sledra_stage_end --exit-code "$business_rc"
+
+# 同名阶段可在上一段结束后再次开始，自动生成不同 stage_id。
+sledra_stage_begin forecast
+sledra_stage_end --signal 15
+```
+
+业务事件使用同一 typed 参数编码器，值直接进入 attributes；属性键按 JSON 键边界检查，不套用 context 参数键的命名规则。`execution.*` 和 `stage.*` 是保留名称，不能从业务 event 入口伪造。每次公共 event 调用都是新事实，即使名称和属性完全相同，也分配新 event_id。
+
+同一 owner 只有一个活动阶段，不支持嵌套/并行。已有阶段再次 begin、没有活动阶段就 end 均拒绝；非法结果或超长输入不会替换已接受的阶段/上下文。阶段名/ID 在 start 追加成功后保存，end 追加成功后清除，重复 source 不丢失它们。结束只接受 exit_code 0–255 或 signal 1–127，恰好一个，不补 duration_ns；execution_end 不补造未闭合的 stage.ended，closed 后阶段/业务钩子无写入。
+
+内部命令的业务名称紧随 KIND：`execution prepare event NAME --execution-id UUID [TYPED_VALUES]`；stage-start 使用 `--stage NAME` 自动分配 ID，stage-end 由 owner 传入已保存的 `--stage NAME --stage-id UUID` 和结果。stage-start 的 TSV auxiliary 为新 stage_id，其他已有字段和限额不变。公共调用方不提供这些 ID、previous-event、请求 JSON 或重试参数。
+
+owner 保留完整 pending 事件与其 auxiliary。测试在已知成功写入后重传缓存 bytes，证明同一事实保留 ID/时间/内容；再次调用公共 event 会分配新事实。真实故障一旦可能写入就禁写，保留 pending，不自动重试或重新 prepare；不要把测试中的安全重传当作故障恢复入口。
+
 ## owner 与失败处理
 
 source 只加载函数定义，begin 才冻结设置并建立一次 Execution；重复 source/begin 不重置。默认模式关闭时无文件、CLI 调用或诊断；与 `SLEDRA_ENABLED=1` 同时启用则禁用新版并诊断。设置在首次 begin 冻结，修改环境不会重启或转根。
@@ -58,4 +83,4 @@ prepare 的单条预写校验失败保留 active。根/工具故障、坏尾、�
 uv run --locked --offline --no-python-downloads python -m unittest discover -s tests/shell -p test_execution.py -v
 ```
 
-运行测试的开发环境需要 Go、Python 及现有 jsonschema 依赖；这不是记录节点依赖。P1-02 已覆盖 owner 生命周期与跨 CLI 禁写，P1-04 仍需完整示例、业务事件/阶段、信号及故障基线的阶段验收。
+运行测试的开发环境需要 Go、Python 及现有 jsonschema 依赖；这不是记录节点依赖。P1-02/P1-03 已覆盖 owner 生命周期、业务事件/阶段、记录边界及跨 CLI 禁写，P1-04 仍需完整示例、信号及故障基线的阶段验收。
