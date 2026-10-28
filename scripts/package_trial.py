@@ -109,6 +109,9 @@ def main() -> None:
         ):
             for path in sorted((ROOT / directory).rglob("*")):
                 if path.is_file() and path.suffix != ".pyc":
+                    if path == ROOT / "integrations/bash/execution-v2.md":
+                        # Its linked examples/spec are not part of the trial package yet.
+                        continue
                     target = share / path.relative_to(ROOT)
                     if path.suffix == ".md":
                         copy_package_markdown(path, target)
