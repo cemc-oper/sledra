@@ -4,6 +4,8 @@ Sledra 为工作流保存可追溯的运行事实。当前提供独立 Go 记录
 
 M1 独立记录、M1.1 工程化与 M1.2 构建及目录整理的既定本地范围已通过验收，当前工程入口见[工程交接](docs/source/development/engineering-handoff.md)。M2 已交付 SLD-10 文件身份与世代模型，SLD-11 原始事实存储、去重和冲突查询，SLD-12 有界读取、隔离和重处理，以及 SLD-13 检查点事务、持久队列、归档确认与备份恢复，SLD-14 身份关联、多维状态与版本化投影，以及 SLD-15 时间分解与不完整样本统计，见[分析组件](analysis/README.md)。SLD-23 提供[核心故障回归门槛](docs/source/development/testing/conformance.md)，根 `make test` 同时验证端到端崩溃恢复与 V01–V22 的明确核心子范围。产品规则聚合、业务报告及透明 `sledra exec` supervisor 尚未实现。
 
+新版 Execution 独立路径已完成 P0–P2 本地验收：公共入口自动记录，管理侧使用 sledra-history 直接读取文件。入口见 [记录/查询示例及支持范围](examples/execution/README.md)；生产 Run、MCV/takflow 和 HPC 接入尚未验收。下述 M1/M2 交接与 Registry/投影说明继续保留旧模式原义。
+
 ## 项目结构
 
 | 目录 | 用途 |
@@ -12,7 +14,7 @@ M1 独立记录、M1.1 工程化与 M1.2 构建及目录整理的既定本地范
 | [recorder](recorder/context/README.md) | Go 记录器：Registry、context、事件、spool 和隔离保留夹具 |
 | [integrations/bash](integrations/bash/README.md) | 由明确的生命周期 owner 调用的 Bash API |
 | [spec](spec/README.md) | 1.0.0 契约草案、生成脚本和合成正反例 |
-| [Execution v2 示例](examples/execution/README.md) | 独立记录与 P1 本地验收；无需旧登记或分析服务 |
+| [Execution v2 示例](examples/execution/README.md) | 独立记录→已安装 CLI 查询与 P0–P2 本地闭环；无需旧登记或分析服务 |
 | [旧版示例](examples/standalone/README.md) | 原独立示例与 HPC 站点模板 |
 | [tests](docs/source/development/testing/local.md) | 契约、Go、Shell、M1 和本地文件系统回归 |
 | [docs](docs/README.md) | Sphinx + PyData Sphinx Theme + MyST-NB 中文文档 |
