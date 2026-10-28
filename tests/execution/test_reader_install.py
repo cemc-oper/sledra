@@ -104,10 +104,17 @@ sys.addaudithook(audit)
 import sledra_analysis.execution
 assert "jsonschema" not in sys.modules
 from sledra_analysis.execution.reader import FileReader,Fact
+from sledra_analysis.execution.summary import group_counts,iter_summaries
 with FileReader(sys.argv[2]) as reader:
     rows=list(reader.iter_events("2026-10-27","2026-10-27"))
+    summaries=list(iter_summaries(reader,"2026-10-27","2026-10-27"))
+    counts=group_counts(summaries,namespace=reader.config["namespace"])
 assert len(rows)==int(sys.argv[3]),rows
 assert all(isinstance(r,Fact) for r in rows)
+assert counts.total.visible==counts.total.started==1
+assert len(counts.groups)==1 and counts.uncertain.visible==0
+assert summaries[0].context.status==summaries[0].end.status=="unique"
+assert len(summaries[0].stages)==2
 from decimal import Decimal
 assert rows[-1].data["attributes"]["zero"]==Decimal(0)
 assert not any(n=="sqlite3" or n.startswith(("sledra_analysis.ingest","sledra_analysis.store","sledra_analysis.projections","sledra_analysis.metrics")) for n in sys.modules)

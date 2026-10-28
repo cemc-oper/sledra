@@ -1,6 +1,6 @@
 # P0 收口：P1/P2 实现位置与依赖边界
 
-本文件固定源码位置、资源分发与验收入口，不新增任务清单。任务状态和 session 交接仍只在仓库外原 implementation-plan.md 维护。格式与接口分别沿用 [记录契约](README.md)、[Shell/CLI 接口](interfaces.md)，不得另建协议。P1-01 已落实 recorder/execution 的 codec/root/writer/独立资源及测试；P1-02 已落实 cmd/sledra/execution.go 的生命周期 CLI、前置分发/根隔离/帮助与版本信息、Bash owner 和 tests/shell/test_execution.py。P1-03 已扩展 prepare event/stage-start/stage-end、三个公共事件/阶段函数和相应 Go/Shell 测试；P1-04 已增加 examples/execution 的实际示例、tests/shell/test_execution_example.py 的真实业务/信号/故障对照；P2-01 已落实 analysis execution 的 codec/reader、独立 wheel 资源与共享/扫描/安装回归；P2-02/P2-03/P2-04 仍未实现。
+本文件固定源码位置、资源分发与验收入口，不新增任务清单。任务状态和 session 交接仍只在仓库外原 implementation-plan.md 维护。格式与接口分别沿用 [记录契约](README.md)、[Shell/CLI 接口](interfaces.md)，不得另建协议。P1-01 已落实 recorder/execution 的 codec/root/writer/独立资源及测试；P1-02 已落实 cmd/sledra/execution.go 的生命周期 CLI、前置分发/根隔离/帮助与版本信息、Bash owner 和 tests/shell/test_execution.py。P1-03 已扩展 prepare event/stage-start/stage-end、三个公共事件/阶段函数和相应 Go/Shell 测试；P1-04 已增加 examples/execution 的实际示例、tests/shell/test_execution_example.py 的真实业务/信号/故障对照；P2-01 已落实 analysis execution 的 codec/reader、独立 wheel 资源与共享/扫描/安装回归；P2-02 已落实独立 summary.py、精确去重/冲突、分组计数/Run 解释/阶段耗时与相应回归；P2-03/P2-04 仍未实现。
 
 ## 共享检查与格式收口
 
