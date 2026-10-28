@@ -1,6 +1,6 @@
 # P0 收口：P1/P2 实现位置与依赖边界
 
-本文件固定源码位置、资源分发与验收入口，不新增任务清单。任务状态和 session 交接仍只在仓库外原 implementation-plan.md 维护。格式与接口分别沿用 [记录契约](README.md)、[Shell/CLI 接口](interfaces.md)，不得另建协议。P1-01 已落实 recorder/execution 的 codec/root/writer/独立资源及测试；P1-02 已落实 cmd/sledra/execution.go 的生命周期 CLI、前置分发/根隔离/帮助与版本信息、Bash owner 和 tests/shell/test_execution.py。P1-03 已扩展 prepare event/stage-start/stage-end、三个公共事件/阶段函数和相应 Go/Shell 测试；完整示例及 P2 后续项不表示已经实现。
+本文件固定源码位置、资源分发与验收入口，不新增任务清单。任务状态和 session 交接仍只在仓库外原 implementation-plan.md 维护。格式与接口分别沿用 [记录契约](README.md)、[Shell/CLI 接口](interfaces.md)，不得另建协议。P1-01 已落实 recorder/execution 的 codec/root/writer/独立资源及测试；P1-02 已落实 cmd/sledra/execution.go 的生命周期 CLI、前置分发/根隔离/帮助与版本信息、Bash owner 和 tests/shell/test_execution.py。P1-03 已扩展 prepare event/stage-start/stage-end、三个公共事件/阶段函数和相应 Go/Shell 测试；P1-04 已增加 examples/execution 的实际示例、tests/shell/test_execution_example.py 的真实业务/信号/故障对照；P2 后续项仍未实现。
 
 ## 共享检查与格式收口
 
@@ -28,10 +28,10 @@ P0-03 修正了 schema 的 `$` 可在末尾 LF 前匹配的问题：UUID、names
 | 新增 `recorder/cmd/sledra/execution.go`、`execution_test.go` | P1-02/P1-03：init-root、prepare 六种 KIND、append，严格结果码/回执/输入限额；Go 主入口先分发 execution，再进入旧分支；通用错误输出保留旧命令退出 1 的既有语义 |
 | 修改 `recorder/cmd/sledra/main.go`、`information.go`，必要时 `internal/buildinfo` | P1-02：前置分发、独立帮助、新版错误码；旧帮助主题/命令/contract_version=1.0.0 保留。新版格式/布局信息以新增 execution_format_version/execution_layout_version 字段单列，不把软件版本当格式版本 |
 | 新增 `integrations/bash/sledra-execution.sh` | P1-02/P1-03：六个已定公共函数；未导出 owner 状态、重复 source/begin、防继承和 subshell 规则、一次 context、当前阶段、幂等结束；在本进程记住 disabled，不能只依赖某次 CLI 的 poisoned 变量 |
-| 新增 `tests/shell/test_execution.py`，扩充 `recorder/execution/*_test.go` | P1-02 至 P1-04：真实 Bash/Go 记录、options/trap 不变、实际重启/exec 身份、context/结束/阶段、诊断限额与跨 CLI 故障禁写；测试根均为临时目录 |
+| 新增 `tests/shell/test_execution.py`、`test_execution_example.py`，扩充 `recorder/execution/*_test.go` | P1-02 至 P1-04：真实 Bash/Go 记录、options/trap 不变、实际重启/exec 身份、context/结束/阶段、诊断限额与跨 CLI 故障禁写；测试根均为临时目录 |
 | 新增 `examples/execution/standalone.sh`、`README.md` | P1-04：实际可运行的独立闭环，由本次接口范例发展而来；无需 takflow/ecFlow/旧 launcher/手工身份；成功/配置失败/退出/信号/观测故障分列 |
 
-P1 以新版校验器和真实 JSONL 断言验收，不等待 P2 查询。已有 Go Makefile 会发现新包；根 make test 需接入新的 Shell 测试，旧 tests/shell/verify.py 保留原义。源码示例和测试只在临时根执行，不运行 examples/generated/generate.py。对照中的业务命令只能执行一次，不因观测故障补跑。
+P1 以新版校验器和真实 JSONL 断言验收，不等待 P2 查询。已有 Go Makefile 会发现新包；根 make test 已接入新的 Shell API 与示例测试，旧 tests/shell/verify.py 保留原义。源码示例和测试只在临时根执行，不运行 examples/generated/generate.py。对照中的业务命令只能执行一次，不因观测故障补跑。
 
 P1 的新调用链应为 `新 Bash owner → sledra execution → recorder/execution → 本执行文件`。同一二进制保留旧命令 import 不代表触发旧机制；须验证新分支不调用旧构造器、不建立 registry/documents/spool 目录。必要时使用局部 writer I/O 注入测试，不能为了测试复用旧 session/spool 框架。共享小型原语需确实中立；新建 UUID 和 SHA256 的标准库调用无需引入整包旧依赖。
 

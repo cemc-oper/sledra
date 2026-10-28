@@ -1,6 +1,6 @@
 # Execution 2.0.0 Shell/CLI 接口
 
-这是 P0-02 固定、经 P0-03 一致性核对的接口规范，与 [记录契约](README.md) 共用格式 `2.0.0`、布局 `2`。P1-01 至 P1-03 已实现 writer、CLI init-root/prepare 六种 KIND/append 和全部六个公共 Bash 函数；完整示例与阶段收口留在 P1-04。已交付部分的用法见 [生命周期说明](../../integrations/bash/execution-v2.md)，位置见 [实现映射](runtime-map.md)；不能将本文件全部接口或 P5 发行归档视为已交付。
+这是 P0-02 固定、经 P0-03 一致性核对的接口规范，与 [记录契约](README.md) 共用格式 `2.0.0`、布局 `2`。P1-01 至 P1-03 已实现 writer、CLI init-root/prepare 六种 KIND/append 和全部六个公共 Bash 函数；P1-04 的 [独立示例/真实业务对照](../../examples/execution/README.md) 已落实，阶段命令/结果及未验证范围见原实施计划。已交付部分的用法见 [生命周期说明](../../integrations/bash/execution-v2.md)，位置见 [实现映射](runtime-map.md)；不能将本文件全部接口或 P5 发行归档视为已交付。
 
 普通脚本只需部署好的 Go 二进制、Bash 库和独立记录根。公共入口调用一次 begin，应用解析实际参数后调用 context，再按需写事件/阶段/结束。用户不生成 execution_id、event_id、stage_id、token 或请求 JSON，不配置 producer/session，不需要 Python、jq、ecFlow、takflow 或后台服务。
 
@@ -120,7 +120,7 @@ Shell 必须在自身进程更新 disabled/closed 状态，再返回业务控制
 
 ## 独立脚本与 callback 边界
 
-[standalone.sh](interface-examples/standalone.sh) 是可做 Bash 语法与控制流检查的接口范例，部署后只需源库路径、SLEDRA_MODE/BIN/ROOT。它不生成身份、请求 JSON 或 producer 配置；其中合成业务 cycle/分辨率只作说明，不代表 MCV 接入。**P1-03 已交付范例所需的全部 API；此文件仍作为 P0 规范范例，其 mock 结果保留原义。独立使用示例及完整业务/故障对照由 P1-04 交付，本轮 API 测试不代替该阶段验收。**
+[standalone.sh](interface-examples/standalone.sh) 是可做 Bash 语法与控制流检查的接口范例，部署后只需源库路径、SLEDRA_MODE/BIN/ROOT。它不生成身份、请求 JSON 或 producer 配置；其中合成业务 cycle/分辨率只作说明，不代表 MCV 接入。**P1-03 已交付范例所需的全部 API；此文件仍作为 P0 规范范例，其 mock 结果保留原义。P1-04 已另行交付真实独立示例与业务/故障对照，不改写本范例或 mock 的历史结果。**
 
 范例 source 后立即 begin，再执行配置检查。业务命令在顶层原控制流执行，不能变成 `if run_business`、`run_business || ...`、`$(run_business)` 或交给 Sledra launcher。退出 handler 首先保存原 rc，signal handler 保存实际信号；库不安装 trap。已有 ecFlow callback 继续由业务 owner 按原顺序调用，允许外层仍 exit 0，但传给 end 的必须是此前保存的真实业务 rc/signal。
 

@@ -12,7 +12,8 @@ M1 独立记录、M1.1 工程化与 M1.2 构建及目录整理的既定本地范
 | [recorder](recorder/context/README.md) | Go 记录器：Registry、context、事件、spool 和隔离保留夹具 |
 | [integrations/bash](integrations/bash/README.md) | 由明确的生命周期 owner 调用的 Bash API |
 | [spec](spec/README.md) | 1.0.0 契约草案、生成脚本和合成正反例 |
-| [examples](examples/standalone/README.md) | 独立示例与 HPC 站点模板 |
+| [Execution v2 示例](examples/execution/README.md) | 独立记录与 P1 本地验收；无需旧登记或分析服务 |
+| [旧版示例](examples/standalone/README.md) | 原独立示例与 HPC 站点模板 |
 | [tests](docs/source/development/testing/local.md) | 契约、Go、Shell、M1 和本地文件系统回归 |
 | [docs](docs/README.md) | Sphinx + PyData Sphinx Theme + MyST-NB 中文文档 |
 | [scripts](docs/source/development/workflow.md) | 专用构建、打包、契约和验证工具 |

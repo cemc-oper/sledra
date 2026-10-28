@@ -2,7 +2,7 @@
 
 源码入口为 [sledra-execution.sh](sledra-execution.sh)，使用 Bash 4.3 及以上版本和编译后的 `sledra` Go 二进制。只需这两项及已初始化的独立记录根；记录节点不需要 Python、jq、ecFlow 或旧 producer/context 配置。
 
-当前已实现全部六个公共函数，以及 CLI init-root、prepare 六种 KIND 和 append。完整独立示例和故障/信号对照待 P1-04；[P0 接口范例](../../spec/execution-v2/interface-examples/standalone.sh) 保留为规范范例，本轮 API 测试不代替 P1 阶段收口。全部签名和错误语义沿用 [2.0.0 冻结接口](../../spec/execution-v2/interfaces.md)。
+当前已实现全部六个公共函数，以及 CLI init-root、prepare 六种 KIND 和 append。P1-04 的 [可执行独立示例](../../examples/execution/README.md) 已提供真实业务/故障/信号对照；[P0 接口范例](../../spec/execution-v2/interface-examples/standalone.sh) 保留为规范范例，P0 mock 结果保留原义，P1 阶段证据由原实施计划汇总。全部签名和错误语义沿用 [2.0.0 冻结接口](../../spec/execution-v2/interfaces.md)。
 
 ## 部署和启用
 
@@ -14,7 +14,7 @@
     --system synthetic --deployment local --partition-timezone=+08:00
 ```
 
-该命令只建立不可覆盖的 sledra.json；相同设置幂等，不同设置、混合旧布局或非空无标记目录被拒绝。部署路径只是说明，本轮验证均用临时目录。P5 试用归档尚未纳入新版 Bash 入口，使用前须由部署者提供本次构建的二进制和源码库。
+该命令只建立不可覆盖的 sledra.json；相同设置幂等，不同设置、混合旧布局或非空无标记目录被拒绝。部署路径只是说明，本轮验证均用临时目录。本次不调整或验收 P5 试用归档，使用前须由部署者提供本次构建的二进制和源码库。
 
 业务 owner 的最小调用如下；实际业务仍在原位置运行，结果由 owner 自行保存：
 
@@ -80,7 +80,7 @@ prepare 的单条预写校验失败保留 active。根/工具故障、坏尾、�
 [真实 Bash/Go 测试](../../tests/shell/test_execution.py) 编译临时二进制并在临时根运行，使用 P0 校验器断言实际记录，不依赖 P2 reader。根 make test 已纳入它；单独执行：
 
 ```bash
-uv run --locked --offline --no-python-downloads python -m unittest discover -s tests/shell -p test_execution.py -v
+uv run --locked --offline --no-python-downloads python -m unittest discover -s tests/shell -p 'test_execution*.py' -v
 ```
 
-运行测试的开发环境需要 Go、Python 及现有 jsonschema 依赖；这不是记录节点依赖。P1-02/P1-03 已覆盖 owner 生命周期、业务事件/阶段、记录边界及跨 CLI 禁写，P1-04 仍需完整示例、信号及故障基线的阶段验收。
+运行测试的开发环境需要 Go、Python 及现有 jsonschema 依赖；这不是记录节点依赖。P1-02/P1-03 已覆盖 owner 生命周期、业务事件/阶段、记录边界及跨 CLI 禁写，P1-04 增加了实际示例的命令次数/argv/产物/callback、TERM/KILL 和观测故障对照；HPC/真实工作流及 P5 归档仍未验收。
