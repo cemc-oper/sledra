@@ -311,6 +311,8 @@ raise SystemExit(code)
             "--all-record-dates", "--cycle", CYCLE, "--parameter", "resolution_km=25"
         )
         self.assertEqual(selected[-1]["matched"]["started"], 3)
+        self.assertTrue(selected[-1]["incomplete"])
+        self.assertIn("window_unresolved_context", selected[-1]["incomplete_reasons"])
         # An old business cycle lives in the actual current entry partition.
         one = self.details(selected)[0]
         partition = one["events"][0]["sources"][0]["path"].split("/")[1]
@@ -560,6 +562,17 @@ kill -KILL "$BASHPID"
         self.assertEqual(self.details(alias)[0]["association"]["status"], "unlinked")
         selected, _ = self.query("--all-record-dates", "--parameter", "resolution_km=3", root=root)
         self.assertEqual(selected[-1]["matched"]["visible"], 1)
+        # A synthetic creation without an Execution must remain a visible round.
+        unused = json.loads((root / "runs/20240701" / (run_ids[0] + ".json")).read_bytes())
+        unused["run_id"] = str(uuid.uuid4())
+        unused["creator_execution_id"] = str(uuid.uuid4())
+        (root / "runs/20240701" / (unused["run_id"] + ".json")).write_bytes(encoded(unused))
+        rounds, _ = self.query(
+            "--all-record-dates", "--all-run-records", "--cycle", CYCLE, root=root
+        )
+        self.assertEqual(rounds[-1]["run_creations"]["recorded_creations"], 3)
+        self.assertEqual(rounds[-1]["run_creations"]["with_followup_observed"], 2)
+        self.assertEqual(rounds[-1]["run_creations"]["without_followup_observed"], 1)
 
 
 if __name__ == "__main__":

@@ -40,6 +40,7 @@ sledra-history --root "$SLEDRA_ROOT" --all-record-dates \
 | --cycle | 匹配最终 single cycle 的同一时间点，保留 UTC 纳秒精度；不能同时指定 none/multiple |
 | --cycle-kind single/none/multiple | 查询明确周期类型；missing/conflicting context 不属于 none |
 | --run-id UUID | 过滤最终 context 已记录的引用，结果仍展示 missing/conflicting/unavailable/scope/cycle 不适用等状态；有引用不等于确定 Run 分组或生产来源证明 |
+| --all-run-records | 额外读取全部保留的 Run 创建记录并统计轮次；Run 计数只使用 scope/cycle/cycle-kind/run-id 条件，不使用 task/参数/事件/execution-id 条件 |
 | --execution-id UUID | 在当前记录窗口定位执行，不要求存在最终 context |
 | --event NAME | 要求存在该业务事件，不接受保留的 execution/stage 事件名 |
 | --target-cycle RFC3339 | 要求业务事件明确给出该合法目标时次，不改写执行主 cycle，不把 multiple 复制计数 |
@@ -49,7 +50,11 @@ ID 为既定小写 UUIDv4。参数保留布尔/数值/字符串/null 区别、�
 
 同 ID 跨多文件属于布局归属异常：逐文件明细保留，但确定 context 过滤不匹配；按 ID 查询可以检查全部原事实，总数只计一次，业务分组进入 uncertain。context 冲突同样不会被归入某一确定 cycle/Run；可去掉 context 条件并加 --execution-id 检查 sources。
 
-Run 元数据扫描全部保留的**创建日期**，独立于 Execution 记录窗口。输出的 Run 范围是“当前扫描窗口中所有引用，以及显式 --run-id”，包括未命中其他业务条件的引用；不是所有 Run 或该窗口内创建轮次数量。没有匹配 Execution 也可展示所请求 Run 的元数据。Run 问题不能隐藏已记录的执行；RunLookup 状态解释沿用汇总接口，P2 的 Run/alias 样例均为合成，不实现 begin_run/发布/来源接受。
+Run 元数据扫描全部保留的**创建日期**，独立于 Execution 记录窗口。默认输出范围仍是“当前扫描窗口中所有引用，以及显式 --run-id”，包括未命中其他业务条件的引用；默认不代表所有 Run 或该窗口内创建轮次数量。没有匹配 Execution 也可展示所请求 Run 的元数据。Run 问题不能隐藏已记录的执行；RunLookup 状态解释沿用汇总接口，P2 的 Run/alias 样例均为合成，不实现 begin_run/发布/来源接受。
+
+显式 --all-run-records 可回答“已记录多少轮创建”，包含尚无任何 Execution 引用的 Run，summary.run_creations 给出 recorded_creations、with_followup_observed、without_followup_observed 和逐 Run ID 的关联观察。仅合法且唯一的 Run ID 计一次；冲突/不可用不选赢家，单列 unresolved_run_ids，扫描错误仍使结果不完整。可使用 `--all-run-records --scope forecast --cycle 2024-07-01T00:00:00+08:00 --all-record-dates` 查看某 scope/cycle 的保留轮次。
+
+创建计数覆盖全部保留的 Run 日期，不受 Execution 记录窗口限制；“后续关联”只检查当前 Execution 窗口、唯一最终 context 与 scope/cycle 适用的关联，不受 task/参数/业务事件等结果过滤缩小。创建者自身关联不算后续 Execution；not_observed_in_window 只表示该窗口未观察到后续关联，不推断发布失败或整轮完成。原始 Run 元数据行仍保留全部候选以便检查，Run 计数的过滤范围在 run_creations.scope 明示。没有该选项时 run_creations 为 null，原默认查询行为不变。
 
 ## 输出、数量与退出码
 
@@ -76,7 +81,7 @@ JSON 数值保持精确，不将 Decimal 转 float 或偷偷编码成字符串�
 | 1 | 完成但看到读取错误、事实/文件冲突、无法确定的 Run 引用或两遍间成员变化；仍输出可用事实和最终 summary |
 | 2 | 参数无效、根不兼容/不可读或查询 I/O 失败。参数错误为标准用法诊断；根/I/O 错误为 stderr 上固定代码，不回显原记录 |
 
-有限窗口本身不意味着查询失败；incomplete_reasons 描述所观察到的数据问题，finite_window 描述覆盖范围，两者分别检查。扫描问题覆盖整个所选窗口，不能因业务过滤或没有匹配而忽略。缺阶段端点、上下文缺失、声明耗时与墙钟差、负墙钟差均按原汇总语义显示。
+有限窗口本身不意味着查询失败；incomplete_reasons 描述所观察到的数据问题，finite_window 描述覆盖范围，两者分别检查。扫描问题覆盖整个所选窗口，不能因业务过滤或没有匹配而忽略。任一遍观察到缺失/冲突 context 时，window_unresolved_context_ids 保留该 ID，并报告 window_unresolved_context；即使它被 task/cycle/参数/Run 条件排除、最终 no_matches 为真，incomplete 仍为 true，不能把未确定归属当作确定不存在。只有上下文未知仍可退出 0，其他错误按上表处理。缺阶段端点、声明耗时与墙钟差、负墙钟差均按原汇总语义显示。
 
 CLI 先逐文件收集紧凑 ID/Run 引用和布局异常，再读取引用元数据，最后逐文件重扫并输出明细/分组。内存不保存全历史事件，只有当前执行及 ID/分组/问题信息；没有临时查询数据库、结果缓存、checkpoint 或源文件修复。两遍均使用各文件打开时大小上界，**不是跨文件原子快照**，不保证检测任意追加/等长改写；活动半行可以在后续查询补齐后读取。需要判断数据完整性时同时看 coverage、issue 和最后的 summary，不能将观察状态当作产品交付证明。
 

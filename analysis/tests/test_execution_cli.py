@@ -329,6 +329,44 @@ class HistoryCLI(unittest.TestCase):
         self.assertIn("end=not_observed", text)
         self.assertNotIn("end=running", text)
 
+    def test_filtered_unknown_context_does_not_claim_complete_no_matches(self):
+        identity = str(uuid.uuid4())
+        self.put([self.event(identity, "execution.started", {"task": "entry", "engine": None})])
+        for arguments in (
+            ("--task", "main.forecast"),
+            ("--cycle", CYCLE),
+            ("--parameter", "resolution_km=25"),
+            ("--run-id", str(uuid.uuid4())),
+        ):
+            with self.subTest(arguments=arguments):
+                code, rows = self.json_cli(*arguments)
+                self.assertIn(code, (0, 1))  # Requested missing Run independently returns 1.
+                self.assertTrue(rows[-1]["no_matches"])
+                self.assertEqual(rows[-1]["window_unresolved_context_ids"], [identity])
+                self.assertTrue(rows[-1]["incomplete"])
+                self.assertIn("window_unresolved_context", rows[-1]["incomplete_reasons"])
+
+    def test_unknown_context_first_seen_in_second_pass_is_reported(self):
+        original = cli.iter_summaries
+        identity = str(uuid.uuid4())
+        calls = 0
+
+        def scans(reader, *window):
+            nonlocal calls
+            calls += 1
+            if calls == 2:
+                self.put(
+                    [self.event(identity, "execution.started", {"task": "entry", "engine": None})]
+                )
+            yield from original(reader, *window)
+
+        with patch.object(cli, "iter_summaries", scans):
+            code, rows = self.json_cli("--task", "main.forecast")
+        self.assertEqual(code, 1)
+        self.assertTrue(rows[-1]["no_matches"])
+        self.assertEqual(rows[-1]["window_unresolved_context_ids"], [identity])
+        self.assertIn("window_unresolved_context", rows[-1]["incomplete_reasons"])
+
     def test_bad_file_and_partial_tail_do_not_hide_good_results_or_filtered_scan_errors(self):
         self.put(self.records())
         broken = self.records(ended=False)
@@ -439,6 +477,56 @@ class HistoryCLI(unittest.TestCase):
         self.assertEqual(rows[-1]["matched"]["visible"], 1)
         self.assertEqual(rows[-1]["uncertain"]["visible"], 1)
         self.assertEqual(rows[-1]["execution_rows"], 2)
+
+    def test_all_run_creations_include_unreferenced_rounds_and_limit_followup_to_window(self):
+        first, second = str(uuid.uuid4()), str(uuid.uuid4())
+        a, b = self.put_run(first), self.put_run(second)
+        # Both are synthetic creation records; only the first has a later accepted Execution.
+        self.put(self.records(run=first, scope=a["scope"]))
+        _, rows = self.json_cli()
+        self.assertEqual({r["run_id"] for r in rows if r["type"] == "run"}, {first})
+        self.assertIsNone(rows[-1]["run_creations"])
+        code, rows = self.json_cli("--all-run-records", "--cycle", CYCLE)
+        self.assertEqual(code, 0)
+        counts = rows[-1]["run_creations"]
+        self.assertEqual(counts["recorded_creations"], 2)
+        self.assertEqual(counts["with_followup_observed"], 1)
+        unlinked = next(r for r in counts["runs"] if r["run_id"] == second)
+        self.assertEqual(unlinked["followup_status"], "not_observed_in_window")
+        self.assertEqual(unlinked["followup_execution_ids"], [])
+        _, rows = self.json_cli(
+            "--all-run-records", "--record-from", "2020-01-01", "--record-through", "2020-01-01"
+        )
+        self.assertTrue(rows[-1]["no_matches"])
+        self.assertEqual(rows[-1]["run_creations"]["recorded_creations"], 2)
+        self.assertEqual(rows[-1]["run_creations"]["with_followup_observed"], 0)
+        # Creator self-association is not a downstream Execution accepting the Run.
+        self.put(self.records(identity=b["creator_execution_id"], run=second, scope=b["scope"]))
+        _, rows = self.json_cli("--all-run-records", "--run-id", second)
+        counts = rows[-1]["run_creations"]
+        self.assertEqual(counts["recorded_creations"], 1)
+        self.assertEqual(counts["with_followup_observed"], 0)
+        self.assertEqual(counts["runs"][0]["associated_execution_ids"], [b["creator_execution_id"]])
+
+    def test_run_creation_filters_and_unreadable_metadata_do_not_create_false_rounds(self):
+        identity = str(uuid.uuid4())
+        run = self.put_run(identity)
+        for args in (
+            ("--scope", "other"),
+            ("--cycle-kind", "none"),
+            ("--cycle", "2024-07-02T00:00:00Z"),
+        ):
+            _, rows = self.json_cli("--all-run-records", *args)
+            self.assertEqual(rows[-1]["run_creations"]["recorded_creations"], 0)
+        # Task/parameter/event filters have no meaning on a Run creation record.
+        _, rows = self.json_cli("--all-run-records", "--task", "no.such.task")
+        self.assertEqual(rows[-1]["run_creations"]["recorded_creations"], 1)
+        path = self.root / "runs/20240701" / (run["run_id"] + ".json")
+        path.write_bytes(b"{bad}")
+        code, rows = self.json_cli("--all-run-records")
+        self.assertEqual(code, 1)
+        self.assertEqual(rows[-1]["run_creations"]["recorded_creations"], 0)
+        self.assertEqual(rows[-1]["run_creations"]["unresolved_run_ids"], [identity])
 
     def test_membership_change_between_scans_is_explicit(self):
         records = self.records()

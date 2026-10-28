@@ -93,6 +93,11 @@ def _parser():
         "--run-id", type=_uuid, help="recorded final Run reference; inspect association status"
     )
     parser.add_argument(
+        "--all-run-records",
+        action="store_true",
+        help="also count all retained Run creations; scope/cycle/kind/run-id filters apply",
+    )
+    parser.add_argument(
         "--execution-id", type=_uuid, help="Execution ID within the selected record dates"
     )
     parser.add_argument("--event", type=_event_name, help="require this business event")
@@ -302,6 +307,48 @@ def _execution(summary, args, lookup, zone):
     }
 
 
+def _run_creations(lookup, associations, args):
+    """Count only readable creation facts; follow-up is limited to this scan window."""
+    observed = []
+    for identity, reference in sorted(lookup.references.items()):
+        if reference.status != "found":
+            continue
+        run = reference.records[0].data
+        if any(
+            value is not None and run[key] != value
+            for key, value in (
+                ("scope", args.scope),
+                ("cycle_kind", args.cycle_kind),
+                ("run_id", args.run_id),
+            )
+        ):
+            continue
+        if args.cycle is not None and (
+            run["cycle_kind"] != "single" or timestamp(run["cycle"]) != timestamp(args.cycle)
+        ):
+            continue
+        accepted = associations.get(identity, set())
+        followup = sorted(accepted - {run["creator_execution_id"]})
+        observed.append(
+            {
+                "run_id": identity,
+                "associated_execution_ids": sorted(accepted),
+                "followup_execution_ids": followup,
+                "followup_status": "observed_in_window" if followup else "not_observed_in_window",
+            }
+        )
+    return {
+        "scope": "all retained Run creation dates; scope/cycle/kind/run-id filters only",
+        "recorded_creations": len(observed),
+        "with_followup_observed": sum(bool(r["followup_execution_ids"]) for r in observed),
+        "without_followup_observed": sum(not r["followup_execution_ids"] for r in observed),
+        "unresolved_run_ids": sorted(
+            i for i, r in lookup.references.items() if r.status != "found"
+        ),
+        "runs": observed,
+    }
+
+
 def _query(reader, args, now):
     config = reader.config
     first, last, mode = _window(args, config, now)
@@ -317,7 +364,9 @@ def _query(reader, args, now):
         "namespace": config["namespace"],
         "finite_window": first is not None,
         "snapshot": False,
-        "run_metadata_scope": "references in scanned window plus requested run_id; all retained Run creation dates",
+        "run_metadata_scope": "all retained Run records"
+        if args.all_run_records
+        else "references in scanned window plus requested run_id; all retained Run creation dates",
         "filters": {
             key: getattr(args, key)
             for key in (
@@ -373,6 +422,14 @@ def _query(reader, args, now):
                 run_ids.add(reference)
     if args.run_id is not None:
         run_ids.add(args.run_id)
+    if args.all_run_records:
+        for item in reader.iter_runs():
+            if isinstance(item, ReadIssue):
+                issue(item, "runs")
+                if item.record_id is not None:
+                    run_ids.add(item.record_id)
+            else:
+                run_ids.add(item.data["run_id"])
     lookup = reader.resolve_runs(run_ids)
     for problem in lookup.issues:
         issue(problem, "runs")
@@ -390,6 +447,7 @@ def _query(reader, args, now):
             errors.add("uncertain_run_reference")
             reasons.add("uncertain_run_reference")
     seen = set()
+    associations = {}
     selected_count = 0
 
     def selected():
@@ -420,6 +478,11 @@ def _query(reader, args, now):
             if item.conflicts:
                 errors.add("conflicting_facts")
                 reasons.add("conflicting_facts")
+            if item.context.status != "unique":
+                unresolved_context.add(identity)
+            association = associate_run(item, lookup)
+            if args.all_run_records and association.status == "associated":
+                associations.setdefault(association.run_id, set()).add(identity)
             if not _matches(item, args):
                 continue
             selected_count += 1
@@ -434,7 +497,6 @@ def _query(reader, args, now):
             for duration in [item.duration, *(s.duration for s in item.stages)]:
                 if duration.status in ("negative_wall_time", "ambiguous_wall_time"):
                     reasons.add(duration.status)
-            association = associate_run(item, lookup)
             if association.status not in (
                 "associated",
                 "unlinked",
@@ -450,6 +512,8 @@ def _query(reader, args, now):
     if seen != set(paths):
         errors.add("scan_membership_changed")
         reasons.add("scan_membership_changed")
+    if unresolved_context:
+        reasons.add("window_unresolved_context")
     for group in counts.groups:
         row = {"type": "group", **asdict(group)}
         if "cycle" in row["key"]:
@@ -474,6 +538,9 @@ def _query(reader, args, now):
             "incomplete": bool(reasons),
             "incomplete_reasons": sorted(reasons),
             "no_matches": counts.total.visible == 0,
+            "run_creations": _run_creations(lookup, associations, args)
+            if args.all_run_records
+            else None,
             "coverage": {
                 k: coverage[k] for k in ("mode", "record_from", "record_through", "finite_window")
             },
