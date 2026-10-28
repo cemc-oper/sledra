@@ -17,4 +17,4 @@ dev = ["setuptools==80.9.0"]
 where = ["src"]
 
 [tool.setuptools.package-data]
-sledra_analysis = ["resources/contract/*.json"]
+sledra_analysis = ["resources/contract/*.json", "resources/execution_v2/*.json"]

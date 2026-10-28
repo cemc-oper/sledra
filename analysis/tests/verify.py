@@ -78,6 +78,13 @@ def main() -> int:
         }[args.task],
         "analysis_version": "0.1.0.dev0",
         "protocol_version": "1.0.0",
+        "execution_format_version": "2.0.0",
+        "execution_layout_version": 2,
+        "execution_resource_sha256": hashlib.sha256(
+            (
+                ROOT / "analysis/src/sledra_analysis/resources/execution_v2/contract.schema.json"
+            ).read_bytes()
+        ).hexdigest(),
         "python": platform.python_version(),
         "sqlite": sqlite3.sqlite_version,
         "platform": platform.platform(),

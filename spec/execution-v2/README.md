@@ -1,6 +1,6 @@
 # Execution 2.0.0 记录与布局契约
 
-本目录是简化方案 P0 的规范成果。格式版本固定为 `2.0.0`，布局版本为整数 `2`；两者独立于软件发行版本。P1-01 的 [Go 记录核心](../../recorder/execution/README.md) 已实现 codec/root/writer；P1-02 的 [CLI/Shell 生命周期](../../integrations/bash/execution-v2.md) 已可用；P1-03 业务事件/顺序阶段已实现；P1-04 的 [独立示例与本地验收](../../examples/execution/README.md) 已交付；查询和真实 Run 接入仍待后续任务。旧 `spec/1.0.0`、旧命令、旧样例及历史结果保留原义。
+本目录是简化方案 P0 的规范成果。格式版本固定为 `2.0.0`，布局版本为整数 `2`；两者独立于软件发行版本。P1-01 的 [Go 记录核心](../../recorder/execution/README.md) 已实现 codec/root/writer；P1-02 的 [CLI/Shell 生命周期](../../integrations/bash/execution-v2.md) 已可用；P1-03 业务事件/顺序阶段已实现；P1-04 的 [独立示例与本地验收](../../examples/execution/README.md) 已交付；P2-01 的 [Python 直接文件读取](../../analysis/src/sledra_analysis/execution/README.md) 已交付；汇总/查询 CLI 和真实 Run 接入仍待后续任务。旧 `spec/1.0.0`、旧命令、旧样例及历史结果保留原义。
 
 P0-02 的公共函数、类型化参数、owner/失败状态与新旧分发已固定在 [Shell/CLI 接口规范](interfaces.md)；其中事件/阶段已由 P1-03 实现，P0 mock 检查仍不代表完整 P1 运行时验收。
 

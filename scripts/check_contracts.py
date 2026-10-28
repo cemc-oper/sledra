@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def check_execution_resource(root: Path) -> None:
-    """Check the independent Go resource without touching frozen 1.0 resources."""
+    """Check independent v2 resources without touching frozen 1.0 resources."""
     canonical = root / "spec/execution-v2/contract.schema.json"
     target = root / "recorder/execution/contract/contract.schema.json"
     if not target.is_file() or target.read_bytes() != canonical.read_bytes():
@@ -21,6 +21,13 @@ def check_execution_resource(root: Path) -> None:
             "recorder/execution/contract/contract.schema.json: differs from canonical spec"
         )
     print("Execution 2.0.0 embedded Go resource matches canonical spec")
+    if (root / "analysis/src/sledra_analysis/execution").is_dir():
+        target = root / "analysis/src/sledra_analysis/resources/execution_v2/contract.schema.json"
+        if not target.is_file() or target.read_bytes() != canonical.read_bytes():
+            raise ValueError(
+                "analysis/src/sledra_analysis/resources/execution_v2/contract.schema.json: differs from canonical spec"
+            )
+        print("Execution 2.0.0 bundled Python resource matches canonical spec")
 
 
 def check_generated(root: Path) -> None:

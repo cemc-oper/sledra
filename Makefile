@@ -78,7 +78,7 @@ _test:
 	$(UV_PY) spec/verify_event.py
 	$(UV_PY) spec/verify_context.py
 	$(UV_PY) spec/execution-v2/verify.py
-	$(UV_PY) -m unittest discover -s tests/execution -p test_writer_contract.py -v
+	$(UV_PY) -m unittest discover -s tests/execution -p 'test_*.py' -v
 	$(UV_PY) -m unittest discover -s tests/shell -p 'test_execution*.py' -v
 	$(UV_PY) tests/cli/verify.py
 	$(UV_PY) tests/m1/verify.py
