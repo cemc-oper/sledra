@@ -198,6 +198,8 @@ def main() -> None:
             goos=goos,
             goarch=arch,
             contract_version="1.0.0",
+            execution_format_version="2.0.0",
+            execution_layout_version=2,
         )
         manifest = {
             "format_version": 1,
