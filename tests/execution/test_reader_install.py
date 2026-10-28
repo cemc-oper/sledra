@@ -140,6 +140,73 @@ print("installed independent reader passed")
             )
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertEqual(result.stdout, b"installed independent reader passed\n")
+            # Install the actual console entry into a temporary target, reusing
+            # the configured test runtime's dependencies, without registry access.
+            environment = base / "installed"
+            install = subprocess.run(
+                [
+                    "uv",
+                    "pip",
+                    "install",
+                    "--offline",
+                    "--no-python-downloads",
+                    "--no-deps",
+                    "--python",
+                    sys.executable,
+                    "--target",
+                    str(environment),
+                    str(wheel),
+                ],
+                cwd=base,
+                capture_output=True,
+                timeout=60,
+            )
+            self.assertEqual(install.returncode, 0, install.stderr)
+            entry = environment / "bin/sledra-history"
+            self.assertTrue(entry.is_file())
+            script = r"""
+import os,runpy,sys
+sys.path.insert(0,sys.argv[3])
+installed=sys.argv[3]
+def audit(event,args):
+    if event=="socket.connect" or event.startswith("sqlite3.connect"):
+        raise AssertionError(event)
+    if event=="open" and args[2] & (os.O_WRONLY|os.O_RDWR|os.O_CREAT|os.O_TRUNC|os.O_APPEND):
+        raise AssertionError("query attempted a write")
+sys.addaudithook(audit)
+sys.argv=[sys.argv[1],"--root",sys.argv[2],"--record-from","2026-10-27","--record-through","2026-10-27","--format","jsonl"]
+try:
+    runpy.run_path(sys.argv[0],run_name="__main__")
+except SystemExit as exc:
+    assert exc.code==0,exc.code
+import sledra_analysis.execution.cli as cli
+assert cli.__file__.startswith(installed)
+assert not any(n=="sqlite3" or n.startswith(("sledra_analysis.ingest","sledra_analysis.store","sledra_analysis.projections","sledra_analysis.metrics")) for n in sys.modules)
+"""
+            result = subprocess.run(
+                [sys.executable, "-I", "-B", "-c", script, str(entry), str(root), str(environment)],
+                cwd=base,
+                capture_output=True,
+                timeout=15,
+                env={k: v for k, v in os.environ.items() if k not in {"PYTHONPATH", "BASH_ENV"}},
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            rows = [json.loads(line) for line in result.stdout.splitlines()]
+            self.assertEqual(rows[0]["type"], "coverage")
+            self.assertEqual(rows[-1]["matched"]["visible"], 1)
+            self.assertEqual(rows[-1]["matched"]["started"], 1)
+            help_result = subprocess.run(
+                [str(entry), "--help"],
+                cwd=base,
+                capture_output=True,
+                timeout=10,
+                env={
+                    **{k: v for k, v in os.environ.items() if k != "BASH_ENV"},
+                    "PYTHONPATH": str(environment),
+                },
+            )
+            self.assertEqual(help_result.returncode, 0, help_result.stderr)
+            self.assertIn(b"--all-record-dates", help_result.stdout)
             self.assertEqual(
                 before,
                 {str(p.relative_to(root)): p.read_bytes() for p in root.rglob("*") if p.is_file()},

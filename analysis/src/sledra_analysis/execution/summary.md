@@ -1,6 +1,6 @@
 # Execution 汇总与统计（P2-02）
 
-[summary.py](summary.py) 直接消费 [reader](README.md) 的合法 Fact/ReadIssue。沿用 2.0.0/布局 2 和精确比较，无数据库、旧投影、登记、索引或额外配置。P2-03 的 sledra-history CLI、默认窗口和输出格式尚未实现。
+[summary.py](summary.py) 直接消费 [reader](README.md) 的合法 Fact/ReadIssue。沿用 2.0.0/布局 2 和精确比较，无数据库、旧投影、登记、索引或额外配置。P2-03 的 [sledra-history CLI](cli.md)、默认窗口和文本/JSONL 输出已实现，沿用本文统计口径。
 
 ## API
 

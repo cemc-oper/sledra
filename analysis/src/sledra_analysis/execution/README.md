@@ -2,7 +2,7 @@
 
 本包直接读取 [2.0.0/布局 2 契约](../../../../spec/execution-v2/README.md) 的文件，没有数据库、Registry、SourceLease、投影或源码目录依赖。包顶层导入无副作用；codec 使用标准库和现有 jsonschema，schema 从 [独立包资源](../resources/execution_v2/contract.schema.json) 加载。旧 resources/contract 和旧分析入口继续服务原格式。
 
-当前交付是 codec、显式日期窗口扫描与 Run 文件查找。[Execution 去重/冲突汇总、次数/分组/耗时](summary.md) 已由 P2-02 实现；sledra-history CLI 和默认七天窗口留在 P2-03，不将此开发 API 当作完整历史查询工具。
+当前交付是 codec、显式日期窗口扫描与 Run 文件查找。[Execution 去重/冲突汇总、次数/分组/耗时](summary.md) 已由 P2-02 实现；P2-03 已提供 [sledra-history CLI](cli.md)、默认七天窗口与覆盖/不完整性说明；此处保留开发 API 的显式窗口语义。
 
 ## 读取与源位置
 

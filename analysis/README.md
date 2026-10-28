@@ -1,6 +1,6 @@
 # Sledra 离线分析组件
 
-新版 [Execution v2 文件读取](src/sledra_analysis/execution/README.md) 已完成 P2-01：独立 codec、显式日期窗口扫描与合成 Run 查找，无数据库/旧 ingest 前置。P2-02 的 [Execution 汇总与统计](src/sledra_analysis/execution/summary.md) 已实现；查询 CLI 仍待 P2-03。以下 SLD-10–15 继续描述旧分析路径。
+新版 [Execution v2 文件读取](src/sledra_analysis/execution/README.md) 已完成 P2-01：独立 codec、显式日期窗口扫描与合成 Run 查找，无数据库/旧 ingest 前置。P2-02 的 [Execution 汇总与统计](src/sledra_analysis/execution/summary.md) 已实现；P2-03 的 [sledra-history 查询 CLI](src/sledra_analysis/execution/cli.md) 已可用，默认七天记录窗口、业务过滤、文本/JSONL 输出均直接读取文件。以下 SLD-10–15 继续描述旧分析路径。
 
 当前交付 SLD-10 文件身份、世代和 offset 模型，SLD-11 SQLite 原始事实、去重与冲突存储，SLD-12 有界读取、校验／隔离和重处理，以及 SLD-13 接入事务、持久队列、原始归档／确认和备份恢复，SLD-14 身份关联与多维状态投影，以及 SLD-15 时间分解与条件统计，独立发行名为 `sledra-analysis`，开发版本 `0.1.0.dev0`，运行使用 Python 3.12+、SQLite 标准库，以及固定 jsonschema 4.10.3；传递依赖由 analysis/uv.lock 锁定。Go/Bash 记录器不依赖此组件。存储需要 Python 内置 SQLite 3.37+ 与 Linux flock；SLD-15 已提供时间配对、时钟质量与不完整样本统计。
 
