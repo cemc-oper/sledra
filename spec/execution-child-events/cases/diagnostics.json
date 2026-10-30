@@ -1,0 +1,574 @@
+[
+  {
+    "id": "off-shared-True-used-True",
+    "input": {
+      "reason": "off",
+      "shared_available": true,
+      "shared_used": true,
+      "local_used": true
+    },
+    "expected": {
+      "emit": false,
+      "budget": "none"
+    }
+  },
+  {
+    "id": "off-shared-True-used-False",
+    "input": {
+      "reason": "off",
+      "shared_available": true,
+      "shared_used": false,
+      "local_used": false
+    },
+    "expected": {
+      "emit": false,
+      "budget": "none"
+    }
+  },
+  {
+    "id": "off-shared-False-used-True",
+    "input": {
+      "reason": "off",
+      "shared_available": false,
+      "shared_used": true,
+      "local_used": true
+    },
+    "expected": {
+      "emit": false,
+      "budget": "none"
+    }
+  },
+  {
+    "id": "off-shared-False-used-False",
+    "input": {
+      "reason": "off",
+      "shared_available": false,
+      "shared_used": false,
+      "local_used": false
+    },
+    "expected": {
+      "emit": false,
+      "budget": "none"
+    }
+  },
+  {
+    "id": "missing_reference-shared-True-used-True",
+    "input": {
+      "reason": "missing_reference",
+      "shared_available": true,
+      "shared_used": true,
+      "local_used": true
+    },
+    "expected": {
+      "emit": false,
+      "budget": "none"
+    }
+  },
+  {
+    "id": "missing_reference-shared-True-used-False",
+    "input": {
+      "reason": "missing_reference",
+      "shared_available": true,
+      "shared_used": false,
+      "local_used": false
+    },
+    "expected": {
+      "emit": false,
+      "budget": "none"
+    }
+  },
+  {
+    "id": "missing_reference-shared-False-used-True",
+    "input": {
+      "reason": "missing_reference",
+      "shared_available": false,
+      "shared_used": true,
+      "local_used": true
+    },
+    "expected": {
+      "emit": false,
+      "budget": "none"
+    }
+  },
+  {
+    "id": "missing_reference-shared-False-used-False",
+    "input": {
+      "reason": "missing_reference",
+      "shared_available": false,
+      "shared_used": false,
+      "local_used": false
+    },
+    "expected": {
+      "emit": false,
+      "budget": "none"
+    }
+  },
+  {
+    "id": "unattached-shared-True-used-True",
+    "input": {
+      "reason": "unattached",
+      "shared_available": true,
+      "shared_used": true,
+      "local_used": true
+    },
+    "expected": {
+      "emit": false,
+      "budget": "none"
+    }
+  },
+  {
+    "id": "unattached-shared-True-used-False",
+    "input": {
+      "reason": "unattached",
+      "shared_available": true,
+      "shared_used": false,
+      "local_used": false
+    },
+    "expected": {
+      "emit": false,
+      "budget": "none"
+    }
+  },
+  {
+    "id": "unattached-shared-False-used-True",
+    "input": {
+      "reason": "unattached",
+      "shared_available": false,
+      "shared_used": true,
+      "local_used": true
+    },
+    "expected": {
+      "emit": false,
+      "budget": "none"
+    }
+  },
+  {
+    "id": "unattached-shared-False-used-False",
+    "input": {
+      "reason": "unattached",
+      "shared_available": false,
+      "shared_used": false,
+      "local_used": false
+    },
+    "expected": {
+      "emit": false,
+      "budget": "none"
+    }
+  },
+  {
+    "id": "busy-shared-True-used-True",
+    "input": {
+      "reason": "busy",
+      "shared_available": true,
+      "shared_used": true,
+      "local_used": true
+    },
+    "expected": {
+      "emit": false,
+      "budget": "none"
+    }
+  },
+  {
+    "id": "busy-shared-True-used-False",
+    "input": {
+      "reason": "busy",
+      "shared_available": true,
+      "shared_used": false,
+      "local_used": false
+    },
+    "expected": {
+      "emit": false,
+      "budget": "none"
+    }
+  },
+  {
+    "id": "busy-shared-False-used-True",
+    "input": {
+      "reason": "busy",
+      "shared_available": false,
+      "shared_used": true,
+      "local_used": true
+    },
+    "expected": {
+      "emit": false,
+      "budget": "none"
+    }
+  },
+  {
+    "id": "busy-shared-False-used-False",
+    "input": {
+      "reason": "busy",
+      "shared_available": false,
+      "shared_used": false,
+      "local_used": false
+    },
+    "expected": {
+      "emit": false,
+      "budget": "none"
+    }
+  },
+  {
+    "id": "closed-shared-True-used-True",
+    "input": {
+      "reason": "closed",
+      "shared_available": true,
+      "shared_used": true,
+      "local_used": true
+    },
+    "expected": {
+      "emit": false,
+      "budget": "none"
+    }
+  },
+  {
+    "id": "closed-shared-True-used-False",
+    "input": {
+      "reason": "closed",
+      "shared_available": true,
+      "shared_used": false,
+      "local_used": false
+    },
+    "expected": {
+      "emit": false,
+      "budget": "none"
+    }
+  },
+  {
+    "id": "closed-shared-False-used-True",
+    "input": {
+      "reason": "closed",
+      "shared_available": false,
+      "shared_used": true,
+      "local_used": true
+    },
+    "expected": {
+      "emit": false,
+      "budget": "none"
+    }
+  },
+  {
+    "id": "closed-shared-False-used-False",
+    "input": {
+      "reason": "closed",
+      "shared_available": false,
+      "shared_used": false,
+      "local_used": false
+    },
+    "expected": {
+      "emit": false,
+      "budget": "none"
+    }
+  },
+  {
+    "id": "noop-shared-True-used-True",
+    "input": {
+      "reason": "noop",
+      "shared_available": true,
+      "shared_used": true,
+      "local_used": true
+    },
+    "expected": {
+      "emit": false,
+      "budget": "none"
+    }
+  },
+  {
+    "id": "noop-shared-True-used-False",
+    "input": {
+      "reason": "noop",
+      "shared_available": true,
+      "shared_used": false,
+      "local_used": false
+    },
+    "expected": {
+      "emit": false,
+      "budget": "none"
+    }
+  },
+  {
+    "id": "noop-shared-False-used-True",
+    "input": {
+      "reason": "noop",
+      "shared_available": false,
+      "shared_used": true,
+      "local_used": true
+    },
+    "expected": {
+      "emit": false,
+      "budget": "none"
+    }
+  },
+  {
+    "id": "noop-shared-False-used-False",
+    "input": {
+      "reason": "noop",
+      "shared_available": false,
+      "shared_used": false,
+      "local_used": false
+    },
+    "expected": {
+      "emit": false,
+      "budget": "none"
+    }
+  },
+  {
+    "id": "input_rejected-shared-True-used-True",
+    "input": {
+      "reason": "input_rejected",
+      "shared_available": true,
+      "shared_used": true,
+      "local_used": true
+    },
+    "expected": {
+      "emit": false,
+      "budget": "execution"
+    }
+  },
+  {
+    "id": "input_rejected-shared-True-used-False",
+    "input": {
+      "reason": "input_rejected",
+      "shared_available": true,
+      "shared_used": false,
+      "local_used": false
+    },
+    "expected": {
+      "emit": true,
+      "budget": "execution"
+    }
+  },
+  {
+    "id": "input_rejected-shared-False-used-True",
+    "input": {
+      "reason": "input_rejected",
+      "shared_available": false,
+      "shared_used": true,
+      "local_used": true
+    },
+    "expected": {
+      "emit": false,
+      "budget": "process"
+    }
+  },
+  {
+    "id": "input_rejected-shared-False-used-False",
+    "input": {
+      "reason": "input_rejected",
+      "shared_available": false,
+      "shared_used": false,
+      "local_used": false
+    },
+    "expected": {
+      "emit": true,
+      "budget": "process"
+    }
+  },
+  {
+    "id": "conflicting_end-shared-True-used-True",
+    "input": {
+      "reason": "conflicting_end",
+      "shared_available": true,
+      "shared_used": true,
+      "local_used": true
+    },
+    "expected": {
+      "emit": false,
+      "budget": "execution"
+    }
+  },
+  {
+    "id": "conflicting_end-shared-True-used-False",
+    "input": {
+      "reason": "conflicting_end",
+      "shared_available": true,
+      "shared_used": false,
+      "local_used": false
+    },
+    "expected": {
+      "emit": true,
+      "budget": "execution"
+    }
+  },
+  {
+    "id": "conflicting_end-shared-False-used-True",
+    "input": {
+      "reason": "conflicting_end",
+      "shared_available": false,
+      "shared_used": true,
+      "local_used": true
+    },
+    "expected": {
+      "emit": false,
+      "budget": "process"
+    }
+  },
+  {
+    "id": "conflicting_end-shared-False-used-False",
+    "input": {
+      "reason": "conflicting_end",
+      "shared_available": false,
+      "shared_used": false,
+      "local_used": false
+    },
+    "expected": {
+      "emit": true,
+      "budget": "process"
+    }
+  },
+  {
+    "id": "write_failure-shared-True-used-True",
+    "input": {
+      "reason": "write_failure",
+      "shared_available": true,
+      "shared_used": true,
+      "local_used": true
+    },
+    "expected": {
+      "emit": false,
+      "budget": "execution"
+    }
+  },
+  {
+    "id": "write_failure-shared-True-used-False",
+    "input": {
+      "reason": "write_failure",
+      "shared_available": true,
+      "shared_used": false,
+      "local_used": false
+    },
+    "expected": {
+      "emit": true,
+      "budget": "execution"
+    }
+  },
+  {
+    "id": "write_failure-shared-False-used-True",
+    "input": {
+      "reason": "write_failure",
+      "shared_available": false,
+      "shared_used": true,
+      "local_used": true
+    },
+    "expected": {
+      "emit": false,
+      "budget": "process"
+    }
+  },
+  {
+    "id": "write_failure-shared-False-used-False",
+    "input": {
+      "reason": "write_failure",
+      "shared_available": false,
+      "shared_used": false,
+      "local_used": false
+    },
+    "expected": {
+      "emit": true,
+      "budget": "process"
+    }
+  },
+  {
+    "id": "installation_failure-shared-True-used-True",
+    "input": {
+      "reason": "installation_failure",
+      "shared_available": true,
+      "shared_used": true,
+      "local_used": true
+    },
+    "expected": {
+      "emit": false,
+      "budget": "execution"
+    }
+  },
+  {
+    "id": "installation_failure-shared-True-used-False",
+    "input": {
+      "reason": "installation_failure",
+      "shared_available": true,
+      "shared_used": false,
+      "local_used": false
+    },
+    "expected": {
+      "emit": true,
+      "budget": "execution"
+    }
+  },
+  {
+    "id": "installation_failure-shared-False-used-True",
+    "input": {
+      "reason": "installation_failure",
+      "shared_available": false,
+      "shared_used": true,
+      "local_used": true
+    },
+    "expected": {
+      "emit": false,
+      "budget": "process"
+    }
+  },
+  {
+    "id": "installation_failure-shared-False-used-False",
+    "input": {
+      "reason": "installation_failure",
+      "shared_available": false,
+      "shared_used": false,
+      "local_used": false
+    },
+    "expected": {
+      "emit": true,
+      "budget": "process"
+    }
+  },
+  {
+    "id": "disable_publish_failed-shared-True-used-True",
+    "input": {
+      "reason": "disable_publish_failed",
+      "shared_available": true,
+      "shared_used": true,
+      "local_used": true
+    },
+    "expected": {
+      "emit": false,
+      "budget": "execution"
+    }
+  },
+  {
+    "id": "disable_publish_failed-shared-True-used-False",
+    "input": {
+      "reason": "disable_publish_failed",
+      "shared_available": true,
+      "shared_used": false,
+      "local_used": false
+    },
+    "expected": {
+      "emit": true,
+      "budget": "execution"
+    }
+  },
+  {
+    "id": "disable_publish_failed-shared-False-used-True",
+    "input": {
+      "reason": "disable_publish_failed",
+      "shared_available": false,
+      "shared_used": true,
+      "local_used": true
+    },
+    "expected": {
+      "emit": false,
+      "budget": "process"
+    }
+  },
+  {
+    "id": "disable_publish_failed-shared-False-used-False",
+    "input": {
+      "reason": "disable_publish_failed",
+      "shared_available": false,
+      "shared_used": false,
+      "local_used": false
+    },
+    "expected": {
+      "emit": true,
+      "budget": "process"
+    }
+  }
+]

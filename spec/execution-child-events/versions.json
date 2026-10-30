@@ -1,0 +1,29 @@
+{
+  "software": "dev",
+  "execution_format": "2.0.0",
+  "execution_layout": 2,
+  "interface": "CE-1",
+  "control_protocol": "execution-child-events",
+  "control_version": 1,
+  "legacy_exit_codes": [
+    0,
+    2,
+    3
+  ],
+  "ce_exit_codes": [
+    0,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26
+  ],
+  "public_functions": [
+    "sledra_event_attach",
+    "sledra_event_emit",
+    "sledra_event_detach"
+  ],
+  "enable_option": "--child-events"
+}

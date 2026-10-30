@@ -1,0 +1,9 @@
+{
+  "format_version": "2.0.0",
+  "layout_version": 2,
+  "namespace": {
+    "system": "synthetic",
+    "deployment": "ce-contract"
+  },
+  "partition_timezone": "+00:00"
+}

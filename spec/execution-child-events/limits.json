@@ -1,0 +1,13 @@
+{
+  "event": 65536,
+  "prepared": 66048,
+  "receipt": 4096,
+  "descriptor": 16384,
+  "state": 524288,
+  "closing": 131072,
+  "path": 1024,
+  "reference": 2048,
+  "argv": 131072,
+  "disabled": 0,
+  "diagnostic": 0
+}

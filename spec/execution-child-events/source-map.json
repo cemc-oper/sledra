@@ -1,0 +1,144 @@
+{
+  "origin": "CE-00 P01-P09, 2026-10-30",
+  "origin_sha256": "3d9f937b5c79db5d9af152d0f744090845a0c0b6475fe73f84010abb5b62eb43",
+  "mappings": [
+    {
+      "difference": "D01",
+      "old_file": "spec/execution-v2/interfaces.md",
+      "old_heading": "owner 状态与继承边界",
+      "new_file": "interfaces.md",
+      "section": "P01",
+      "acceptance": [
+        "A02",
+        "A04"
+      ]
+    },
+    {
+      "difference": "D02",
+      "old_file": "spec/execution-v2/interfaces.md",
+      "old_heading": "owner 状态与继承边界",
+      "new_file": "runtime.md",
+      "section": "P03",
+      "acceptance": [
+        "A03",
+        "A04",
+        "A08"
+      ]
+    },
+    {
+      "difference": "D03",
+      "old_file": "recorder/execution/README.md",
+      "old_heading": "写入边界",
+      "new_file": "runtime.md",
+      "section": "P05",
+      "acceptance": [
+        "A06",
+        "A07"
+      ]
+    },
+    {
+      "difference": "D04",
+      "old_file": "spec/execution-v2/README.md",
+      "old_heading": "根与物理布局",
+      "new_file": "runtime.md",
+      "section": "P03",
+      "acceptance": [
+        "A01",
+        "A12",
+        "A14"
+      ]
+    },
+    {
+      "difference": "D05",
+      "old_file": "spec/execution-v2/interfaces.md",
+      "old_heading": "owner 状态与继承边界",
+      "new_file": "interfaces.md",
+      "section": "P01",
+      "acceptance": [
+        "A03",
+        "A04",
+        "A05"
+      ]
+    },
+    {
+      "difference": "D06",
+      "old_file": "spec/execution-v2/interfaces.md",
+      "old_heading": "owner 状态与继承边界",
+      "new_file": "runtime.md",
+      "section": "P04",
+      "acceptance": [
+        "A08",
+        "A13"
+      ]
+    },
+    {
+      "difference": "D07",
+      "old_file": "spec/execution-v2/interfaces.md",
+      "old_heading": "Go CLI 与 Shell 之间的小型内部接口",
+      "new_file": "interfaces.md",
+      "section": "P02",
+      "acceptance": [
+        "A06",
+        "A07"
+      ]
+    },
+    {
+      "difference": "D08",
+      "old_file": "spec/execution-v2/interfaces.md",
+      "old_heading": "公共 Bash 函数",
+      "new_file": "runtime.md",
+      "section": "P07",
+      "acceptance": [
+        "A07",
+        "A10"
+      ]
+    },
+    {
+      "difference": "D09",
+      "old_file": "spec/execution-v2/interfaces.md",
+      "old_heading": "Go CLI 与 Shell 之间的小型内部接口",
+      "new_file": "runtime.md",
+      "section": "P06",
+      "acceptance": [
+        "A08",
+        "A09"
+      ]
+    },
+    {
+      "difference": "D10",
+      "old_file": "spec/execution-v2/interfaces.md",
+      "old_heading": "模式、安装与根配置",
+      "new_file": "runtime.md",
+      "section": "P03",
+      "acceptance": [
+        "A02",
+        "A11",
+        "A12"
+      ]
+    },
+    {
+      "difference": "D11",
+      "old_file": "spec/execution-v2/interfaces.md",
+      "old_heading": "公共 Bash 函数",
+      "new_file": "interfaces.md",
+      "section": "P02",
+      "acceptance": [
+        "A01",
+        "A04",
+        "A05",
+        "A14"
+      ]
+    },
+    {
+      "difference": "D12",
+      "old_file": "spec/execution-v2/README.md",
+      "old_heading": "JSON 字节与资源边界",
+      "new_file": "runtime.md",
+      "section": "P03",
+      "acceptance": [
+        "A01",
+        "A14"
+      ]
+    }
+  ]
+}

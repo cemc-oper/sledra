@@ -1,0 +1,254 @@
+[
+  {
+    "id": "exact-last-commit",
+    "input": {
+      "request": {
+        "request_id": "30000000-0000-4000-8000-000000000001",
+        "event_id": "50000000-0000-4000-8000-000000000003",
+        "record_sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+      },
+      "last": {
+        "request_id": "30000000-0000-4000-8000-000000000001",
+        "event_id": "50000000-0000-4000-8000-000000000003",
+        "record_sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+      },
+      "phase": "active"
+    },
+    "expected": {
+      "result": "confirmed",
+      "disable_attempts": 0,
+      "prepare_again": false,
+      "append_again": false,
+      "phase": "active"
+    }
+  },
+  {
+    "id": "historical-success-does-not-reenable",
+    "input": {
+      "request": {
+        "request_id": "30000000-0000-4000-8000-000000000001",
+        "event_id": "50000000-0000-4000-8000-000000000003",
+        "record_sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+      },
+      "last": {
+        "request_id": "30000000-0000-4000-8000-000000000001",
+        "event_id": "50000000-0000-4000-8000-000000000003",
+        "record_sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+      },
+      "phase": "disabled"
+    },
+    "expected": {
+      "result": "confirmed",
+      "disable_attempts": 0,
+      "prepare_again": false,
+      "append_again": false,
+      "phase": "disabled"
+    }
+  },
+  {
+    "id": "closed-preserved",
+    "input": {
+      "request": {
+        "request_id": "30000000-0000-4000-8000-000000000001",
+        "event_id": "50000000-0000-4000-8000-000000000003",
+        "record_sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+      },
+      "last": {
+        "request_id": "30000000-0000-4000-8000-000000000001",
+        "event_id": "50000000-0000-4000-8000-000000000003",
+        "record_sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+      },
+      "phase": "closed"
+    },
+    "expected": {
+      "result": "confirmed",
+      "disable_attempts": 0,
+      "prepare_again": false,
+      "append_again": false,
+      "phase": "closed"
+    }
+  },
+  {
+    "id": "overwritten-request_id",
+    "input": {
+      "request": {
+        "request_id": "30000000-0000-4000-8000-000000000001",
+        "event_id": "50000000-0000-4000-8000-000000000003",
+        "record_sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+      },
+      "last": {
+        "request_id": "0000000000000000000000000000000000000000000000000000000000000000",
+        "event_id": "50000000-0000-4000-8000-000000000003",
+        "record_sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+      },
+      "phase": "active"
+    },
+    "expected": {
+      "result": "unknown",
+      "disable_attempts": 1,
+      "prepare_again": false,
+      "append_again": false,
+      "phase": "active"
+    }
+  },
+  {
+    "id": "overwritten-event_id",
+    "input": {
+      "request": {
+        "request_id": "30000000-0000-4000-8000-000000000001",
+        "event_id": "50000000-0000-4000-8000-000000000003",
+        "record_sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+      },
+      "last": {
+        "request_id": "30000000-0000-4000-8000-000000000001",
+        "event_id": "0000000000000000000000000000000000000000000000000000000000000000",
+        "record_sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+      },
+      "phase": "active"
+    },
+    "expected": {
+      "result": "unknown",
+      "disable_attempts": 1,
+      "prepare_again": false,
+      "append_again": false,
+      "phase": "active"
+    }
+  },
+  {
+    "id": "overwritten-record_sha256",
+    "input": {
+      "request": {
+        "request_id": "30000000-0000-4000-8000-000000000001",
+        "event_id": "50000000-0000-4000-8000-000000000003",
+        "record_sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+      },
+      "last": {
+        "request_id": "30000000-0000-4000-8000-000000000001",
+        "event_id": "50000000-0000-4000-8000-000000000003",
+        "record_sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "phase": "active"
+    },
+    "expected": {
+      "result": "unknown",
+      "disable_attempts": 1,
+      "prepare_again": false,
+      "append_again": false,
+      "phase": "active"
+    }
+  },
+  {
+    "id": "missing",
+    "input": {
+      "request": {
+        "request_id": "30000000-0000-4000-8000-000000000001",
+        "event_id": "50000000-0000-4000-8000-000000000003",
+        "record_sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+      },
+      "last": null,
+      "phase": "active"
+    },
+    "expected": {
+      "result": "unknown",
+      "disable_attempts": 1,
+      "prepare_again": false,
+      "append_again": false,
+      "phase": "active"
+    }
+  },
+  {
+    "id": "writing",
+    "input": {
+      "request": {
+        "request_id": "30000000-0000-4000-8000-000000000001",
+        "event_id": "50000000-0000-4000-8000-000000000003",
+        "record_sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+      },
+      "last": {
+        "request_id": "30000000-0000-4000-8000-000000000001",
+        "event_id": "50000000-0000-4000-8000-000000000003",
+        "record_sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+      },
+      "phase": "writing"
+    },
+    "expected": {
+      "result": "unknown",
+      "disable_attempts": 1,
+      "prepare_again": false,
+      "append_again": false,
+      "phase": "writing"
+    }
+  },
+  {
+    "id": "busy",
+    "input": {
+      "request": {
+        "request_id": "30000000-0000-4000-8000-000000000001",
+        "event_id": "50000000-0000-4000-8000-000000000003",
+        "record_sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+      },
+      "last": {
+        "request_id": "30000000-0000-4000-8000-000000000001",
+        "event_id": "50000000-0000-4000-8000-000000000003",
+        "record_sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+      },
+      "phase": "active",
+      "lock_free": false
+    },
+    "expected": {
+      "result": "unknown",
+      "disable_attempts": 1,
+      "prepare_again": false,
+      "append_again": false,
+      "phase": "active"
+    }
+  },
+  {
+    "id": "unreadable",
+    "input": {
+      "request": {
+        "request_id": "30000000-0000-4000-8000-000000000001",
+        "event_id": "50000000-0000-4000-8000-000000000003",
+        "record_sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+      },
+      "last": {
+        "request_id": "30000000-0000-4000-8000-000000000001",
+        "event_id": "50000000-0000-4000-8000-000000000003",
+        "record_sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+      },
+      "phase": "active",
+      "control_valid": false
+    },
+    "expected": {
+      "result": "unknown",
+      "disable_attempts": 1,
+      "prepare_again": false,
+      "append_again": false,
+      "phase": "active"
+    }
+  },
+  {
+    "id": "lost-result-response",
+    "input": {
+      "request": {
+        "request_id": "30000000-0000-4000-8000-000000000001",
+        "event_id": "50000000-0000-4000-8000-000000000003",
+        "record_sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+      },
+      "last": {
+        "request_id": "30000000-0000-4000-8000-000000000001",
+        "event_id": "50000000-0000-4000-8000-000000000003",
+        "record_sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+      },
+      "phase": "active",
+      "receipt_valid": false
+    },
+    "expected": {
+      "result": "unknown",
+      "disable_attempts": 1,
+      "prepare_again": false,
+      "append_again": false,
+      "phase": "active"
+    }
+  }
+]

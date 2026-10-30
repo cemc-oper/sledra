@@ -1,0 +1,187 @@
+[
+  {
+    "id": "event-start",
+    "input": {
+      "role": "event",
+      "kind": "start"
+    },
+    "expected": "role_denied"
+  },
+  {
+    "id": "event-context",
+    "input": {
+      "role": "event",
+      "kind": "context"
+    },
+    "expected": "role_denied"
+  },
+  {
+    "id": "event-event",
+    "input": {
+      "role": "event",
+      "kind": "event"
+    },
+    "expected": "ok"
+  },
+  {
+    "id": "event-stage-start",
+    "input": {
+      "role": "event",
+      "kind": "stage-start"
+    },
+    "expected": "role_denied"
+  },
+  {
+    "id": "event-stage-end",
+    "input": {
+      "role": "event",
+      "kind": "stage-end"
+    },
+    "expected": "role_denied"
+  },
+  {
+    "id": "event-end",
+    "input": {
+      "role": "event",
+      "kind": "end"
+    },
+    "expected": "role_denied"
+  },
+  {
+    "id": "owner-start",
+    "input": {
+      "role": "owner",
+      "kind": "start"
+    },
+    "expected": "role_denied"
+  },
+  {
+    "id": "owner-context",
+    "input": {
+      "role": "owner",
+      "kind": "context"
+    },
+    "expected": "ok"
+  },
+  {
+    "id": "owner-event",
+    "input": {
+      "role": "owner",
+      "kind": "event"
+    },
+    "expected": "ok"
+  },
+  {
+    "id": "owner-stage-start",
+    "input": {
+      "role": "owner",
+      "kind": "stage-start"
+    },
+    "expected": "ok"
+  },
+  {
+    "id": "owner-stage-end",
+    "input": {
+      "role": "owner",
+      "kind": "stage-end"
+    },
+    "expected": "ok"
+  },
+  {
+    "id": "owner-end",
+    "input": {
+      "role": "owner",
+      "kind": "end"
+    },
+    "expected": "ok"
+  },
+  {
+    "id": "open-owner-only",
+    "input": {
+      "role": "owner",
+      "kind": "start",
+      "command": "open"
+    },
+    "expected": "ok"
+  },
+  {
+    "id": "no-public-role-upgrade",
+    "input": {
+      "role": "event-only",
+      "kind": "end"
+    },
+    "expected": "role_denied"
+  },
+  {
+    "id": "event-reserved-execution.ended",
+    "input": {
+      "role": "event",
+      "kind": "event",
+      "name": "execution.ended"
+    },
+    "expected": "reserved_event_name"
+  },
+  {
+    "id": "event-reserved-execution.custom",
+    "input": {
+      "role": "event",
+      "kind": "event",
+      "name": "execution.custom"
+    },
+    "expected": "reserved_event_name"
+  },
+  {
+    "id": "event-reserved-stage.started",
+    "input": {
+      "role": "event",
+      "kind": "event",
+      "name": "stage.started"
+    },
+    "expected": "reserved_event_name"
+  },
+  {
+    "id": "event-reserved-stage.custom",
+    "input": {
+      "role": "event",
+      "kind": "event",
+      "name": "stage.custom"
+    },
+    "expected": "reserved_event_name"
+  },
+  {
+    "id": "owner-reserved-execution.ended",
+    "input": {
+      "role": "owner",
+      "kind": "event",
+      "name": "execution.ended"
+    },
+    "expected": "reserved_event_name"
+  },
+  {
+    "id": "owner-reserved-execution.custom",
+    "input": {
+      "role": "owner",
+      "kind": "event",
+      "name": "execution.custom"
+    },
+    "expected": "reserved_event_name"
+  },
+  {
+    "id": "owner-reserved-stage.started",
+    "input": {
+      "role": "owner",
+      "kind": "event",
+      "name": "stage.started"
+    },
+    "expected": "reserved_event_name"
+  },
+  {
+    "id": "owner-reserved-stage.custom",
+    "input": {
+      "role": "owner",
+      "kind": "event",
+      "name": "stage.custom"
+    },
+    "expected": "reserved_event_name"
+  }
+]

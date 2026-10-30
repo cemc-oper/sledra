@@ -1,0 +1,147 @@
+[
+  {
+    "id": "old-library-old-binary",
+    "input": {
+      "mode": "execution-v2",
+      "child_events": false,
+      "library_ce": false,
+      "binary_legacy": true,
+      "binary_interface": null,
+      "binary_protocol": null
+    },
+    "expected": "legacy"
+  },
+  {
+    "id": "old-library-new-binary",
+    "input": {
+      "mode": "execution-v2",
+      "child_events": false,
+      "library_ce": false,
+      "binary_legacy": true,
+      "binary_interface": "CE-1",
+      "binary_protocol": 1
+    },
+    "expected": "legacy"
+  },
+  {
+    "id": "new-library-old-binary-default",
+    "input": {
+      "mode": "execution-v2",
+      "child_events": false,
+      "library_ce": true,
+      "binary_legacy": true,
+      "binary_interface": null,
+      "binary_protocol": null
+    },
+    "expected": "legacy"
+  },
+  {
+    "id": "new-library-old-binary-opt-in",
+    "input": {
+      "mode": "execution-v2",
+      "child_events": true,
+      "library_ce": true,
+      "binary_legacy": true,
+      "binary_interface": null,
+      "binary_protocol": null
+    },
+    "expected": "incompatible"
+  },
+  {
+    "id": "old-library-cannot-enable-ce",
+    "input": {
+      "mode": "execution-v2",
+      "child_events": true,
+      "library_ce": false,
+      "binary_legacy": true,
+      "binary_interface": null,
+      "binary_protocol": null
+    },
+    "expected": "rejected"
+  },
+  {
+    "id": "new-pair-opt-in",
+    "input": {
+      "mode": "execution-v2",
+      "child_events": true,
+      "library_ce": true,
+      "binary_legacy": true,
+      "binary_interface": "CE-1",
+      "binary_protocol": 1
+    },
+    "expected": "coordinated"
+  },
+  {
+    "id": "new-interface-mismatch",
+    "input": {
+      "mode": "execution-v2",
+      "child_events": true,
+      "library_ce": true,
+      "binary_legacy": true,
+      "binary_interface": "CE-2",
+      "binary_protocol": 1
+    },
+    "expected": "incompatible"
+  },
+  {
+    "id": "new-protocol-mismatch",
+    "input": {
+      "mode": "execution-v2",
+      "child_events": true,
+      "library_ce": true,
+      "binary_legacy": true,
+      "binary_interface": "CE-1",
+      "binary_protocol": 2
+    },
+    "expected": "incompatible"
+  },
+  {
+    "id": "off-no-handshake",
+    "input": {
+      "mode": "off",
+      "child_events": true,
+      "library_ce": true,
+      "binary_legacy": true,
+      "binary_interface": null,
+      "binary_protocol": null
+    },
+    "expected": "silent"
+  },
+  {
+    "id": "boolean-not-protocol",
+    "input": {
+      "mode": "execution-v2",
+      "child_events": true,
+      "library_ce": true,
+      "binary_legacy": true,
+      "binary_interface": "CE-1",
+      "binary_protocol": true
+    },
+    "expected": "incompatible"
+  },
+  {
+    "id": "unknown-mode",
+    "input": {
+      "mode": "unknown",
+      "child_events": true,
+      "library_ce": true,
+      "binary_legacy": true,
+      "binary_interface": "CE-1",
+      "binary_protocol": 1
+    },
+    "expected": "incompatible"
+  },
+  {
+    "id": "ambiguous-old-and-new",
+    "input": {
+      "mode": "execution-v2",
+      "child_events": true,
+      "library_ce": true,
+      "binary_legacy": true,
+      "binary_interface": "CE-1",
+      "binary_protocol": 1,
+      "ambiguous": true
+    },
+    "expected": "incompatible"
+  }
+]

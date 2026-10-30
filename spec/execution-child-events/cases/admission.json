@@ -1,0 +1,428 @@
+[
+  {
+    "id": "off-has-no-cli",
+    "input": {
+      "off": true
+    },
+    "expected": {
+      "result": "silent",
+      "rc": null,
+      "append_max": 0,
+      "phase": "active"
+    }
+  },
+  {
+    "id": "unattached-has-no-cli",
+    "input": {
+      "attached": false
+    },
+    "expected": {
+      "result": "silent",
+      "rc": null,
+      "append_max": 0,
+      "phase": "active"
+    }
+  },
+  {
+    "id": "producer-business",
+    "input": {},
+    "expected": {
+      "result": "admit",
+      "rc": 0,
+      "append_max": 1,
+      "phase": "writing"
+    }
+  },
+  {
+    "id": "producer-denied-context",
+    "input": {
+      "kind": "context"
+    },
+    "expected": {
+      "result": "rejected",
+      "rc": 20,
+      "append_max": 0,
+      "phase": "active"
+    }
+  },
+  {
+    "id": "producer-denied-stage-start",
+    "input": {
+      "kind": "stage-start"
+    },
+    "expected": {
+      "result": "rejected",
+      "rc": 20,
+      "append_max": 0,
+      "phase": "active"
+    }
+  },
+  {
+    "id": "producer-denied-stage-end",
+    "input": {
+      "kind": "stage-end"
+    },
+    "expected": {
+      "result": "rejected",
+      "rc": 20,
+      "append_max": 0,
+      "phase": "active"
+    }
+  },
+  {
+    "id": "producer-denied-end",
+    "input": {
+      "kind": "end"
+    },
+    "expected": {
+      "result": "rejected",
+      "rc": 20,
+      "append_max": 0,
+      "phase": "active"
+    }
+  },
+  {
+    "id": "owner-context",
+    "input": {
+      "role": "owner",
+      "kind": "context"
+    },
+    "expected": {
+      "result": "admit",
+      "rc": 0,
+      "append_max": 1,
+      "phase": "writing"
+    }
+  },
+  {
+    "id": "owner-stage-start",
+    "input": {
+      "role": "owner",
+      "kind": "stage-start"
+    },
+    "expected": {
+      "result": "admit",
+      "rc": 0,
+      "append_max": 1,
+      "phase": "writing"
+    }
+  },
+  {
+    "id": "owner-stage-end",
+    "input": {
+      "role": "owner",
+      "kind": "stage-end"
+    },
+    "expected": {
+      "result": "admit",
+      "rc": 0,
+      "append_max": 1,
+      "phase": "writing"
+    }
+  },
+  {
+    "id": "owner-end",
+    "input": {
+      "role": "owner",
+      "kind": "end"
+    },
+    "expected": {
+      "result": "admit",
+      "rc": 0,
+      "append_max": 1,
+      "phase": "writing"
+    }
+  },
+  {
+    "id": "owner-event",
+    "input": {
+      "role": "owner",
+      "kind": "event"
+    },
+    "expected": {
+      "result": "admit",
+      "rc": 0,
+      "append_max": 1,
+      "phase": "writing"
+    }
+  },
+  {
+    "id": "input-rejection-not-disabled",
+    "input": {
+      "input_valid": false
+    },
+    "expected": {
+      "result": "rejected",
+      "rc": 20,
+      "append_max": 0,
+      "phase": "active"
+    }
+  },
+  {
+    "id": "busy-not-disabled",
+    "input": {
+      "lock_free": false
+    },
+    "expected": {
+      "result": "busy",
+      "rc": 21,
+      "append_max": 0,
+      "phase": "active"
+    }
+  },
+  {
+    "id": "busy-end-closes-admission",
+    "input": {
+      "role": "owner",
+      "kind": "end",
+      "lock_free": false
+    },
+    "expected": {
+      "result": "busy",
+      "rc": 21,
+      "append_max": 0,
+      "phase": "closing"
+    }
+  },
+  {
+    "id": "writing-busy-is-live",
+    "input": {
+      "phase": "writing",
+      "lock_free": false
+    },
+    "expected": {
+      "result": "busy",
+      "rc": 21,
+      "append_max": 0,
+      "phase": "writing"
+    }
+  },
+  {
+    "id": "writing-with-lock-is-abandoned",
+    "input": {
+      "phase": "writing"
+    },
+    "expected": {
+      "result": "disabled",
+      "rc": 23,
+      "append_max": 0,
+      "phase": "disabled"
+    }
+  },
+  {
+    "id": "disabled-state-irreversible",
+    "input": {
+      "phase": "disabled"
+    },
+    "expected": {
+      "result": "disabled",
+      "rc": 23,
+      "append_max": 0,
+      "phase": "disabled"
+    }
+  },
+  {
+    "id": "disabled-latch-beats-active",
+    "input": {
+      "disabled": true
+    },
+    "expected": {
+      "result": "disabled",
+      "rc": 23,
+      "append_max": 0,
+      "phase": "disabled"
+    }
+  },
+  {
+    "id": "disabled-beats-closing",
+    "input": {
+      "disabled": true,
+      "closing": true
+    },
+    "expected": {
+      "result": "disabled",
+      "rc": 23,
+      "append_max": 0,
+      "phase": "disabled"
+    }
+  },
+  {
+    "id": "closed-event",
+    "input": {
+      "phase": "closed"
+    },
+    "expected": {
+      "result": "closed",
+      "rc": 22,
+      "append_max": 0,
+      "phase": "closed"
+    }
+  },
+  {
+    "id": "closed-same-end",
+    "input": {
+      "phase": "closed",
+      "role": "owner",
+      "kind": "end",
+      "same_end": true
+    },
+    "expected": {
+      "result": "noop",
+      "rc": 0,
+      "append_max": 0,
+      "phase": "closed"
+    }
+  },
+  {
+    "id": "closed-conflict-end",
+    "input": {
+      "phase": "closed",
+      "role": "owner",
+      "kind": "end",
+      "same_end": false
+    },
+    "expected": {
+      "result": "closed",
+      "rc": 22,
+      "append_max": 0,
+      "phase": "closed"
+    }
+  },
+  {
+    "id": "closing-event",
+    "input": {
+      "closing": true
+    },
+    "expected": {
+      "result": "closed",
+      "rc": 22,
+      "append_max": 0,
+      "phase": "closing"
+    }
+  },
+  {
+    "id": "closing-conflicting-end",
+    "input": {
+      "closing": true,
+      "role": "owner",
+      "kind": "end"
+    },
+    "expected": {
+      "result": "closed",
+      "rc": 22,
+      "append_max": 0,
+      "phase": "closing"
+    }
+  },
+  {
+    "id": "closing-explicit-end-before-any-attempt",
+    "input": {
+      "closing": true,
+      "role": "owner",
+      "kind": "end",
+      "same_end": true
+    },
+    "expected": {
+      "result": "admit",
+      "rc": 0,
+      "append_max": 1,
+      "phase": "writing"
+    }
+  },
+  {
+    "id": "closing-end-after-attempt-unknown",
+    "input": {
+      "closing": true,
+      "role": "owner",
+      "kind": "end",
+      "same_end": true,
+      "end_attempted": true
+    },
+    "expected": {
+      "result": "disabled",
+      "rc": 23,
+      "append_max": 0,
+      "phase": "disabled"
+    }
+  },
+  {
+    "id": "same-context-no-line",
+    "input": {
+      "kind": "context",
+      "role": "owner",
+      "context": "same"
+    },
+    "expected": {
+      "result": "noop",
+      "rc": 0,
+      "append_max": 0,
+      "phase": "active"
+    }
+  },
+  {
+    "id": "context-conflict-terminal",
+    "input": {
+      "kind": "context",
+      "role": "owner",
+      "context": "conflict"
+    },
+    "expected": {
+      "result": "disabled",
+      "rc": 23,
+      "append_max": 0,
+      "phase": "disabled"
+    }
+  },
+  {
+    "id": "invalid-stage-start",
+    "input": {
+      "kind": "stage-start",
+      "role": "owner",
+      "stage_valid": false
+    },
+    "expected": {
+      "result": "rejected",
+      "rc": 20,
+      "append_max": 0,
+      "phase": "active"
+    }
+  },
+  {
+    "id": "invalid-stage-end",
+    "input": {
+      "kind": "stage-end",
+      "role": "owner",
+      "stage_valid": false
+    },
+    "expected": {
+      "result": "rejected",
+      "rc": 20,
+      "append_max": 0,
+      "phase": "active"
+    }
+  },
+  {
+    "id": "unreadable-control-not-active",
+    "input": {
+      "control_valid": false
+    },
+    "expected": {
+      "result": "disabled",
+      "rc": 23,
+      "append_max": 0,
+      "phase": "disabled"
+    }
+  },
+  {
+    "id": "stale-reference-no-create",
+    "input": {
+      "identity_valid": false
+    },
+    "expected": {
+      "result": "unavailable",
+      "rc": 26,
+      "append_max": 0,
+      "phase": "active"
+    }
+  }
+]

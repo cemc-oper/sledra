@@ -1,0 +1,25 @@
+{
+  "protocol": "execution-child-events",
+  "version": 1,
+  "session_id": "20000000-0000-4000-8000-000000000001",
+  "execution_id": "10000000-0000-4000-8000-000000000001",
+  "descriptor_sha256": "df318e4a417b5b453c9134700117784f1be82901c6e6fca9802565d2adfd1103",
+  "owner_key_sha256": "52fe6094743bfd4f9be4321d98adc7e23c1ab622b0ba830e271d1ee1cbfd7850",
+  "revision": 8,
+  "phase": "closed",
+  "record_device": "43",
+  "record_inode": "202",
+  "context": "eyJmb3JtYXRfdmVyc2lvbiI6IjIuMC4wIiwiZXZlbnRfaWQiOiI1MDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDIiLCJleGVjdXRpb25faWQiOiIxMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJuYW1lIjoiZXhlY3V0aW9uLmNvbnRleHQiLCJvY2N1cnJlZF9hdCI6IjIwMjYtMTAtMzBUMDA6MDA6MDJaIiwiYXR0cmlidXRlcyI6eyJ0YXNrIjoic3ludGhldGljLmluaXRpYWwiLCJwYXJhbWV0ZXJzIjp7ImZvcmVjYXN0X2xlbmd0aCI6MTIsImZvcmVjYXN0X3N0ZXAiOjMsImV4YWN0X3N0ZXBzIjo5MDA3MTk5MjU0NzQwOTkzfSwic2NvcGUiOm51bGwsImN5Y2xlX2tpbmQiOiJzaW5nbGUiLCJjeWNsZSI6IjIwMjYtMDYtMDdUMDA6MDA6MDBaIiwicnVuX2lkIjpudWxsfX0=",
+  "active_stage": null,
+  "end": "eyJmb3JtYXRfdmVyc2lvbiI6IjIuMC4wIiwiZXZlbnRfaWQiOiI1MDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDgiLCJleGVjdXRpb25faWQiOiIxMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJuYW1lIjoiZXhlY3V0aW9uLmVuZGVkIiwib2NjdXJyZWRfYXQiOiIyMDI2LTEwLTMwVDAwOjAwOjA4WiIsImF0dHJpYnV0ZXMiOnsiZXhpdF9jb2RlIjowfX0=",
+  "pending": null,
+  "last_result": {
+    "request_id": "30000000-0000-4000-8000-000000000001",
+    "event_id": "50000000-0000-4000-8000-000000000008",
+    "record_sha256": "e0736a0b4f3a060b82a7139039da424a336189206f638dc3965791c5d844b528",
+    "revision": 8,
+    "result": "committed",
+    "code": "ok",
+    "phase": "closed"
+  }
+}

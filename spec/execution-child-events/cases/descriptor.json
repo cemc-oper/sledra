@@ -1,0 +1,33 @@
+{
+  "protocol": "execution-child-events",
+  "version": 1,
+  "interface": "CE-1",
+  "role": "event-only",
+  "session_id": "20000000-0000-4000-8000-000000000001",
+  "execution_id": "10000000-0000-4000-8000-000000000001",
+  "entry_time": "2026-10-30T00:00:00Z",
+  "uid": 1000,
+  "boot_id": "40000000-0000-4000-8000-000000000001",
+  "pid_namespace_inode": "4026531836",
+  "owner_pid": 12345,
+  "owner_start_ticks": "9007199254740993",
+  "runtime_path": "/node-local/sledra",
+  "runtime_device": "42",
+  "runtime_inode": "101",
+  "session_device": "42",
+  "session_inode": "102",
+  "lock_device": "42",
+  "lock_inode": "103",
+  "root_path": "/records/sledra",
+  "root_device": "43",
+  "root_inode": "201",
+  "root_config": {
+    "format_version": "2.0.0",
+    "layout_version": 2,
+    "namespace": {
+      "system": "synthetic",
+      "deployment": "ce-contract"
+    },
+    "partition_timezone": "+00:00"
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "protocol": "execution-child-events",
+  "version": 1,
+  "session_id": "20000000-0000-4000-8000-000000000001",
+  "execution_id": "10000000-0000-4000-8000-000000000001",
+  "descriptor_sha256": "df318e4a417b5b453c9134700117784f1be82901c6e6fca9802565d2adfd1103",
+  "owner_key_sha256": "52fe6094743bfd4f9be4321d98adc7e23c1ab622b0ba830e271d1ee1cbfd7850",
+  "revision": 9,
+  "phase": "writing",
+  "record_device": "43",
+  "record_inode": "202",
+  "context": "eyJmb3JtYXRfdmVyc2lvbiI6IjIuMC4wIiwiZXZlbnRfaWQiOiI1MDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDIiLCJleGVjdXRpb25faWQiOiIxMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJuYW1lIjoiZXhlY3V0aW9uLmNvbnRleHQiLCJvY2N1cnJlZF9hdCI6IjIwMjYtMTAtMzBUMDA6MDA6MDJaIiwiYXR0cmlidXRlcyI6eyJ0YXNrIjoic3ludGhldGljLmluaXRpYWwiLCJwYXJhbWV0ZXJzIjp7ImZvcmVjYXN0X2xlbmd0aCI6MTIsImZvcmVjYXN0X3N0ZXAiOjMsImV4YWN0X3N0ZXBzIjo5MDA3MTk5MjU0NzQwOTkzfSwic2NvcGUiOm51bGwsImN5Y2xlX2tpbmQiOiJzaW5nbGUiLCJjeWNsZSI6IjIwMjYtMDYtMDdUMDA6MDA6MDBaIiwicnVuX2lkIjpudWxsfX0=",
+  "active_stage": null,
+  "end": null,
+  "pending": {
+    "request_id": "30000000-0000-4000-8000-000000000001",
+    "kind": "event",
+    "event_id": "50000000-0000-4000-8000-000000000003",
+    "record_base64": "eyJmb3JtYXRfdmVyc2lvbiI6IjIuMC4wIiwiZXZlbnRfaWQiOiI1MDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDMiLCJleGVjdXRpb25faWQiOiIxMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJuYW1lIjoiZ2ZzLm1vZGVsdmFyLnJlYWR5Iiwib2NjdXJyZWRfYXQiOiIyMDI2LTEwLTMwVDAwOjAwOjAzWiIsImF0dHJpYnV0ZXMiOnsiZm9yZWNhc3RfbGVhZF9ob3VycyI6MCwiaW5wdXRfc3RhcnRfdGltZSI6IjIwMjYwNjA3MDAiLCJtZXNzYWdlIjoibGl0ZXJhbCAkKCkgYHZhbHVlYFxuVW5pY29kZSDpm6giLCJudWxsYWJsZSI6bnVsbCwiZW5hYmxlZCI6dHJ1ZSwicmF0aW8iOjAuMTI1fX0=",
+    "record_sha256": "e6e00f81e6cfbfb3d089eae90dcdb7aa5361f3f5eb60e8f72dd57e05a4789dda",
+    "auxiliary": "-",
+    "target_phase": "active"
+  },
+  "last_result": {
+    "request_id": "30000000-0000-4000-8000-000000000001",
+    "event_id": "50000000-0000-4000-8000-000000000003",
+    "record_sha256": "e6e00f81e6cfbfb3d089eae90dcdb7aa5361f3f5eb60e8f72dd57e05a4789dda",
+    "revision": 8,
+    "result": "committed",
+    "code": "ok",
+    "phase": "active"
+  }
+}

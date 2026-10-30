@@ -1,0 +1,17 @@
+{
+  "protocol": "execution-child-events",
+  "version": 1,
+  "session_id": "20000000-0000-4000-8000-000000000001",
+  "execution_id": "10000000-0000-4000-8000-000000000001",
+  "descriptor_sha256": "df318e4a417b5b453c9134700117784f1be82901c6e6fca9802565d2adfd1103",
+  "owner_key_sha256": "52fe6094743bfd4f9be4321d98adc7e23c1ab622b0ba830e271d1ee1cbfd7850",
+  "revision": 0,
+  "phase": "creating",
+  "record_device": null,
+  "record_inode": null,
+  "context": null,
+  "active_stage": null,
+  "end": null,
+  "pending": null,
+  "last_result": null
+}

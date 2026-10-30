@@ -1,0 +1,11 @@
+{
+  "format_version": "2.0.0",
+  "event_id": "50000000-0000-4000-8000-000000000001",
+  "execution_id": "10000000-0000-4000-8000-000000000001",
+  "name": "execution.started",
+  "occurred_at": "2026-10-30T00:00:01Z",
+  "attributes": {
+    "task": "synthetic.initial",
+    "engine": null
+  }
+}

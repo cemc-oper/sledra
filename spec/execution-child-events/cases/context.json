@@ -1,0 +1,19 @@
+{
+  "format_version": "2.0.0",
+  "event_id": "50000000-0000-4000-8000-000000000002",
+  "execution_id": "10000000-0000-4000-8000-000000000001",
+  "name": "execution.context",
+  "occurred_at": "2026-10-30T00:00:02Z",
+  "attributes": {
+    "task": "synthetic.initial",
+    "parameters": {
+      "forecast_length": 12,
+      "forecast_step": 3,
+      "exact_steps": 9007199254740993
+    },
+    "scope": null,
+    "cycle_kind": "single",
+    "cycle": "2026-06-07T00:00:00Z",
+    "run_id": null
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "protocol": "execution-child-events",
+  "version": 1,
+  "session_id": "20000000-0000-4000-8000-000000000001",
+  "execution_id": "10000000-0000-4000-8000-000000000001",
+  "descriptor_sha256": "df318e4a417b5b453c9134700117784f1be82901c6e6fca9802565d2adfd1103",
+  "owner_key_sha256": "52fe6094743bfd4f9be4321d98adc7e23c1ab622b0ba830e271d1ee1cbfd7850",
+  "revision": 1,
+  "phase": "writing",
+  "record_device": null,
+  "record_inode": null,
+  "context": null,
+  "active_stage": null,
+  "end": null,
+  "pending": {
+    "request_id": "30000000-0000-4000-8000-000000000001",
+    "kind": "start",
+    "event_id": "50000000-0000-4000-8000-000000000001",
+    "record_base64": "eyJmb3JtYXRfdmVyc2lvbiI6IjIuMC4wIiwiZXZlbnRfaWQiOiI1MDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJleGVjdXRpb25faWQiOiIxMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJuYW1lIjoiZXhlY3V0aW9uLnN0YXJ0ZWQiLCJvY2N1cnJlZF9hdCI6IjIwMjYtMTAtMzBUMDA6MDA6MDFaIiwiYXR0cmlidXRlcyI6eyJ0YXNrIjoic3ludGhldGljLmluaXRpYWwiLCJlbmdpbmUiOm51bGx9fQ==",
+    "record_sha256": "20812baf07a108fe20cfe9b503198700ed560f4a968af7cc0d76debf7bf8a7d5",
+    "auxiliary": "2026-10-30T00:00:01Z",
+    "target_phase": "active"
+  },
+  "last_result": null
+}

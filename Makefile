@@ -60,6 +60,7 @@ _check:
 	@find . -name '*.sh' -not -path './build/*' -not -path './dist/*' -not -path './test-results/*' -not -path './.venv/*' -exec bash -n '{}' +
 	$(UV_PY) scripts/check_contracts.py
 	$(UV_PY) spec/execution-v2/verify.py
+	$(UV_PY) spec/execution-child-events/verify.py
 	$(MAKE) -C docs OUTPUT_DIR="$(BUILD_ROOT)" check
 	$(PYTHON) scripts/check_ci.py
 
@@ -78,6 +79,7 @@ _test:
 	$(UV_PY) spec/verify_event.py
 	$(UV_PY) spec/verify_context.py
 	$(UV_PY) spec/execution-v2/verify.py
+	$(UV_PY) spec/execution-child-events/verify.py
 	$(UV_PY) -m unittest discover -s tests/execution -p 'test_*.py' -v
 	$(UV_PY) -m unittest discover -s tests/shell -p 'test_execution*.py' -v
 	$(UV_PY) tests/cli/verify.py
