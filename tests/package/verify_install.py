@@ -6,6 +6,8 @@ import argparse
 import json
 import os
 import platform
+import shutil
+import tarfile
 import subprocess
 import sys
 import tempfile
@@ -120,6 +122,155 @@ class Acceptance:
             if values[0] != values[1]:
                 raise ValueError(f"Shell observation changed {mode} business behavior")
 
+    def child_events(self, manifest: dict) -> dict:
+        capability = self.call(
+            "child-events-capability",
+            [
+                str(self.package / "bin/sledra"),
+                "execution",
+                "child-events",
+                "capabilities",
+                "--interface",
+                "CE-1",
+                "--protocol",
+                "1",
+            ],
+            quiet=False,
+        )
+        if capability.stdout != b"CE-1\texecution-child-events\t1\n":
+            raise ValueError("installed binary does not support the advertised CE-1 protocol")
+        if manifest.get("child_events", {}).get("interface") != "CE-1":
+            raise ValueError("package does not advertise child-events resources")
+        library = self.share / "integrations/bash"
+        example = self.share / "examples/execution-child-events"
+        expected = b"".join(f"synthetic ready:{lead:03d}\n".encode() for lead in (0, 3, 6, 9, 12))
+        facts = {}
+        for case, mode, count in (
+            ("inline", "inline", 8),
+            ("external", "external", 8),
+            ("off", "external", 0),
+            ("missing-owner", "external", 0),
+            ("missing-events", "external", 3),
+            ("missing-sibling", "external", 0),
+            ("protocol-mismatch", "external", 0),
+            ("unattached", "external", 0),
+        ):
+            work = self.work / ("child-events-" + case)
+            runtime = work / "runtime"
+            runtime.mkdir(parents=True, mode=0o700)
+            records = work / "records"
+            self.call(
+                "init-" + case,
+                [
+                    str(self.package / "bin/sledra"),
+                    "execution",
+                    "init-root",
+                    "--root",
+                    str(records),
+                    "--system",
+                    "synthetic",
+                    "--deployment",
+                    "installed",
+                    "--partition-timezone=+00:00",
+                ],
+            )
+            env = dict(
+                self.env,
+                SLEDRA_MODE="execution-v2",
+                SLEDRA_BIN=str(self.package / "bin/sledra"),
+                SLEDRA_ROOT=str(records),
+                SLEDRA_RUNTIME_DIR=str(runtime),
+                SLEDRA_BASH_LIBRARY=str(library / "sledra-execution.sh"),
+                SLEDRA_EVENTS_LIBRARY=str(library / "sledra-events.sh"),
+            )
+            if case == "off":
+                env["SLEDRA_MODE"] = "off"
+            elif case == "missing-owner":
+                env["SLEDRA_BASH_LIBRARY"] = str(work / "absent-owner.sh")
+            elif case == "missing-events":
+                env["SLEDRA_EVENTS_LIBRARY"] = str(work / "absent-events.sh")
+            elif case == "missing-sibling":
+                detached = work / "owner-only.sh"
+                shutil.copyfile(library / "sledra-execution.sh", detached)
+                env["SLEDRA_BASH_LIBRARY"] = str(detached)
+            elif case == "protocol-mismatch":
+                proxy = work / "incompatible-recorder"
+                proxy.write_text(
+                    '#!/usr/bin/env bash\nprintf "CE-1\\texecution-child-events\\t0\\n"\n'
+                )
+                proxy.chmod(0o700)
+                env["SLEDRA_BIN"] = str(proxy)
+            args = ["bash", str(example / "owner.sh"), mode]
+            if case == "unattached":
+                args = ["bash", str(example / "business.sh")]
+            result = self.call("child-events-" + case, args, env=env, quiet=False)
+            diagnostic = b'{"ok":false,"code":"execution_observation_unavailable"}\n'
+            stderr = diagnostic if case in {"missing-sibling", "protocol-mismatch"} else b""
+            if (result.stdout, result.stderr) != (expected, stderr):
+                raise ValueError(f"{case} changed business output or bounded diagnostic")
+            streams = sorted(records.glob("executions/*/*/*.jsonl"))
+            events = [
+                json.loads(line) for path in streams for line in path.read_bytes().splitlines()
+            ]
+            if len(events) != count or len(streams) != int(count > 0):
+                raise ValueError(f"{case} produced unexpected lifecycle/facts")
+            if count:
+                if [event["name"] for event in events] != [
+                    "execution.started",
+                    "execution.context",
+                    *(["data.ready"] * 5 if count == 8 else []),
+                    "execution.ended",
+                ]:
+                    raise ValueError(f"{case} lifecycle/order changed")
+                if count == 8 and [e["attributes"]["lead"] for e in events[2:-1]] != [
+                    0,
+                    3,
+                    6,
+                    9,
+                    12,
+                ]:
+                    raise ValueError("installed child facts are missing or out of order")
+            before = {
+                str(p): sha(p)
+                for base in (records, runtime)
+                for p in base.rglob("*")
+                if p.is_file()
+            }
+            if any(
+                p.name in {"writer.lock", "state.json", "owner.json"} for p in records.rglob("*")
+            ):
+                raise ValueError("control files leaked into recording root")
+            business = work / "business"
+            business.mkdir()
+            (business / "product").write_text("synthetic business-only cleanup fixture\n")
+            with tarfile.open(work / "records.tar", "w") as archive:
+                archive.add(records, arcname="records")
+            with tarfile.open(work / "records.tar") as archive:
+                if any(
+                    not name.startswith("records") or "runtime" in Path(name).parts
+                    for name in archive.getnames()
+                ):
+                    raise ValueError("record archive includes control directory")
+            shutil.rmtree(business)
+            after = {
+                str(p): sha(p)
+                for base in (records, runtime)
+                for p in base.rglob("*")
+                if p.is_file()
+            }
+            if before != after:
+                raise ValueError("business cleanup changed recording/control files")
+            if any(p.stat().st_mode & 0o077 for p in runtime.rglob("*")):
+                raise ValueError("private control resources have public permissions")
+            facts[case] = {
+                "events": len(events),
+                "streams": len(streams),
+                "business_exit": result.returncode,
+                "control_separate": True,
+                "archive_and_cleanup": "fixture passed",
+            }
+        return facts
+
     def run(self, manifest: dict) -> dict:
         if not (self.share / "integrations/bash/sledra.sh").is_file():
             raise ValueError("installed Bash integration is missing")
@@ -130,6 +281,7 @@ class Acceptance:
             raise ValueError("binary version differs from package manifest")
         self.call("help", [str(self.package / "bin/sledra"), "--help"], quiet=False)
         self.shell_examples()
+        child_events = self.child_events(manifest)
         handoff = self.report / "handoff.json"
         common = [
             "--bin",
@@ -238,6 +390,7 @@ class Acceptance:
             if platform_reports[name]["status"] != "pass":
                 raise ValueError(f"installed {name} verification failed")
         return {
+            "child_events": child_events,
             "platform_tools": platform_reports,
             "m1": m1,
             "validated_events": len(events),

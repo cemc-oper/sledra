@@ -70,6 +70,19 @@ def verify_install(root: Path, *, native: bool = True) -> dict:
     if manifest.get("format_version") != 1 or manifest.get("kind") != "local_trial":
         raise ValueError("unsupported package manifest")
     files = manifest["files"]
+    child_events = manifest.get("child_events")
+    if child_events is not None:
+        if child_events != {
+            "interface": "CE-1",
+            "protocol_version": 1,
+            "owner_library": "share/sledra/integrations/bash/sledra-execution.sh",
+            "events_library": "share/sledra/integrations/bash/sledra-events.sh",
+            "example": "share/sledra/examples/execution-child-events/owner.sh",
+        }:
+            raise ValueError("unsupported child-events package interface/layout")
+        for key in ("owner_library", "events_library", "example"):
+            if child_events[key] not in files:
+                raise ValueError(f"missing child-events package resource: {key}")
     actual = set()
     for path in root.rglob("*"):
         if path.is_symlink() or not (path.is_file() or path.is_dir()):

@@ -158,10 +158,34 @@ export SLEDRA_BIN={shlex.quote(INSTALL)}/bin/sledra SLEDRA_ENABLED=1
 printf 'runtime-without-python-go-source:pass; bash:%s\\n' "$BASH_VERSION"
 """
         (runtime / "observability").mkdir()
+        (runtime / "ce-runtime").mkdir(mode=0o700)
+        smoke += f"""
+if command -v jq || command -v ecflow_client; then exit 1; fi
+unset SLEDRA_ENABLED
+export SLEDRA_MODE=execution-v2 SLEDRA_ROOT=/work/ce-records SLEDRA_RUNTIME_DIR=/work/ce-runtime
+export SLEDRA_BASH_LIBRARY={shlex.quote(INSTALL)}/share/sledra/integrations/bash/sledra-execution.sh
+export SLEDRA_EVENTS_LIBRARY={shlex.quote(INSTALL)}/share/sledra/integrations/bash/sledra-events.sh
+"$SLEDRA_BIN" execution init-root --root "$SLEDRA_ROOT" --system synthetic --deployment installed --partition-timezone=+00:00
+bash {shlex.quote(INSTALL)}/share/sledra/examples/execution-child-events/owner.sh inline
+bash {shlex.quote(INSTALL)}/share/sledra/examples/execution-child-events/owner.sh external
+printf 'child-events-without-python-jq-ecflow-go-source:pass\\n'
+"""
         execute(
             "recording-without-python",
             [*sandbox(install, runtime), "/runtime/bin/bash", "-c", smoke],
         )
+        streams = sorted((runtime / "ce-records").glob("executions/*/*/*.jsonl"))
+        if len(streams) != 2:
+            raise ValueError("source-free child-events recording did not create two executions")
+        for path in streams:
+            events = [json.loads(line) for line in path.read_bytes().splitlines()]
+            if [event["name"] for event in events] != [
+                "execution.started",
+                "execution.context",
+                *(["data.ready"] * 5),
+                "execution.ended",
+            ] or [event["attributes"]["lead"] for event in events[2:-1]] != [0, 3, 6, 9, 12]:
+                raise ValueError("source-free installed child-events lifecycle/facts differ")
         # A second namespace permits only the standard-library test interpreter.
         probe = """import errno,json,os,shutil,socket
 s=socket.socket();s.settimeout(1)

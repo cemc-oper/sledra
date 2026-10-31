@@ -118,6 +118,16 @@ def main() -> None:
                     else:
                         copy_file(path, target)
         for name_in, name_out in (
+            ("examples/execution/standalone.sh", "examples/execution/standalone.sh"),
+            (
+                "examples/execution-child-events/owner.sh",
+                "examples/execution-child-events/owner.sh",
+            ),
+            (
+                "examples/execution-child-events/business.sh",
+                "examples/execution-child-events/business.sh",
+            ),
+            ("tests/package/child-events.md", "examples/execution-child-events/README.md"),
             ("scripts/test_tools.py", "scripts/test_tools.py"),
             ("scripts/test_session.py", "scripts/test_session.py"),
             ("scripts/package_tools.py", "scripts/package_tools.py"),
@@ -217,9 +227,17 @@ def main() -> None:
             "elf": elf,
             "runtime": {
                 "recording": ["target binary", "Bash >=4.4"],
+                "child_events": "Linux procfs; pre-created private node-local runtime directory (0700), trusted ancestors; separate from records and business cleanup",
                 "synthetic_example": ["dirname", "cat", "sleep"],
                 "verification": ["Python >=3.12 standard library"],
                 "retention_tool": "not included; fixture-only, not production cleanup",
+            },
+            "child_events": {
+                "interface": "CE-1",
+                "protocol_version": 1,
+                "owner_library": "share/sledra/integrations/bash/sledra-execution.sh",
+                "events_library": "share/sledra/integrations/bash/sledra-events.sh",
+                "example": "share/sledra/examples/execution-child-events/owner.sh",
             },
             "files": {
                 p.relative_to(stage).as_posix(): {

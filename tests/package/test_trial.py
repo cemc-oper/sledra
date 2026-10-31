@@ -129,6 +129,57 @@ class TrialChecks(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "package documentation"):
                     verify_install(root, native=False)
 
+    def test_child_events_metadata_rejects_incompatible_or_incomplete_packages(self) -> None:
+        for mutation in (
+            "protocol",
+            "layout",
+            "missing-owner",
+            "missing-events",
+            "missing-example",
+        ):
+            with self.subTest(mutation=mutation), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                fixture(root)
+                manifest = json.loads((root / "manifest.json").read_text())
+                ce = {
+                    "interface": "CE-1",
+                    "protocol_version": 1,
+                    "owner_library": "share/sledra/integrations/bash/sledra-execution.sh",
+                    "events_library": "share/sledra/integrations/bash/sledra-events.sh",
+                    "example": "share/sledra/examples/execution-child-events/owner.sh",
+                }
+                for key in ("owner_library", "events_library", "example"):
+                    path = root / ce[key]
+                    path.parent.mkdir(parents=True, exist_ok=True)
+                    path.write_text("# source-only fixture\n")
+                    manifest["files"][ce[key]] = {
+                        "sha256": sha(path),
+                        "size": path.stat().st_size,
+                        "mode": "0644",
+                    }
+                if mutation == "protocol":
+                    ce["protocol_version"] = 2
+                elif mutation == "layout":
+                    ce["events_library"] = "elsewhere/events.sh"
+                else:
+                    key = {
+                        "missing-owner": "owner_library",
+                        "missing-events": "events_library",
+                        "missing-example": "example",
+                    }[mutation]
+                    (root / ce[key]).unlink()
+                    del manifest["files"][ce[key]]
+                manifest["child_events"] = ce
+                (root / "manifest.json").write_text(json.dumps(manifest))
+                (root / "SHA256SUMS").write_text(
+                    "".join(
+                        f"{sha(root / name)}  {name}\n"
+                        for name in [*manifest["files"], "manifest.json"]
+                    )
+                )
+                with self.assertRaisesRegex(ValueError, "child-events package"):
+                    verify_install(root, native=False)
+
     def test_actual_elf_linkage_not_cgo_label_is_checked(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             binary = Path(tmp) / "sledra"
