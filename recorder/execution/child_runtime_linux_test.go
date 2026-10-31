@@ -724,3 +724,58 @@ func TestChildBindingAndConcurrentDiagnosticBudget(t *testing.T) {
 		t.Fatal("missing control claimed shared diagnostic")
 	}
 }
+
+func TestChildStateSnapshotAllowsUnlinkedMetadataButRejectsUnsafeFiles(t *testing.T) {
+	tr := newChildTrial(t)
+	_, _, path, _ := ChildReference(tr.ref)
+	state := filepath.Join(path, "state.json")
+	f, err := os.Open(state)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	original, err := io.ReadAll(f)
+	if err != nil {
+		t.Fatal(err)
+	}
+	replacement := filepath.Join(path, "replacement")
+	if err = os.WriteFile(replacement, original, 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err = os.Rename(replacement, state); err != nil {
+		t.Fatal(err)
+	}
+	unlinked, err := f.Stat()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if unlinked.Sys().(*syscall.Stat_t).Nlink != 0 {
+		t.Fatal("old inode still linked")
+	}
+	if !childStateSnapshotPrivate(unlinked) || childPrivate(unlinked, false) {
+		t.Fatal("legitimate state snapshot and immutable control rules were conflated")
+	}
+	// The same metadata may be returned by lstat after path lookup races rename.
+	// Both predicates must accept it; the pre-CE-04 path predicate rejected it.
+	current, err := os.Stat(state)
+	if err != nil || !childStateSnapshotPrivate(current) {
+		t.Fatal("current state rejected", err)
+	}
+	if err = os.Link(state, filepath.Join(path, "alias")); err != nil {
+		t.Fatal(err)
+	}
+	linked, _ := os.Stat(state)
+	if childStateSnapshotPrivate(linked) {
+		t.Fatal("hardlink accepted as snapshot")
+	}
+	if err = os.Remove(filepath.Join(path, "alias")); err != nil {
+		t.Fatal(err)
+	}
+	if err = os.Chmod(state, 0644); err != nil {
+		t.Fatal(err)
+	}
+	weak, _ := os.Stat(state)
+	if childStateSnapshotPrivate(weak) {
+		t.Fatal("nonprivate snapshot accepted")
+	}
+}

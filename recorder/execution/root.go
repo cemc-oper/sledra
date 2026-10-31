@@ -26,11 +26,12 @@ type RootConfig struct {
 	PartitionTimezone string    `json:"partition_timezone"`
 }
 
-// Root holds only a directory descriptor, validated deployment settings and codec.
+// Root holds a directory descriptor, validated settings, codec and a private test hook.
 type Root struct {
-	dir    *os.Root
-	config RootConfig
-	codec  *Codec
+	dir        *os.Root
+	config     RootConfig
+	codec      *Codec
+	writerHook func(*Writer) // Private coordinator test instrumentation; nil for ordinary roots.
 }
 
 func (r *Root) Config() RootConfig { return r.config }

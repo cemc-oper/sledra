@@ -137,6 +137,9 @@ func (r *ChildRecorder) Commit(ref, role, key string, p *ChildPrepared) ChildRec
 	if reply, stop := s.stopped(p); stop {
 		return reply
 	}
+	if err = r.cut("admission.after-disabled"); err != nil {
+		return s.disable("control_unavailable", p)
+	}
 	closing, err := s.closing()
 	if err != nil {
 		return s.disable("control_unavailable", p)
@@ -179,9 +182,6 @@ func (r *ChildRecorder) Commit(ref, role, key string, p *ChildPrepared) ChildRec
 	if statErr != nil || s.state.RecordInode == nil || !childMatches(info, *s.state.RecordDevice, *s.state.RecordInode) {
 		_ = w.Close()
 		return s.disable("indeterminate", p)
-	}
-	if r.writerHook != nil {
-		r.writerHook(w)
 	}
 	if err = r.cut("record.before-write"); err != nil {
 		_ = w.Close()

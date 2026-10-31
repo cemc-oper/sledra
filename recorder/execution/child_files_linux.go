@@ -176,17 +176,28 @@ func childFile(dir *os.Root, name string, flags int) (*os.File, error) {
 	info, err := f.Stat()
 	path, pathErr := dir.Lstat(name)
 	valid := err == nil && childPrivate(info, false)
-	if err == nil && name == "state.json" && flags == os.O_RDONLY {
-		// A complete old state snapshot may be unlinked by an atomic rename
-		// after open. Its immutable session/key binding is checked by the caller.
-		stat := info.Sys().(*syscall.Stat_t)
-		valid = info.Mode().IsRegular() && info.Mode().Perm() == 0600 && stat.Uid == uint32(os.Geteuid()) && stat.Nlink <= 1
+	validPath := pathErr == nil && childPrivate(path, false)
+	if name == "state.json" && flags == os.O_RDONLY {
+		// Both fstat and lstat can finish on an inode concurrently unlinked
+		// by atomic state replacement. Accept complete private snapshots;
+		// the caller checks session/key binding and reloads under writer.lock.
+		valid = err == nil && childStateSnapshotPrivate(info)
+		validPath = pathErr == nil && childStateSnapshotPrivate(path)
 	}
-	if err != nil || pathErr != nil || !valid || !childPrivate(path, false) || (name != "state.json" && !os.SameFile(info, path)) {
+	if !valid || !validPath || (name != "state.json" && !os.SameFile(info, path)) {
 		f.Close()
 		return nil, bad("control_unavailable")
 	}
 	return f, nil
+}
+
+// State snapshots may have zero links after rename; immutable controls may not.
+func childStateSnapshotPrivate(info os.FileInfo) bool {
+	if info == nil {
+		return false
+	}
+	stat := info.Sys().(*syscall.Stat_t)
+	return info.Mode().IsRegular() && info.Mode().Perm() == 0600 && stat.Uid == uint32(os.Geteuid()) && stat.Nlink <= 1
 }
 func childRead(dir *os.Root, name string, limit int) ([]byte, error) {
 	f, err := childFile(dir, name, os.O_RDONLY)

@@ -301,6 +301,7 @@ func (s *childSession) root() (*Root, error) {
 		root.Close()
 		return nil, bad("identity_mismatch")
 	}
+	root.writerHook = s.r.writerHook
 	return root, nil
 }
 func (s *childSession) ownerAuth(key string) error {
@@ -348,6 +349,7 @@ func (r *ChildRecorder) Open(rootPath, runtimePath string, ownerPID int, p *Chil
 		return childReply(25, "installation_incompatible", p)
 	}
 	defer root.Close()
+	root.writerHook = r.writerHook
 	rootInfo, err := root.dir.Stat(".")
 	if err != nil {
 		return childReply(25, "installation_incompatible", p)
@@ -408,9 +410,6 @@ func (r *ChildRecorder) Open(rootPath, runtimePath string, ownerPID int, p *Chil
 	w, err := root.Create(p.Record)
 	if err != nil {
 		return s.disable("indeterminate", p)
-	}
-	if r.writerHook != nil {
-		r.writerHook(w)
 	}
 	info, statErr := w.file.Stat()
 	closeErr := w.Close()

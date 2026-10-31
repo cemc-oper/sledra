@@ -99,7 +99,11 @@ func (r *Root) openWriter(id, path string, flags int) (*Writer, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Writer{file: f, codec: r.codec, id: id, path: path, write: f.Write, closeFile: f.Close}, nil
+	w := &Writer{file: f, codec: r.codec, id: id, path: path, write: f.Write, closeFile: f.Close}
+	if r.writerHook != nil {
+		r.writerHook(w)
+	}
+	return w, nil
 }
 
 // Append validates completely before I/O. Raw must exclude the terminal LF.

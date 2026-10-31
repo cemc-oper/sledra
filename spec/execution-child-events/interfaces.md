@@ -1,6 +1,6 @@
 # CE-1 Shell/CLI interface contract
 
-CE-01 contract baseline, 2026-10-30. CE-02 implements the internal Go CLI/coordinator; CE-03 implements the opt-in owner and event-only Bash APIs. Full cross-process fault acceptance remains CE-04 work. Data remains Execution 2.0.0/layout 2. See [offline validation](README.md).
+CE-01 contract baseline, 2026-10-30. CE-02 implements the internal Go CLI/coordinator; CE-03 implements the opt-in owner and event-only Bash APIs. CE-04 covers local cross-process fault acceptance; application, installation and target-node qualification remain separate. Data remains Execution 2.0.0/layout 2. See [offline validation](README.md).
 
 ## P01 启用与公共 API
 

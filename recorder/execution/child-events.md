@@ -1,4 +1,4 @@
-# Coordinated child events (CE-02/CE-03)
+# Coordinated child events (CE-02/CE-03/CE-04)
 
 CE-02 implements the Linux Go coordinator and the **internal**
 `execution child-events` command family for [CE-1](../../spec/execution-child-events/README.md).
@@ -69,7 +69,7 @@ The public make test includes both [Go components](child_runtime_linux_test.go)
 and native CLI checks; the existing CE-1 vectors remain independent.
 
 CE-02 qualifies the Go components; CE-03 adds public Bash qualification.
-Full SIGKILL/fault/barrier acceptance, installation combinations, GFS business
-equivalence and HPC operation remain CE-04–07. There is no automatic control-directory cleanup or history repair.
+CE-04 adds [local cross-process SIGKILL/fault/barrier acceptance](child-events-faults.md).
+Installation combinations, GFS business equivalence and HPC operation remain CE-05–07. There is no automatic control-directory cleanup or history repair.
 
-CE-03 adds the public [owner and event-only Bash hooks](../../integrations/bash/execution-v2.md) and [standalone example](../../examples/execution-child-events/README.md). Internal `bind` reuses attach validation and returns only the execution ID; `diagnostic` claims the shared O_EXCL budget without changing writer state or facts. Existing attach/prepare/receipt frames remain unchanged. The full cross-process write-cut matrix remains CE-04 work.
+CE-03 adds the public [owner and event-only Bash hooks](../../integrations/bash/execution-v2.md) and [standalone example](../../examples/execution-child-events/README.md). Internal `bind` reuses attach validation and returns only the execution ID; `diagnostic` claims the shared O_EXCL budget without changing writer state or facts. Existing attach/prepare/receipt frames remain unchanged. The local cross-process write-cut matrix is covered by CE-04; target-node qualification remains separate.
