@@ -1,6 +1,6 @@
 # CE-1 Shell/CLI interface contract
 
-CE-01 contract baseline, 2026-10-30. Public Bash/Go support is not implemented yet. Data remains Execution 2.0.0/layout 2. See [offline validation](README.md).
+CE-01 contract baseline, 2026-10-30. CE-02 implements the internal Go CLI/coordinator; public Bash support remains CE-03 work. Data remains Execution 2.0.0/layout 2. See [offline validation](README.md).
 
 ## P01 启用与公共 API
 

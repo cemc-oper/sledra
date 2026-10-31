@@ -130,6 +130,8 @@ func executionCommand(args []string, input io.Reader, output io.Writer) error {
 		return executionFailure("usage", 2)
 	}
 	switch args[0] {
+	case "child-events":
+		return childExecutionCommand(args[1:], input, output)
 	case "init-root":
 		opts, _, err := parseExecutionOptions(args[1:], "--root --system --deployment --partition-timezone", false)
 		if err != nil {

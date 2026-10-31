@@ -1,0 +1,477 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sledra:execution-child-events:1",
+  "title": "CE-1 node-local control records (not Execution JSONL)",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/descriptor"
+    },
+    {
+      "$ref": "#/$defs/state"
+    },
+    {
+      "$ref": "#/$defs/closing"
+    }
+  ],
+  "$defs": {
+    "descriptor": {
+      "type": "object",
+      "properties": {
+        "protocol": {
+          "const": "execution-child-events"
+        },
+        "version": {
+          "type": "integer",
+          "const": 1
+        },
+        "interface": {
+          "const": "CE-1"
+        },
+        "role": {
+          "const": "event-only"
+        },
+        "session_id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+          "minLength": 36,
+          "maxLength": 36
+        },
+        "execution_id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+          "minLength": 36,
+          "maxLength": 36
+        },
+        "entry_time": {
+          "type": "string"
+        },
+        "uid": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4294967295
+        },
+        "boot_id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "minLength": 36,
+          "maxLength": 36
+        },
+        "pid_namespace_inode": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$",
+          "maxLength": 20
+        },
+        "owner_pid": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        },
+        "owner_start_ticks": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$",
+          "maxLength": 20
+        },
+        "runtime_path": {
+          "type": "string"
+        },
+        "runtime_device": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$",
+          "maxLength": 20
+        },
+        "runtime_inode": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$",
+          "maxLength": 20
+        },
+        "session_device": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$",
+          "maxLength": 20
+        },
+        "session_inode": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$",
+          "maxLength": 20
+        },
+        "lock_device": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$",
+          "maxLength": 20
+        },
+        "lock_inode": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$",
+          "maxLength": 20
+        },
+        "root_path": {
+          "type": "string"
+        },
+        "root_device": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$",
+          "maxLength": 20
+        },
+        "root_inode": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$",
+          "maxLength": 20
+        },
+        "root_config": {
+          "type": "object"
+        }
+      },
+      "required": [
+        "protocol",
+        "version",
+        "interface",
+        "role",
+        "session_id",
+        "execution_id",
+        "entry_time",
+        "uid",
+        "boot_id",
+        "pid_namespace_inode",
+        "owner_pid",
+        "owner_start_ticks",
+        "runtime_path",
+        "runtime_device",
+        "runtime_inode",
+        "session_device",
+        "session_inode",
+        "lock_device",
+        "lock_inode",
+        "root_path",
+        "root_device",
+        "root_inode",
+        "root_config"
+      ],
+      "additionalProperties": false
+    },
+    "state": {
+      "type": "object",
+      "properties": {
+        "protocol": {
+          "const": "execution-child-events"
+        },
+        "version": {
+          "type": "integer",
+          "const": 1
+        },
+        "session_id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+          "minLength": 36,
+          "maxLength": 36
+        },
+        "execution_id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+          "minLength": 36,
+          "maxLength": 36
+        },
+        "descriptor_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "minLength": 64,
+          "maxLength": 64
+        },
+        "owner_key_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "minLength": 64,
+          "maxLength": 64
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9223372036854775807
+        },
+        "phase": {
+          "enum": [
+            "creating",
+            "active",
+            "writing",
+            "closed",
+            "disabled"
+          ]
+        },
+        "record_device": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$",
+              "maxLength": 20
+            }
+          ]
+        },
+        "record_inode": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$",
+              "maxLength": 20
+            }
+          ]
+        },
+        "context": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "string",
+              "maxLength": 87384
+            }
+          ]
+        },
+        "active_stage": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 128
+                },
+                "stage_id": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+                  "minLength": 36,
+                  "maxLength": 36
+                }
+              },
+              "required": [
+                "name",
+                "stage_id"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        },
+        "end": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "string",
+              "maxLength": 87384
+            }
+          ]
+        },
+        "pending": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/pending"
+            }
+          ]
+        },
+        "last_result": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/last_result"
+            }
+          ]
+        }
+      },
+      "required": [
+        "protocol",
+        "version",
+        "session_id",
+        "execution_id",
+        "descriptor_sha256",
+        "owner_key_sha256",
+        "revision",
+        "phase",
+        "record_device",
+        "record_inode",
+        "context",
+        "active_stage",
+        "end",
+        "pending",
+        "last_result"
+      ],
+      "additionalProperties": false
+    },
+    "closing": {
+      "type": "object",
+      "properties": {
+        "protocol": {
+          "const": "execution-child-events"
+        },
+        "version": {
+          "type": "integer",
+          "const": 1
+        },
+        "session_id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+          "minLength": 36,
+          "maxLength": 36
+        },
+        "request_id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+          "minLength": 36,
+          "maxLength": 36
+        },
+        "event_id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+          "minLength": 36,
+          "maxLength": 36
+        },
+        "record_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "minLength": 64,
+          "maxLength": 64
+        },
+        "record_base64": {
+          "type": "string",
+          "maxLength": 87384
+        }
+      },
+      "required": [
+        "protocol",
+        "version",
+        "session_id",
+        "request_id",
+        "event_id",
+        "record_sha256",
+        "record_base64"
+      ],
+      "additionalProperties": false
+    },
+    "pending": {
+      "type": "object",
+      "properties": {
+        "request_id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+          "minLength": 36,
+          "maxLength": 36
+        },
+        "kind": {
+          "enum": [
+            "start",
+            "context",
+            "event",
+            "stage-start",
+            "stage-end",
+            "end"
+          ]
+        },
+        "event_id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+          "minLength": 36,
+          "maxLength": 36
+        },
+        "record_base64": {
+          "type": "string",
+          "maxLength": 87384
+        },
+        "record_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "minLength": 64,
+          "maxLength": 64
+        },
+        "auxiliary": {
+          "type": "string"
+        },
+        "target_phase": {
+          "enum": [
+            "active",
+            "closed"
+          ]
+        }
+      },
+      "required": [
+        "request_id",
+        "kind",
+        "event_id",
+        "record_base64",
+        "record_sha256",
+        "auxiliary",
+        "target_phase"
+      ],
+      "additionalProperties": false
+    },
+    "last_result": {
+      "type": "object",
+      "properties": {
+        "request_id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+          "minLength": 36,
+          "maxLength": 36
+        },
+        "event_id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+          "minLength": 36,
+          "maxLength": 36
+        },
+        "record_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "minLength": 64,
+          "maxLength": 64
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9223372036854775807
+        },
+        "result": {
+          "enum": [
+            "committed",
+            "noop"
+          ]
+        },
+        "code": {
+          "enum": [
+            "ok",
+            "same_context",
+            "same_end"
+          ]
+        },
+        "phase": {
+          "enum": [
+            "active",
+            "closed"
+          ]
+        }
+      },
+      "required": [
+        "request_id",
+        "event_id",
+        "record_sha256",
+        "revision",
+        "result",
+        "code",
+        "phase"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

@@ -21,6 +21,12 @@ def sync_execution(root: Path) -> None:
             shutil.copyfile(root / "spec/execution-v2/contract.schema.json", target)
 
 
+def sync_child(root: Path) -> None:
+    target = root / "recorder/execution/childcontract/contract.schema.json"
+    if target.parent.is_dir():
+        shutil.copyfile(root / "spec/execution-child-events/contract.schema.json", target)
+
+
 def sync(root: Path) -> None:
     source = root / "spec/1.0.0"
     for directory, names in (
@@ -46,6 +52,7 @@ def sync(root: Path) -> None:
         for name in sorted(names):
             shutil.copyfile(source / name, target / name)
     sync_execution(root)
+    sync_child(root)
 
 
 if __name__ == "__main__":

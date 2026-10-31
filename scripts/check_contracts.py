@@ -30,6 +30,14 @@ def check_execution_resource(root: Path) -> None:
         print("Execution 2.0.0 bundled Python resource matches canonical spec")
 
 
+def check_child_resource(root: Path) -> None:
+    canonical = root / "spec/execution-child-events/contract.schema.json"
+    target = root / "recorder/execution/childcontract/contract.schema.json"
+    if not target.is_file() or target.read_bytes() != canonical.read_bytes():
+        raise ValueError("execution child-events embedded resource differs from canonical spec")
+    print("execution-child-events/1 Go resource matches canonical spec")
+
+
 def check_generated(root: Path) -> None:
     with tempfile.TemporaryDirectory(prefix="sledra-contract-check-") as tmp:
         copy = Path(tmp) / "spec"
@@ -93,3 +101,4 @@ def check_generated(root: Path) -> None:
 
 if __name__ == "__main__":
     check_generated(ROOT)
+    check_child_resource(ROOT)
