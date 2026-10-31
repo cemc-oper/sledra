@@ -671,3 +671,56 @@ func TestChildEquivalentContextKeepsNanosecondsAndExactDecimals(t *testing.T) {
 		t.Fatal("conflicting context appended")
 	}
 }
+
+func TestChildBindingAndConcurrentDiagnosticBudget(t *testing.T) {
+	tr := newChildTrial(t)
+	before := tr.records(t)
+	reply, id := tr.r.Bind(tr.ref)
+	childWant(t, reply, 0, "ok")
+	if id != tr.id || !bytes.Equal(before, tr.records(t)) {
+		t.Fatal("binding changed facts or identity")
+	}
+	const count = 12
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+	winners := 0
+	for range count {
+		recorder := tr.recorder(t)
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			claimed, err := recorder.ClaimDiagnostic(tr.ref)
+			mu.Lock()
+			defer mu.Unlock()
+			if err != nil {
+				t.Error(err)
+			}
+			if claimed {
+				winners++
+			}
+		}()
+	}
+	wg.Wait()
+	if winners != 1 {
+		t.Fatalf("diagnostic winners: %d", winners)
+	}
+	if !bytes.Equal(before, tr.records(t)) {
+		t.Fatal("diagnostic appended")
+	}
+	if tr.state(t).Revision != 2 {
+		t.Fatal("diagnostic changed writer state")
+	}
+	_, _, path, _ := ChildReference(tr.ref)
+	if err := os.WriteFile(filepath.Join(path, "diagnostic"), []byte("corrupt"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := tr.r.ClaimDiagnostic(tr.ref); err == nil {
+		t.Fatal("corrupt latch treated as suppressed")
+	}
+	if err := os.Remove(filepath.Join(path, "state.json")); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := tr.r.ClaimDiagnostic(tr.ref); err == nil {
+		t.Fatal("missing control claimed shared diagnostic")
+	}
+}

@@ -84,3 +84,34 @@ uv run --locked --offline --no-python-downloads python -m unittest discover -s t
 ```
 
 运行测试的开发环境需要 Go、Python 及现有 jsonschema 依赖；这不是记录节点依赖。P1-02/P1-03 已覆盖 owner 生命周期、业务事件/阶段、记录边界及跨 CLI 禁写，P1-04 增加了实际示例的命令次数/argv/产物/callback、TERM/KILL 和观测故障对照；HPC/真实工作流及 P5 归档仍未验收。
+
+## CE-03：显式接入同机子进程事件
+
+默认调用继续使用上面的单 owner 路径。只有首次 `sledra_execution_begin --child-events [原 start 参数]` 选择协调路径；不能给 active/off/closed/disabled 的入口升级模式。CE-1 是独立接口版本，数据仍为 Execution 2.0.0/layout 2。参见[独立契约](../../spec/execution-child-events/interfaces.md)及[完整父子示例](../../examples/execution-child-events/README.md)。
+
+部署者须提供绝对 `SLEDRA_RUNTIME_DIR`，预建当前 UID 的 0700 目录，确认节点本地 FS、可信祖先，且位于记录根/业务/清理树之外。库不推断 TMPDIR，不创建缺失 runtime，不退回旧 append。CE 模式要求同目录的 `sledra-execution.sh` 和 `sledra-events.sh`，以及支持本次接口的 Linux amd64/arm64 Go 二进制；记录端仍不依赖 Python/jq/ecFlow。最终独立安装/混装验收留给 CE-06。
+
+```bash
+source /absolute/install/sledra-execution.sh
+sledra_execution_begin --child-events --task synthetic.initial
+# 只有完整 started 和控制发布成功后才 export SLEDRA_EVENT_CONTEXT。
+sledra_execution_context --task synthetic.initial --cycle-kind none
+(
+    source /absolute/install/sledra-events.sh
+    sledra_event_attach
+    # 原业务留在原控制流；在实际事实发生处调用。
+    sledra_event_emit data.ready --int lead 0
+    sledra_event_detach
+)
+# 独立 Bash 必须自行 source/attach，不依赖导出的函数。
+# owner 先保存业务退出码或信号，再使用原 end 签名。
+sledra_execution_end --exit-code 0
+```
+
+事件库只定义函数，重复 source 不重置绑定。`sledra_event_attach [--context REF]` 不传选项时用环境引用，显式空值不回退；无引用、off、未 attach 的 emit 静默且不调用 CLI。首次 attach 冻结当前 BASHPID 的 mode/bin，缺引用允许稍后显式 attach。重复相同 attach 再校验、健康时幂等；不同引用拒绝切换，需先无参数 detach。detach 只清当前绑定，不结束父执行、不删文件；控制不可用或不确定结果引起的本进程 disabled 不能经 detach/source/换环境恢复。
+
+`sledra_event_emit NAME [TYPED_VALUES]`沿用 typed 编码和精确数值规则，只允许业务事件；`execution.*`/`stage.*` 及身份/role/raw JSON 选项拒绝本条。inline 子 shell 必须显式 attach，旧 lifecycle hook 保持子 shell no-op；external 自行加载库。所有私有 `_SLEDRA_V2_`/`_SLEDRA_CE_` 状态去除 export 属性，即使 set -a；继承的私有导出状态丢弃，BASHPID 不同不能使用继承绑定。
+
+CE owner 的 context/event/stage/end 全部走协调层。相同 context 幂等、冲突禁写；阶段顺序规则保留；首次合法 end 缓存在 owner 并发布 closing。Busy 不重发普通事件，只有后续显式相同 end 可以在协议允许时使用首次 prepared 再争取锁。相同已提交 end 幂等，不同结果保留首份。
+
+每份普通事实只 prepare 一次、commit 一次。损坏/缺失/CLI 信号退出的 commit 回执触发一次只读 result；不能证明时调用一次 disable 并永久停止本进程，不补录、不修复。正常 off、缺引用、Busy 和正常 closed 不诊断；其他失败共享 diagnostic O_EXCL 预算，健康控制目录每 Execution 至多一行固定 JSON，无法使用共享状态时退化为每 BASHPID 至多一行。诊断不含路径、引用、key、typed 值或凭证。公共 hook 返回 0、stdout 空，保留调用方 options/trap；xtrace 仅在内部观测调用期间屏蔽并恢复，调用方自己写出的敏感 hook 参数仍受 Bash 原始跟踪规则约束。

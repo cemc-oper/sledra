@@ -113,7 +113,7 @@ func childExecutionCommand(args []string, input io.Reader, output io.Writer) err
 	switch args[0] {
 	case "open":
 		allowed = "--root --runtime-dir --owner-pid"
-	case "attach", "disable":
+	case "attach", "bind", "diagnostic", "disable":
 		allowed = "--context"
 	case "commit":
 		allowed = "--context --role --owner-key"
@@ -143,6 +143,36 @@ func childExecutionCommand(args []string, input io.Reader, output io.Writer) err
 		return emit(reply)
 	}
 	switch args[0] {
+	case "bind":
+		reply, id := recorder.Bind(opts["--context"])
+		if reply.Status != 0 {
+			return emit(reply)
+		}
+		raw := []byte("CE-1\tbound\t" + id + "\n")
+		n, err := output.Write(raw)
+		if err != nil || n != len(raw) {
+			return executionFailure("indeterminate", 23)
+		}
+		return nil
+	case "diagnostic":
+		claimed, err := recorder.ClaimDiagnostic(opts["--context"])
+		if err != nil {
+			reply := execution.ChildRejection("invalid_reference")
+			reply.Status = 26
+			reply.Result = "unavailable"
+			reply.Stop = "local"
+			return emit(reply)
+		}
+		outcome := "suppressed"
+		if claimed {
+			outcome = "granted"
+		}
+		raw := []byte("CE-1\tdiagnostic\t" + outcome + "\n")
+		n, err := output.Write(raw)
+		if err != nil || n != len(raw) {
+			return executionFailure("indeterminate", 23)
+		}
+		return nil
 	case "attach":
 		return emit(recorder.Attach(opts["--context"]))
 	case "disable":

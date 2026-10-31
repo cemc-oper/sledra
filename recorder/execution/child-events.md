@@ -1,8 +1,9 @@
-# Coordinated child events (CE-02)
+# Coordinated child events (CE-02/CE-03)
 
 CE-02 implements the Linux Go coordinator and the **internal**
 `execution child-events` command family for [CE-1](../../spec/execution-child-events/README.md).
-The public owner opt-in and `sledra-events.sh` Bash API remain CE-03 work.
+CE-03 implements the public owner opt-in and `sledra-events.sh` Bash API;
+see the [Bash interface](../../integrations/bash/execution-v2.md).
 GFS still uses the existing interface until its separately gated integration.
 No legacy Registry, Attempt, spool, Python, jq, ecFlow or daemon is involved.
 
@@ -67,6 +68,8 @@ fresh CLI calls are checked separately in
 The public make test includes both [Go components](child_runtime_linux_test.go)
 and native CLI checks; the existing CE-1 vectors remain independent.
 
-This is component qualification. Public Bash behavior, full SIGKILL/fault/barrier
-acceptance, installation combinations, GFS business equivalence and HPC operation
-remain CE-03–07. There is no automatic control-directory cleanup or history repair.
+CE-02 qualifies the Go components; CE-03 adds public Bash qualification.
+Full SIGKILL/fault/barrier acceptance, installation combinations, GFS business
+equivalence and HPC operation remain CE-04–07. There is no automatic control-directory cleanup or history repair.
+
+CE-03 adds the public [owner and event-only Bash hooks](../../integrations/bash/execution-v2.md) and [standalone example](../../examples/execution-child-events/README.md). Internal `bind` reuses attach validation and returns only the execution ID; `diagnostic` claims the shared O_EXCL budget without changing writer state or facts. Existing attach/prepare/receipt frames remain unchanged. The full cross-process write-cut matrix remains CE-04 work.

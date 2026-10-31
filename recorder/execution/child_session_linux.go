@@ -477,46 +477,52 @@ func (s *childSession) finish(p *ChildPrepared, result, code string) (ChildRecei
 	return reply, true
 }
 func (r *ChildRecorder) Attach(ref string) ChildReceipt {
+	reply, _ := r.Bind(ref)
+	return reply
+}
+
+// Bind returns only the validated execution ID, never owner authority.
+func (r *ChildRecorder) Bind(ref string) (ChildReceipt, string) {
 	s, err := r.session(ref)
 	if err != nil {
-		return childUnavailable(err, nil)
+		return childUnavailable(err, nil), ""
 	}
 	defer s.close()
 	if reply, ok := s.lockAndLoad(nil); !ok {
-		return reply
+		return reply, ""
 	}
 	if s.state.Phase == "closed" {
-		return s.reply(22, "closed", nil)
+		return s.reply(22, "closed", nil), ""
 	}
 	closing, err := s.closing()
 	if err != nil {
-		return s.disable("control_unavailable", nil)
+		return s.disable("control_unavailable", nil), ""
 	}
 	if closing != nil {
 		reply := s.reply(22, "closing", nil)
 		reply.Phase = "closing"
-		return reply
+		return reply, ""
 	}
 	if s.state.Phase != "active" {
-		return s.disable("control_unavailable", nil)
+		return s.disable("control_unavailable", nil), ""
 	}
 	root, err := s.root()
 	if err != nil {
-		return s.disable("control_unavailable", nil)
+		return s.disable("control_unavailable", nil), ""
 	}
 	defer root.Close()
 	w, err := root.OpenWriter(s.descriptor.ExecutionID, s.descriptor.EntryTime)
 	if err != nil {
-		return s.disable("indeterminate", nil)
+		return s.disable("indeterminate", nil), ""
 	}
 	info, statErr := w.file.Stat()
 	closeErr := w.Close()
 	if statErr != nil || closeErr != nil || s.state.RecordInode == nil || !childMatches(info, *s.state.RecordDevice, *s.state.RecordInode) {
-		return s.disable("indeterminate", nil)
+		return s.disable("indeterminate", nil), ""
 	}
 	reply := s.reply(0, "ok", nil)
 	reply.Result = "attached"
-	return reply
+	return reply, s.descriptor.ExecutionID
 }
 func (r *ChildRecorder) Disable(ref string) ChildReceipt {
 	s, err := r.session(ref)
@@ -563,4 +569,29 @@ func (r *ChildRecorder) Lookup(ref string, p *ChildPrepared) ChildReceipt {
 		reply.Phase = "closing"
 	}
 	return reply
+}
+
+// ClaimDiagnostic consumes the execution-wide budget without waiting for writers.
+// It neither authorizes nor disables recording. Errors select a local fallback.
+func (r *ChildRecorder) ClaimDiagnostic(ref string) (bool, error) {
+	s, err := r.session(ref)
+	if err != nil {
+		return false, err
+	}
+	defer s.close()
+	if err = s.loadState(); err != nil {
+		return false, err
+	}
+	f, err := childFile(s.dir, "diagnostic", os.O_WRONLY|os.O_CREATE|os.O_EXCL)
+	if errors.Is(err, os.ErrExist) {
+		_, err = childLatch(s.dir, "diagnostic")
+		return false, err
+	}
+	if err != nil {
+		return false, err
+	}
+	if err = f.Close(); err != nil {
+		return false, err
+	}
+	return true, nil
 }

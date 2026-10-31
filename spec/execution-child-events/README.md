@@ -5,7 +5,7 @@ CE-01 contract baseline, 2026-10-30. This directory defines the opt-in interface
 remains `dev`, Execution JSONL remains format `2.0.0` and layout `2`. These are
 separate version axes. No new software release or data migration is implied.
 
-**CE-02 now implements the Linux Go coordinator and internal CLI; the public Bash API remains CE-03 work.** See the [component implementation](../../recorder/execution/child-events.md). The checks here
+**CE-02 implements the Linux Go coordinator/internal CLI and CE-03 implements the opt-in owner/event-only Bash APIs. Full CE-04 cross-process fault acceptance remains pending.** See the [component implementation](../../recorder/execution/child-events.md). The checks here
 are offline contract oracles, synthetic records and compatibility expectations.
 They do not prove process identity, filesystem atomicity, lock behavior, actual
 Bash no-op behavior, mixed-install runtime rejection or GFS/HPC execution.

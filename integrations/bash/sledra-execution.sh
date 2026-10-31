@@ -22,6 +22,7 @@ _sledra_v2_owner() {
 }
 
 _sledra_v2_diag() {
+    if [[ ${_SLEDRA_V2_CHILD:-0} == 1 ]]; then _sledra_ce_diag; return 0; fi
     if [[ ${_SLEDRA_V2_DIAG:-0} != 1 ]]; then
         declare -g _SLEDRA_V2_DIAG=1
         export -n _SLEDRA_V2_DIAG
@@ -154,9 +155,10 @@ _sledra_v2_active() {
     return 1
 }
 
-sledra_execution_begin() {
+_sledra_v2_begin() {
     if ! _sledra_v2_owner; then return 0; fi
     if [[ -n ${_SLEDRA_V2_STATE:-} ]]; then return 0; fi
+    unset -v SLEDRA_EVENT_CONTEXT
     declare -g _SLEDRA_V2_BIN="${SLEDRA_BIN:-}" _SLEDRA_V2_ROOT="${SLEDRA_ROOT:-}"
     export -n _SLEDRA_V2_BIN _SLEDRA_V2_ROOT
     case ${SLEDRA_MODE:-off} in
@@ -173,6 +175,21 @@ sledra_execution_begin() {
           ! -x $_SLEDRA_V2_BIN || $_SLEDRA_V2_ROOT != /* ]]; then
         _sledra_v2_diag; return 0
     fi
+    local +x _option _skip=0 _child=0
+    for _option in "$@"; do
+        if [[ $_skip == 1 ]]; then _skip=0; continue; fi
+        case $_option in
+            --child-events|--child-events=*) _child=1 ;;
+            --task|--engine-kind|--engine-service|--engine-node|--engine-alias) _skip=1 ;;
+        esac
+    done
+    if [[ $_child == 1 ]]; then
+        local +x _library=${BASH_SOURCE[0]%/*}/sledra-events.sh
+        if [[ ! -f $_library || ! -r $_library ]]; then _sledra_v2_diag; return 0; fi
+        if ! source "$_library"; then _sledra_v2_diag; return 0; fi
+        _sledra_ce_owner_begin "$@"
+        return 0
+    fi
     if ! _sledra_v2_public start "$@"; then return 0; fi
     if ! _sledra_v2_prepare start "$@"; then return 0; fi
     if ! _sledra_v2_append --create; then return 0; fi
@@ -181,7 +198,9 @@ sledra_execution_begin() {
     return 0
 }
 
-sledra_execution_context() {
+_sledra_v2_context() {
+    if ! _sledra_v2_owner; then return 0; fi
+    if [[ ${_SLEDRA_V2_CHILD:-0} == 1 ]]; then _sledra_ce_owner_hook context "$@"; return 0; fi
     if ! _sledra_v2_active; then return 0; fi
     if ! _sledra_v2_public context "$@"; then return 0; fi
     if [[ -n ${_SLEDRA_V2_CONTEXT:-} ]]; then
@@ -196,7 +215,9 @@ sledra_execution_context() {
     return 0
 }
 
-sledra_execution_event() {
+_sledra_v2_event() {
+    if ! _sledra_v2_owner; then return 0; fi
+    if [[ ${_SLEDRA_V2_CHILD:-0} == 1 ]]; then _sledra_ce_owner_hook event "$@"; return 0; fi
     if ! _sledra_v2_active; then return 0; fi
     if [[ $# -lt 1 ]]; then _sledra_v2_diag; return 0; fi
     local +x _event_name=$1
@@ -207,7 +228,9 @@ sledra_execution_event() {
     return 0
 }
 
-sledra_stage_begin() {
+_sledra_v2_stage_begin() {
+    if ! _sledra_v2_owner; then return 0; fi
+    if [[ ${_SLEDRA_V2_CHILD:-0} == 1 ]]; then _sledra_ce_owner_hook stage-start "$@"; return 0; fi
     if ! _sledra_v2_active; then return 0; fi
     if [[ $# != 1 || -n ${_SLEDRA_V2_STAGE:-} ]]; then _sledra_v2_diag; return 0; fi
     if ! _sledra_v2_prepare stage-start --execution-id "$_SLEDRA_V2_ID" --stage "$1"; then return 0; fi
@@ -217,7 +240,9 @@ sledra_stage_begin() {
     return 0
 }
 
-sledra_stage_end() {
+_sledra_v2_stage_end() {
+    if ! _sledra_v2_owner; then return 0; fi
+    if [[ ${_SLEDRA_V2_CHILD:-0} == 1 ]]; then _sledra_ce_owner_hook stage-end "$@"; return 0; fi
     if ! _sledra_v2_active; then return 0; fi
     if [[ -z ${_SLEDRA_V2_STAGE:-} ]]; then _sledra_v2_diag; return 0; fi
     if ! _sledra_v2_public end "$@"; then return 0; fi
@@ -228,8 +253,9 @@ sledra_stage_end() {
     return 0
 }
 
-sledra_execution_end() {
+_sledra_v2_end() {
     if ! _sledra_v2_owner; then return 0; fi
+    if [[ ${_SLEDRA_V2_CHILD:-0} == 1 ]]; then _sledra_ce_owner_hook end "$@"; return 0; fi
     if [[ ${_SLEDRA_V2_STATE:-} != closed ]]; then
         if ! _sledra_v2_active; then return 0; fi
     fi
@@ -246,9 +272,58 @@ sledra_execution_end() {
     return 0
 }
 
-# set -a also marks function definitions for export. Keep these definitions
-# source-only even in that caller mode; do not export a child recording service.
+sledra_execution_begin() {
+    local +x _trace=0
+    case $- in *x*) set +x; _trace=1 ;; esac
+    _sledra_v2_begin "$@"
+    if [[ $_trace == 1 ]]; then set -x; fi
+    return 0
+}
+
+sledra_execution_context() {
+    local +x _trace=0
+    case $- in *x*) set +x; _trace=1 ;; esac
+    _sledra_v2_context "$@"
+    if [[ $_trace == 1 ]]; then set -x; fi
+    return 0
+}
+
+sledra_execution_event() {
+    local +x _trace=0
+    case $- in *x*) set +x; _trace=1 ;; esac
+    _sledra_v2_event "$@"
+    if [[ $_trace == 1 ]]; then set -x; fi
+    return 0
+}
+
+sledra_stage_begin() {
+    local +x _trace=0
+    case $- in *x*) set +x; _trace=1 ;; esac
+    _sledra_v2_stage_begin "$@"
+    if [[ $_trace == 1 ]]; then set -x; fi
+    return 0
+}
+
+sledra_stage_end() {
+    local +x _trace=0
+    case $- in *x*) set +x; _trace=1 ;; esac
+    _sledra_v2_stage_end "$@"
+    if [[ $_trace == 1 ]]; then set -x; fi
+    return 0
+}
+
+sledra_execution_end() {
+    local +x _trace=0
+    case $- in *x*) set +x; _trace=1 ;; esac
+    _sledra_v2_end "$@"
+    if [[ $_trace == 1 ]]; then set -x; fi
+    return 0
+}
+
+# Keep both public and internal functions source-only under set -a.
 export -nf _sledra_v2_owner _sledra_v2_diag _sledra_v2_disable _sledra_v2_call \
     _sledra_v2_public _sledra_v2_prepare _sledra_v2_append _sledra_v2_active \
-    sledra_execution_begin sledra_execution_context sledra_execution_end \
-    sledra_execution_event sledra_stage_begin sledra_stage_end
+    _sledra_v2_begin _sledra_v2_context _sledra_v2_event _sledra_v2_end \
+    _sledra_v2_stage_begin _sledra_v2_stage_end \
+    sledra_execution_begin sledra_execution_context sledra_execution_event \
+    sledra_stage_begin sledra_stage_end sledra_execution_end

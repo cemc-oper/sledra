@@ -1,6 +1,6 @@
 # CE-1 Shell/CLI interface contract
 
-CE-01 contract baseline, 2026-10-30. CE-02 implements the internal Go CLI/coordinator; public Bash support remains CE-03 work. Data remains Execution 2.0.0/layout 2. See [offline validation](README.md).
+CE-01 contract baseline, 2026-10-30. CE-02 implements the internal Go CLI/coordinator; CE-03 implements the opt-in owner and event-only Bash APIs. Full cross-process fault acceptance remains CE-04 work. Data remains Execution 2.0.0/layout 2. See [offline validation](README.md).
 
 ## P01 启用与公共 API
 
@@ -38,11 +38,15 @@ context/stage/end 的公开签名不变。相同 context 幂等；不同 context
 | `prepare KIND [OPTIONS]` | KIND 为 start/context/event/stage-start/stage-end/end；沿用原 kind 参数但禁止 --previous-event（共享状态独占幂等判定），非 start 的 execution-id 仅由库内部提供 | 纯编码，不访问记录/控制目录；分配一次 request_id 和完整事件；start 另外分配 session_id/owner_key；不复用旧 CLI 回执语义 |
 | `open --root ROOT --runtime-dir DIR --owner-pid PID` | stdin 是一次 start prepared；首个 owner | 核对调用方 PID 身份，按 P03 创建一次会话及 started；失败不第二次调用 open；无引用时不尝试找回本次 begin |
 | `attach --context REF` | event-only | 有界读取并核对描述/身份/状态；不写 JSONL、不建身份；非阻塞锁检查 |
+| `bind --context REF` | event-only；与 attach 完全相同的校验 | 成功只返回 `CE-1<TAB>bound<TAB>execution_id<LF>`，供 Bash 取得已核验身份；不返回 key，不解析 Shell JSON；失败沿用完成回执 |
+| `diagnostic --context REF` | 同会话 | 独立核验控制绑定并以 O_EXCL 领取一次共享诊断预算；成功返回 `CE-1<TAB>diagnostic<TAB>granted\|suppressed<LF>`，失败返回 26 完成回执并使用本地预算；不改 writer 状态 |
 | `commit --context REF --role event\|owner [--owner-key KEY]` | stdin 是一份 prepared | event 只允许业务 event；owner key 和仍有效的 owner 祖先身份校验后才允许生命周期操作；内部按 P05–P07 协调 |
 | `result --context REF --request-id UUID --event-id UUID --record-sha256 HEX` | 同会话，只读 | 非阻塞取得同一 writer 锁，有界查最后回执；绝不 append、清空 writing 或解除 disabled |
 | `disable --context REF` | 已验证的同会话 | 单次发布禁写请求；非阻塞尝试锁以确认静止，不重试、不 append |
 
 库在启用 child-events、attach 前做一次精确握手，冻结已核验的 SLEDRA_BIN 绝对路径；描述不能提供可执行文件路径。旧二进制不识别命令、异常退出或 malformed 回执均停止本次接入，不降级。producer 不从引用猜测另一安装。默认旧模式不增加新握手或运行目录前提。
+
+CE-03 补齐上述内部 bind/diagnostic 专用传输；原 attach、九字段完成回执、prepared、CE-1/协议版本及 CE-01 向量保持不变。bind 复用 attach 的一次非阻塞锁检查，只暴露 execution ID；diagnostic 不等 writer 锁、不改 JSONL/状态 revision，已有合法 diagnostic 时明确 suppressed。两种专用成功行均由 Bash 有界且精确匹配；异常使用本进程预算，不把输出当作业务或 owner 权限。
 
 prepared 为一个 LF 结尾的九字段 TSV：`1, request_id, execution_id, event_id, auxiliary, session_id, owner_key, record_sha256, event_json`（这里的逗号表示字段分隔，实际分隔为 TAB）。UUID 均为旧契约的小写 UUIDv4；auxiliary 对 start 为入口 UTC 时间，对 stage-start 为 stage_id，其余为 `-`；session_id、owner_key 仅 start 有值，其余为 `-`。owner_key 为 Go CSPRNG 产生的 32 随机字节的小写 hex，state 仅保存 SHA256。record_sha256 是 event_json 原始 UTF-8 bytes（不含 LF）的 SHA256 小写 hex，内部只用于核查同一请求。event_json 是无原始 TAB/CR/LF 的单行 JSON，复用原 codec。Bash 按固定字段/总长/ID/单行检查，不 eval/source。一次 emit 只 prepare 一次、commit 一次；事件 occurred_at 是该 hook 的 prepare 时刻，不在 tail 补录。Bash 不自行拼 JSON。
 

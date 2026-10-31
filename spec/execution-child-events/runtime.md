@@ -1,6 +1,6 @@
 # execution-child-events/1 runtime contract
 
-CE-01 contract baseline, 2026-10-30. CE-02 implements the Go components; full CE-03/04 Bash and cross-process fault acceptance remain pending. See [interface](interfaces.md) and [vectors](README.md).
+CE-01 contract baseline, 2026-10-30. CE-02 implements the Go components and CE-03 implements public Bash integration; full CE-04 cross-process fault acceptance remains pending. See [interface](interfaces.md) and [vectors](README.md).
 
 ## P03 身份、文件与资源边界
 

@@ -19,3 +19,8 @@ func (r *ChildRecorder) Commit(ref, role, key string, p *ChildPrepared) ChildRec
 func (r *ChildRecorder) Attach(ref string) ChildReceipt                   { return childUnsupported(nil) }
 func (r *ChildRecorder) Lookup(ref string, p *ChildPrepared) ChildReceipt { return childUnsupported(p) }
 func (r *ChildRecorder) Disable(ref string) ChildReceipt                  { return childUnsupported(nil) }
+
+func (r *ChildRecorder) Bind(ref string) (ChildReceipt, string) { return childUnsupported(nil), "" }
+func (r *ChildRecorder) ClaimDiagnostic(ref string) (bool, error) {
+	return false, bad("installation_incompatible")
+}
