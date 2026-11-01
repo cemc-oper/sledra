@@ -11,3 +11,5 @@ python3 examples/hpc/site.py --config /absolute/path/to/site.json
 单节点可用probe、M1、Shell及可选benchmark，加--mode hpc --bin/--work-root/--report-dir/--keep-work，每个report须新建；按站点策略在计算节点执行。手动双角色流程见源码docs/source/guides/hpc.md，安装版位于share/sledra/docs/testing-hpc.md。
 
 模板、登录节点运行或本地模拟不证明共享存储、调度、MPI、signal、断电持久性或A6预算达标。
+
+CE-1 子进程事件使用单独的[目标节点预检与现场验收](child-events.md)。其中预检只采集安装、权限、节点和挂载/容量信息，不初始化记录、不提交或取消作业，始终保留 A15 未验证；旧记录流程的双角色工具不能替代 CE-1 现场验收。
