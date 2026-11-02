@@ -81,4 +81,4 @@ for path in "$runtime" "$shared"; do
     df -P -k -- "$path"
     df -P -i -- "$path"
 done
-printf 'status=preflight_passed\nruntime_node_local=unverified\nshared_visibility=unverified\na15=unverified\n'
+printf 'status=preflight_passed\nstorage_semantics=unverified\nshared_visibility=unverified\na15=unverified\n'

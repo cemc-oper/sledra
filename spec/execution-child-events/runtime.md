@@ -2,13 +2,15 @@
 
 CE-01 contract baseline, 2026-10-30. CE-02 implements the Go components and CE-03 implements public Bash integration; CE-04 covers local cross-process fault acceptance, with target-node qualification still pending. See [interface](interfaces.md) and [vectors](README.md).
 
+2026-11-02 部署修订：按用户明确要求允许经现场验证的共享控制目录，替代 CE-00/CE-01 历史文本中的必须节点本地限制。此修订不改变 CE-1/协议1、控制字段/wire、Execution 2.0.0/布局2、权限或同节点身份规则；共享 FS 资格仍须 CE-07 实证，不能从本地测试推断。
+
 ## P03 身份、文件与资源边界
 
 首版限 Linux 同机、同 UID、同 PID namespace、有可读 procfs 的 Bash >=4.3。节点键固定 `/proc/sys/kernel/random/boot_id` 加 PID namespace inode；owner 键为 UID、owner BASHPID、`/proc/PID/stat` 第 22 字段 starttime、session_id。open 核对 owner 为当前 CLI 的 Bash 祖先进程（允许库捕获回执使用的进程替换子进程，逐级核验 ancestry，不仅比较直接 PPID），非 zombie，UID/namespace 一致。以后每次 attach/commit/result 重新核对 owner PID/starttime/boot/namespace，不用 hostname、`kill -0` 或旧环境 ID 替代；PID 重用、重启、owner 死亡均拒绝，不补 ended。procfs 不可核验即 fail closed，不猜测。
 
 PID/starttime 不区分同 PID 的 exec。本期支持 owner 保持原 Bash 直到收尾，业务 inline/external 由它启动；owner 通过 exec 替换自身不在有效生命周期支持范围。新的 Bash 公共 begin 一律清除导出身份、使用新 key/新 Execution；继承旧引用只能申请 event-only，不能成为 owner。不能宣称能检测任意同 PID 同启动时刻的 exec，或原子证明 owner 在检查后仍存活。A03 必须分开验证“PID 重用拒绝”“新入口新身份”“继承无 owner 权限”与此限制。
 
-运行目录由部署者事先建立，UID 匹配，mode 0700；部署须确认是真正节点本地文件系统（不在 NFS/Lustre/共享卷上），不能仅凭绝对路径或 hostname 判断。所有路径组件不允许 symlink、其他用户可写组件或不可信挂载。begin 只在其中以随机 UUIDv4 建立新 0700 目录。当前 UID 的根路径及上级目录仍属可信部署边界，不是对同 UID 恶意写者的沙箱。runtime、session、writer.lock 的 device/inode 固定；每次 open 与路径的 lstat/fstat 对照，不跟随链接，不接受特殊文件、硬链接或锁 inode 替换。lock 0600，创建后不 rename/unlink。记录根锚定原 os.Root 校验，根路径/设备 inode/根配置绑定固定；文件缺失、替换、坏尾、根不兼容拒绝，不重建。
+运行目录由部署者事先建立，UID 匹配，mode 0700；部署可显式使用本地或共享文件系统，须在目标挂载上验证完整读写、稳定 inode、原子 rename/renameat2(RENAME_NOREPLACE)、O_EXCL 和非阻塞 flock 语义。共享目录按随机 session 隔离；一个 Execution 的 owner/producers 仍限定在同一节点、UID 和 PID namespace。共享路径可见不授予其他节点 attach/写入权限，其他节点仍须按 boot/PID 身份检查拒绝。未经验证的挂载不因路径可访问或名称而自动获得支持。所有路径组件不允许 symlink、其他用户可写组件或不可信挂载。begin 只在其中以随机 UUIDv4 建立新 0700 目录。当前 UID 的根路径及上级目录仍属可信部署边界，不是对同 UID 恶意写者的沙箱。runtime、session、writer.lock 的 device/inode 固定；每次 open 与路径的 lstat/fstat 对照，不跟随链接，不接受特殊文件、硬链接或锁 inode 替换。lock 0600，创建后不 rename/unlink。记录根锚定原 os.Root 校验，根路径/设备 inode/根配置绑定固定；文件缺失、替换、坏尾、根不兼容拒绝，不重建。
 
 固定控制目录内容：
 
@@ -132,4 +134,4 @@ closing 发布失败：不写 ended，尝试 disabled 请求并停止本地；�
 
 首版不自动清理、不实现恢复/cleanup CLI。关闭/detach 不删控制目录。部署者预先约定 runtime 专用容量、监测和维护责任；不存在可用容量时本次 begin 失败并保持业务原结果。不能通过自动删除活跃目录腾挪空间。清理在停止新 CE 启动的维护窗口按 boot/PID/starttime 验证无有效 owner，对该 session writer 锁非阻塞独占成功后才可删除；先使引用失效，再清除目录，不影响任何 JSONL。年龄/TTL/closed 标记独自不足以证明可删；不得删除或更换活跃锁 inode。不能证明无活跃使用者就保留；跨 boot 的目录仍须在维护窗口验证不可能有活跃锁。旧引用永不因清理而重建。
 
-平台资格由 CE-07 固定节点本地 FS、权限、procfs、原子 rename（含 NOREPLACE）/flock、共享记录根行为和维护流程。本地设计/测试不代表 HPC 通过。临时安装只在 CE-06 的隔离目录，保留现有试用/正式安装；目标部署和发布须独立授权。
+平台资格由 CE-07 固定实际控制与记录挂载（本地或显式共享）、权限、procfs、原子 rename（含 NOREPLACE）/flock、共享可见性与维护流程。本地设计/测试不代表 HPC 通过。临时安装只在 CE-06 的隔离目录，保留现有试用/正式安装；目标部署和发布须独立授权。

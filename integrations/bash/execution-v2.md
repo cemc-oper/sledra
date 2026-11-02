@@ -89,7 +89,7 @@ uv run --locked --offline --no-python-downloads python -m unittest discover -s t
 
 默认调用继续使用上面的单 owner 路径。只有首次 `sledra_execution_begin --child-events [原 start 参数]` 选择协调路径；不能给 active/off/closed/disabled 的入口升级模式。CE-1 是独立接口版本，数据仍为 Execution 2.0.0/layout 2。参见[独立契约](../../spec/execution-child-events/interfaces.md)及[完整父子示例](../../examples/execution-child-events/README.md)。
 
-部署者须提供绝对 `SLEDRA_RUNTIME_DIR`，预建当前 UID 的 0700 目录，确认节点本地 FS、可信祖先，且位于记录根/业务/清理树之外。库不推断 TMPDIR，不创建缺失 runtime，不退回旧 append。CE 模式要求同目录的 `sledra-execution.sh` 和 `sledra-events.sh`，以及支持本次接口的 Linux amd64/arm64 Go 二进制；记录端仍不依赖 Python/jq/ecFlow。最终独立安装/混装验收留给 CE-06。
+部署者须提供绝对 `SLEDRA_RUNTIME_DIR`，预建当前 UID 的 0700 目录，确认显式选定的本地或共享 FS 通过原子替换/非阻塞锁验收、可信祖先，且位于记录根/业务/清理树之外。库不推断 TMPDIR，不创建缺失 runtime，不退回旧 append。CE 模式要求同目录的 `sledra-execution.sh` 和 `sledra-events.sh`，以及支持本次接口的 Linux amd64/arm64 Go 二进制；记录端仍不依赖 Python/jq/ecFlow。最终独立安装/混装验收留给 CE-06。
 
 ```bash
 source /absolute/install/sledra-execution.sh

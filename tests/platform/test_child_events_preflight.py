@@ -71,7 +71,7 @@ class ChildEventsPreflight(unittest.TestCase):
         for expected in (
             "status=preflight_passed",
             "a15=unverified",
-            "runtime_node_local=unverified",
+            "storage_semantics=unverified",
             "shared_visibility=unverified",
             "boot_id=",
             "pid_namespace_inode=",

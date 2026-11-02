@@ -17,9 +17,11 @@ Supported runtime builds are Linux amd64 and arm64. Other hosts keep the legacy
 build path; the CE capability handshake rejects unsupported platforms. Runtime
 permission checks reject symlinks, non-private session/control files, hardlinks,
 changed lock/directory/record inodes and writable ancestors, including `/tmp`.
-Use a pre-created node-local 0700 runtime under trusted ancestors (for example a
-private user cache). The deployment must verify local filesystem semantics;
-absolute paths alone do not establish that a mount is node-local. No runtime
+Use a pre-created 0700 runtime under trusted ancestors on an explicitly qualified
+local or shared filesystem. Qualify stable inodes, atomic rename/renameat2
+(NOREPLACE), O_EXCL and nonblocking flock on the actual mount. Shared storage
+does not change the same-node owner/producer identity checks: each Execution
+remains bound to its owner boot/PID namespace and process lifetime. No runtime
 base is guessed or created. Target filesystem qualification remains CE-07.
 
 An owner is bound to UID, boot identity, PID namespace, Bash PID/start ticks and

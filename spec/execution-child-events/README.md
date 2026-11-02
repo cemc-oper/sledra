@@ -1,7 +1,7 @@
 # CE-1 child-events contract and independent vectors
 
 CE-01 contract baseline, 2026-10-30. This directory defines the opt-in interface
-`CE-1` and node-local control protocol `execution-child-events/1`. The software
+`CE-1` and same-node producer control protocol `execution-child-events/1`. The software
 remains `dev`, Execution JSONL remains format `2.0.0` and layout `2`. These are
 separate version axes. No new software release or data migration is implied.
 
@@ -131,3 +131,5 @@ The Go test `TestChildEventsContractUsesUnchangedExecutionCodec` in
 passes the same eight records through the unmodified Go codec and asserts ready
 leads and exact integer precision. It runs with normal `go test`/`make test`.
 These are data interoperability checks, not real child-process writing.
+
+2026-11-02 storage qualification update: P03/P09 allow explicitly qualified shared control storage while retaining same-node producers and all permission/identity checks. CE-1, protocol 1, all control/data fields and wire formats are unchanged. The schema title and synthetic `/node-local` fixture paths are historical labels, not filesystem-type validators. CE-00 source-map digests continue to identify the original baseline.

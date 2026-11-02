@@ -2,7 +2,7 @@
 
 [owner.sh](owner.sh) 使用 [Bash owner API](../../integrations/bash/execution-v2.md)，显式选择 `--child-events`，对完整 [business.sh](business.sh) 仅调用一次。inline 用子 shell source 完整业务脚本，external 启动独立 Bash；两者均自行 source [事件库](../../integrations/bash/sledra-events.sh)、attach、按实际业务点 emit，然后 detach。业务脚本可直接运行；缺引用、off 或缺事件库时保留五条合成业务输出。
 
-运行前提供本次构建的 Go 二进制、已初始化记录根，以及部署者预先创建的独立私有节点本地目录。runtime 必须 mode 0700，所有祖先可信且不可被其他用户写入，不得放在记录根或业务清理树。`/tmp`（包括 sticky 目录）不符合本实现的祖先权限检查。下面只在本地用户缓存的新目录演示；缓存实际文件系统是否节点本地必须由部署者验证，示例不构成 HPC 资格。
+运行前提供本次构建的 Go 二进制、已初始化记录根，以及部署者预先创建的独立私有控制目录。runtime 必须 mode 0700，所有祖先可信且不可被其他用户写入，不得放在记录根或业务清理树。`/tmp`（包括 sticky 目录）不符合本实现的祖先权限检查。下面只在本地用户缓存的新目录演示；部署者须在实际控制挂载（本地或共享）验证原子替换、稳定 inode 与非阻塞锁，示例不构成 HPC 资格。
 
 ```bash
 # Sledra 源码根；Go 环境已就绪。

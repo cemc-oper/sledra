@@ -227,7 +227,7 @@ def main() -> None:
             "elf": elf,
             "runtime": {
                 "recording": ["target binary", "Bash >=4.4"],
-                "child_events": "Linux procfs; pre-created private node-local runtime directory (0700), trusted ancestors; separate from records and business cleanup",
+                "child_events": "Linux procfs; pre-created private runtime directory (0700) on an explicitly qualified local or shared filesystem, trusted ancestors, same-node producers; separate from records and business cleanup",
                 "synthetic_example": ["dirname", "cat", "sleep"],
                 "verification": ["Python >=3.12 standard library"],
                 "retention_tool": "not included; fixture-only, not production cleanup",

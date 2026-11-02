@@ -6,7 +6,7 @@ CE-01 contract baseline, 2026-10-30. CE-02 implements the internal Go CLI/coordi
 
 数据格式仍为 `2.0.0`，布局仍为 `2`，软件仍为 `dev`；`CE-1` 不是软件 2.1.0，也不是新的 JSON schema 版本。只有首次 `sledra_execution_begin --child-events [原 start 参数]` 选择协调路径。参数仅可出现一次，无值；重复、`--child-events=true`、未知参数都作为首次 begin 拒绝并冻结 disabled。旧签名及默认单 owner 路径不变；已有 active/off/closed/disabled 入口不能升级或重新 begin。
 
-增加部署配置 `SLEDRA_RUNTIME_DIR`：绝对、节点本地、当前 UID 独占，位于记录根和业务/生成/清理树之外；不从 TMPDIR、SLEDRA_ROOT 或业务配置推断。首次 begin 冻结 mode/bin/root/runtime。未设置、不可用或不满足 P03 时停止本次观测，不回退旧 append。`SLEDRA_MODE` 的 off、execution-v2、歧义及未知值规则沿用旧接口。off 不检查路径、不访问文件、不运行 CLI、不诊断。
+增加部署配置 `SLEDRA_RUNTIME_DIR`：绝对、部署者显式指定且已验证文件系统语义、当前 UID 独占，位于记录根和业务/生成/清理树之外；不从 TMPDIR、SLEDRA_ROOT 或业务配置推断。首次 begin 冻结 mode/bin/root/runtime。未设置、不可用或不满足 P03 时停止本次观测，不回退旧 append。`SLEDRA_MODE` 的 off、execution-v2、歧义及未知值规则沿用旧接口。off 不检查路径、不访问文件、不运行 CLI、不诊断。
 
 `SLEDRA_EVENT_CONTEXT` 是可导出的不透明 event-only 引用。协调 begin 首先清除当前入口继承的引用，只有 started 写入及 close、active 状态提交、描述原子发布和成功回执校验全部完成才发布新引用。off、输入/安装/初始化失败不发布。重复 begin 不清除自己已经发布的引用；普通旧入口也不得把继承引用当作自己的身份。source 本身不清理公开引用，允许业务先 source 后 attach。所有其他公共 SLEDRA ID/token/context 值都不是身份来源。
 
