@@ -43,6 +43,12 @@ func (r *ChildRecorder) Commit(ref, role, key string, p *ChildPrepared) ChildRec
 	if reply, stop := s.stopped(p); stop {
 		return reply
 	}
+	// A verified closed snapshot can only reject new writes. Avoid competing for
+	// writer.lock and emitting an invalid Busy/closed receipt; end idempotency
+	// and every admission decision still require the writer lock below.
+	if s.state.Phase == "closed" && p.Kind != "end" {
+		return s.reply(22, "closed", p)
+	}
 	if p.Kind == "end" {
 		closing, err := s.closing()
 		if err != nil {

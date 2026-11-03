@@ -206,6 +206,50 @@ func TestChildBusyCloseAdmissionAndExplicitEnd(t *testing.T) {
 		t.Fatal("end not once")
 	}
 }
+func TestChildClosedRequestsRejectBeforeWriterContention(t *testing.T) {
+	tr := newChildTrial(t)
+	end := tr.prepare(t, "execution.ended", map[string]any{"exit_code": 0})
+	childWant(t, tr.r.Commit(tr.ref, "owner", tr.key, end), 0, "ok")
+	s, err := tr.r.session(tr.ref)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer s.close()
+	if err = s.tryLock(); err != nil {
+		t.Fatal(err)
+	}
+	before := tr.records(t)
+	stateBefore, err := childRead(s.dir, "state.json", ChildStateLimit)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for n, role := range []string{"event", "owner"} {
+		reply := tr.recorder(t).Commit(tr.ref, role, tr.key, tr.event(t, n))
+		childWant(t, reply, 22, "closed")
+		if reply.Phase != "closed" || reply.Stop != "none" || reply.Revision == nil || *reply.Revision != 4 {
+			t.Fatal(reply)
+		}
+	}
+	// Explicit same-end still competes for the lock and reports the closing latch.
+	reply := tr.recorder(t).Commit(tr.ref, "owner", tr.key, end)
+	childWant(t, reply, 21, "writer_busy")
+	if reply.Phase != "closing" {
+		t.Fatal(reply)
+	}
+	stateAfter, err := childRead(s.dir, "state.json", ChildStateLimit)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(before, tr.records(t)) || !bytes.Equal(stateBefore, stateAfter) {
+		t.Fatal("closed rejection changed records or state")
+	}
+	for _, name := range []string{"disabled", "diagnostic"} {
+		if _, err = s.dir.Stat(name); !errors.Is(err, os.ErrNotExist) {
+			t.Fatalf("unexpected %s: %v", name, err)
+		}
+	}
+}
+
 func TestChildCloseRacesAdmittedWriter(t *testing.T) {
 	tr := newChildTrial(t)
 	entered := make(chan struct{})
