@@ -200,20 +200,40 @@ func childStateSnapshotPrivate(info os.FileInfo) bool {
 	return info.Mode().IsRegular() && info.Mode().Perm() == 0600 && stat.Uid == uint32(os.Geteuid()) && stat.Nlink <= 1
 }
 func childRead(dir *os.Root, name string, limit int) ([]byte, error) {
-	f, err := childFile(dir, name, os.O_RDONLY)
-	if err != nil {
-		return nil, err
-	}
-	raw, readErr := io.ReadAll(io.LimitReader(f, int64(limit+1)))
-	closeErr := f.Close()
-	if readErr != nil || closeErr != nil {
-		return nil, bad("control_unavailable")
-	}
-	if len(raw) > limit {
-		return nil, bad("limit_exceeded")
-	}
-	return raw, nil
+	return childReadControl(dir, name, limit, io.ReadAll)
 }
+
+func childReadControl(dir *os.Root, name string, limit int, readAll func(io.Reader) ([]byte, error)) ([]byte, error) {
+	for attempt := 0; ; attempt++ {
+		f, err := childFile(dir, name, os.O_RDONLY)
+		if err != nil {
+			return nil, err
+		}
+		raw, readErr := readAll(io.LimitReader(f, int64(limit+1)))
+		replaced := false
+		if attempt == 0 && name == "state.json" && errors.Is(readErr, os.ErrNotExist) {
+			// Some shared filesystems invalidate a reader of the replaced inode.
+			// Reopen only when the current path names a different snapshot.
+			opened, statErr := f.Stat()
+			current, pathErr := dir.Lstat(name)
+			replaced = statErr == nil && pathErr == nil && !os.SameFile(opened, current)
+		}
+		if f.Close() != nil {
+			return nil, bad("control_unavailable")
+		}
+		if replaced {
+			continue
+		}
+		if readErr != nil {
+			return nil, bad("control_unavailable")
+		}
+		if len(raw) > limit {
+			return nil, bad("limit_exceeded")
+		}
+		return raw, nil
+	}
+}
+
 func childLatch(dir *os.Root, name string) (bool, error) {
 	raw, err := childRead(dir, name, 0)
 	if errors.Is(err, os.ErrNotExist) {

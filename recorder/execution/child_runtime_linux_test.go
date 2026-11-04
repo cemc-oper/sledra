@@ -823,3 +823,54 @@ func TestChildStateSnapshotAllowsUnlinkedMetadataButRejectsUnsafeFiles(t *testin
 		t.Fatal("nonprivate snapshot accepted")
 	}
 }
+
+func TestChildReadReopensReplacedStateAfterReadENOENT(t *testing.T) {
+	for _, tc := range []struct {
+		name               string
+		replace, failAgain bool
+		wantCalls          int
+	}{
+		{name: "replaced", replace: true, wantCalls: 2},
+		{name: "same inode", wantCalls: 1},
+		{name: "second failure", replace: true, failAgain: true, wantCalls: 2},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			tr := newChildTrial(t)
+			session, err := tr.r.session(tr.ref)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer session.close()
+			before, err := childRead(session.dir, "state.json", ChildStateLimit)
+			if err != nil {
+				t.Fatal(err)
+			}
+			calls := 0
+			raw, err := childReadControl(session.dir, "state.json", ChildStateLimit, func(r io.Reader) ([]byte, error) {
+				calls++
+				if calls == 1 {
+					if tc.replace {
+						if err := tr.r.atomic(session.dir, "state.json", before, false, "test-replace"); err != nil {
+							t.Fatal(err)
+						}
+					}
+					return []byte("partial snapshot"), syscall.ENOENT
+				}
+				if tc.failAgain {
+					return nil, syscall.ENOENT
+				}
+				return io.ReadAll(r)
+			})
+			if calls != tc.wantCalls {
+				t.Fatalf("read calls = %d, want %d", calls, tc.wantCalls)
+			}
+			if tc.replace && !tc.failAgain {
+				if err != nil || !bytes.Equal(raw, before) {
+					t.Fatalf("reopened snapshot differs: %v", err)
+				}
+			} else if Code(err) != "control_unavailable" || raw != nil {
+				t.Fatalf("expected control_unavailable without bytes, got %q, %v", raw, err)
+			}
+		})
+	}
+}
