@@ -84,3 +84,15 @@ python3 "$install_dir/share/sledra/test-tools/verify.py" \
 试用包也包含公共 M1/Shell/平台/性能工具和站点模板，详见 [HPC 测试](../guides/hpc.md)。隔离回归额外使用 grep/findmnt，属于测试依赖。SLD-26 的完整离线发行、升级/回滚与真实 HPC 资格继续单独验收。
 
 <!-- trial-package:end -->
+
+## 验收 CE-1 子事件试用安装
+
+完成上述归档与包内校验后，检查同一安装下的 `bin/sledra`、`share/sledra/integrations/bash/sledra-execution.sh` 和相邻的 `sledra-events.sh`。manifest 分别记录软件身份、Execution 2.0.0/布局 2 及 CE-1/控制协议 1。使用 Bash 检查精确握手：
+
+```bash
+cmp -s \
+  <("$install_dir/bin/sledra" execution child-events capabilities --interface CE-1 --protocol 1) \
+  <(printf 'CE-1\texecution-child-events\t1\n')
+```
+
+握手返回 0 后，在独立、权限受控的试验根下预建当前 UID 的 0700 控制目录，初始化分离的记录根，再按包内 `share/sledra/examples/execution-child-events/` 的 owner/business 示例验证。顺序试点每条 Execution 使用同节点的一个前台业务子进程，owner 等子进程退出后结束记录，作业结束后再读取控制状态。把安装、记录和控制目录的实际挂载与作业证据一起留档。平台与发行状态见[支持矩阵](../reference/compatibility/support.md)。

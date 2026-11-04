@@ -13,10 +13,20 @@
 | 其他允许工具链组合 | 未验证 | 开发下限不等于全矩阵实测 |
 | 中文文档 | 本地构建验证 | Sphinx + PyData Sphinx Theme + MyST-NB，zh_CN，Notebook 不自动执行；公开托管未配置 |
 | GitHub Ubuntu 24.04 amd64 workflow | 静态/本地命令验证 | 真实 runner、cache/upload 和 namespace 配置未验证 |
-| 真实计算节点、共享 HPC 与调度器 | 未验证 | 已有显式测试根和 Slurm 模板，须站点/节点窗口及03/25证据 |
+| 真实计算节点、共享 HPC 与调度器 | CE-1 顺序试点通过 | 现场范围见下表，完整目标平台 A15 待验收 |
 | signal、MPI、透明 supervisor | 有限/未验证 | 仅当前 owner/Bash profile；INT 即时处理与 sledra exec 未交付 |
 | A6、断电持久性和网络故障 | 未验证 | 本地性能/进程退出可见性不足以证明 |
 | 公开发行、签名与完整离线升级/回滚 | 后续工作 | A7 和26独立收口 |
 | 分析、查询、真实采集确认 | 尚未实现 | M2；隔离保留夹具不是采集器 |
 
 最低/实测工具见[开发](../../development/workflow.md)，产物身份与运行依赖见[安装](../../getting-started/installation.md)，节点/mount 和命令边界见 [HPC 测试](../../guides/hpc.md)。[工程交接](../../development/engineering-handoff.md)保留兼容输入及未完成分支。
+
+## CE-1 子事件
+
+| 范围 | 状态 | 验收边界 |
+|---|---|---|
+| 核心与安装 | 本地通过 | CE-1/协议 1，Execution 2.0.0/布局 2。覆盖 Go/Bash、旧 reader、混装拒绝和 Linux amd64 独立安装。 |
+| GFS 接入 | 本地通过 | GFS 全量 83 项通过，另有安装资源和生成回归。 |
+| CMA HPC `/g4` Parastor | 顺序试点通过 | 控制与记录分离。同一 Execution 的 owner 和唯一前台业务子进程同节点，作业结束后核对控制状态。独立 Bash 作业 232024671；GFS ecFlow inline 成功 2026110300、abort 2026110400。 |
+| 完整目标平台 A15 | 待验收 | `/g4` 无跟踪并发快照用例失败。提交中断、跨节点可见性与引用拒绝、容量或配额故障、受控清理仍待现场验证。 |
+| 正式发行 | 待验收 | 正式发行、签名和升级/回滚资格分别跟踪。 |

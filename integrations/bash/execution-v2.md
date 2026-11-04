@@ -85,11 +85,11 @@ uv run --locked --offline --no-python-downloads python -m unittest discover -s t
 
 运行测试的开发环境需要 Go、Python 及现有 jsonschema 依赖；这不是记录节点依赖。P1-02/P1-03 已覆盖 owner 生命周期、业务事件/阶段、记录边界及跨 CLI 禁写，P1-04 增加了实际示例的命令次数/argv/产物/callback、TERM/KILL 和观测故障对照；HPC/真实工作流及 P5 归档仍未验收。
 
-## CE-03：显式接入同机子进程事件
+## CE-1 同机子进程事件
 
-默认调用继续使用上面的单 owner 路径。只有首次 `sledra_execution_begin --child-events [原 start 参数]` 选择协调路径；不能给 active/off/closed/disabled 的入口升级模式。CE-1 是独立接口版本，数据仍为 Execution 2.0.0/layout 2。参见[独立契约](../../spec/execution-child-events/interfaces.md)及[完整父子示例](../../examples/execution-child-events/README.md)。
+默认调用继续使用上面的单 owner 路径。首次 `sledra_execution_begin --child-events [原 start 参数]` 显式选择协调路径。CE-1 为 Bash 接口版本，内部控制协议为 `execution-child-events` 版本 1，记录格式为 Execution 2.0.0、布局版本为 2。相对于原单 owner 接口，CE-1 增加 opt-in、同机引用和三个事件钩子。owner 独占 context/stage/end，原 JSONL 格式和 reader 兼容规则保持原义。[接口契约](../../spec/execution-child-events/interfaces.md) · [完整父子示例](../../examples/execution-child-events/README.md)。
 
-部署者须提供绝对 `SLEDRA_RUNTIME_DIR`，预建当前 UID 的 0700 目录，确认显式选定的本地或共享 FS 通过原子替换/非阻塞锁验收、可信祖先，且位于记录根/业务/清理树之外。库不推断 TMPDIR，不创建缺失 runtime，不退回旧 append。CE 模式要求同目录的 `sledra-execution.sh` 和 `sledra-events.sh`，以及支持本次接口的 Linux amd64/arm64 Go 二进制；记录端仍不依赖 Python/jq/ecFlow。最终独立安装/混装验收留给 CE-06。
+部署者须提供绝对 `SLEDRA_RUNTIME_DIR`，预建当前 UID 的 0700 目录，确认显式选定的本地或共享 FS 通过实际用法所需的原子替换和非阻塞锁验收，祖先可信，且位于记录根、业务和清理树之外。库不推断 TMPDIR，不创建缺失 runtime，不退回旧 append。CE 模式要求同一安装中的 `sledra-execution.sh`、相邻的 `sledra-events.sh` 和通过精确握手的 Linux 二进制。运行依赖为 Bash 4.3+、Linux procfs 和记录器。已完成独立试用安装和混装回归，目标平台范围见[支持矩阵](../../docs/source/reference/compatibility/support.md)。
 
 ```bash
 source /absolute/install/sledra-execution.sh
